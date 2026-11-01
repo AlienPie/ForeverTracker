@@ -5,3 +5,7 @@ node_modules/
 data-local/
 *.sqlite
 *.sqlite-*
+
+.superpowers/
+.remember/
+addon/tests/out/
