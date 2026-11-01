@@ -4,13 +4,14 @@ import {
   ForeverDbAuthError,
   ForeverDbBudgetError,
   ForeverDbHttpError,
+  ForeverDbResponseError,
 } from "../src/index";
 import metaFixture from "./fixtures/meta.json";
 import questsPage from "./fixtures/quests-page.json";
 
 const KEY = "fdb_secret";
 
-type Reply = { status?: number; body?: unknown; headers?: Record<string, string> };
+type Reply = { status?: number; body?: unknown; raw?: boolean; headers?: Record<string, string> };
 
 function harness(replies: Reply[] | ((n: number) => Reply), opts: { perMinute?: number; dailyReserve?: number } = {}) {
   let clock = 1_000_000;
@@ -20,7 +21,7 @@ function harness(replies: Reply[] | ((n: number) => Reply), opts: { perMinute?: 
     const n = calls.length;
     calls.push({ url: String(url), headers: { ...(init?.headers as Record<string, string>) }, at: clock });
     const r = typeof replies === "function" ? replies(n) : (replies[Math.min(n, replies.length - 1)] as Reply);
-    return new Response(JSON.stringify(r.body ?? { data: {}, meta: { build: "b", attribution: "a" } }), {
+    return new Response(r.raw ? String(r.body) : JSON.stringify(r.body ?? { data: {}, meta: { build: "b", attribution: "a" } }), {
       status: r.status ?? 200,
       headers: r.headers,
     });
@@ -149,4 +150,41 @@ describe("ForeverDB client", () => {
       expect((e as Error).stack ?? "").not.toContain(KEY);
     }
   });
+
+  test("invalid-JSON 200 body throws ForeverDbResponseError", async () => {
+    const { client } = harness([{ body: "<html>portal</html>", raw: true }]);
+    const err = await client.get("/meta").catch((e) => e);
+    expect(err).toBeInstanceOf(ForeverDbResponseError);
+    expect(err.message).not.toContain("portal");
+  });
+
+  test("200 JSON without meta throws ForeverDbResponseError", async () => {
+    const { client } = harness([{ body: { data: [] } }]);
+    await expect(client.get("/meta")).rejects.toBeInstanceOf(ForeverDbResponseError);
+  });
+
+  test("pages() over non-array data throws ForeverDbResponseError", async () => {
+    const { client } = harness([{ body: { data: { x: 1 }, meta: { build: "b", attribution: "a" } } }]);
+    await expect(client.pages("/quests").next()).rejects.toBeInstanceOf(ForeverDbResponseError);
+  });
+
+  test(
+    "pages() throws instead of looping when meta.limit is 0",
+    async () => {
+      const { client, calls } = harness([
+        { body: { data: [1], meta: { build: "b", attribution: "a", total: 10, limit: 0, offset: 0 } } },
+      ]);
+      const pages: unknown[] = [];
+      const run = async () => {
+        for await (const p of client.pages<number>("/quests", { limit: 2 })) {
+          pages.push(p);
+          if (pages.length > 5) break;
+        }
+      };
+      await expect(run()).rejects.toBeInstanceOf(ForeverDbResponseError);
+      expect(pages.length).toBeLessThanOrEqual(1);
+      expect(calls.length).toBeLessThanOrEqual(1);
+    },
+    2000,
+  );
 });

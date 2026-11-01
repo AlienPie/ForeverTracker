@@ -1,5 +1,9 @@
 export { createForeverDbClient } from "./client/client";
-export { ForeverDbAuthError, ForeverDbBudgetError, ForeverDbHttpError } from "./client/errors";
+export {
+  ForeverDbAuthError,
+  ForeverDbBudgetError, ForeverDbHttpError,
+  ForeverDbResponseError,
+} from "./client/errors";
 export type {
   ApiMeta,
   ApiResponse,

@@ -25,3 +25,13 @@ export class ForeverDbHttpError extends Error {
     this.status = status;
   }
 }
+
+/** A 2xx response that was not the expected ForeverDB JSON envelope. Carries only the status. */
+export class ForeverDbResponseError extends Error {
+  readonly status: number;
+  constructor(status: number) {
+    super(`ForeverDB returned an unexpected response (HTTP ${status})`);
+    this.name = "ForeverDbResponseError";
+    this.status = status;
+  }
+}

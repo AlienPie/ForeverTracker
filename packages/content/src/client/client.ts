@@ -1,4 +1,9 @@
-import { ForeverDbAuthError, ForeverDbBudgetError, ForeverDbHttpError } from "./errors";
+import {
+  ForeverDbAuthError,
+  ForeverDbBudgetError,
+  ForeverDbHttpError,
+  ForeverDbResponseError,
+} from "./errors";
 import { createLimiter } from "./limiter";
 import type { ApiResponse, ForeverDbClient, ForeverDbClientOptions, Page, Query } from "./types";
 
@@ -40,7 +45,25 @@ export function createForeverDbClient(opts: ForeverDbClientOptions): ForeverDbCl
           dailyRemaining = remaining;
         }
         if (res.status === 401 || res.status === 403) throw new ForeverDbAuthError(res.status);
-        if (res.ok) return (await res.json()) as ApiResponse<T>;
+        if (res.ok) {
+          let body: unknown;
+          try {
+            body = await res.json();
+          } catch {
+            throw new ForeverDbResponseError(res.status);
+          }
+          const env = body as Partial<ApiResponse<T>> | null;
+          if (
+            typeof env !== "object" ||
+            env === null ||
+            !("data" in env) ||
+            typeof env.meta !== "object" ||
+            env.meta === null
+          ) {
+            throw new ForeverDbResponseError(res.status);
+          }
+          return env as ApiResponse<T>;
+        }
         if (res.status !== 429 && res.status < 500) throw new ForeverDbHttpError(res.status);
       }
 
@@ -63,9 +86,12 @@ export function createForeverDbClient(opts: ForeverDbClientOptions): ForeverDbCl
     let offset = o.startOffset ?? 0;
     for (;;) {
       const res = await get<T[]>(path, { ...o.query, limit, offset });
+      if (!Array.isArray(res.data)) throw new ForeverDbResponseError(200);
       const total = res.meta.total ?? offset + res.data.length;
       const step = res.meta.limit ?? limit;
+      if (!Number.isInteger(step) || step <= 0) throw new ForeverDbResponseError(200);
       const nextOffset = res.data.length > 0 && offset + step < total ? offset + step : null;
+      if (nextOffset !== null && nextOffset <= offset) throw new ForeverDbResponseError(200);
       yield { items: res.data, offset, total, nextOffset, build: res.meta.build };
       if (nextOffset === null) return;
       offset = nextOffset;
