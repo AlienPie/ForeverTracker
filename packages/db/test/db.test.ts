@@ -29,9 +29,9 @@ describe("db", () => {
 
   test("deviceToken.tokenHash is unique", () => {
     const db = openDb(":memory:");
-    db.insert(deviceToken).values({ id: "a", label: "x", tokenHash: "h", createdAt: 1 }).run();
+    db.insert(deviceToken).values({ label: "x", tokenHash: "h", createdAt: 1 }).run();
     expect(() =>
-      db.insert(deviceToken).values({ id: "b", label: "y", tokenHash: "h", createdAt: 2 }).run(),
+      db.insert(deviceToken).values({ label: "y", tokenHash: "h", createdAt: 2 }).run(),
     ).toThrow();
   });
 

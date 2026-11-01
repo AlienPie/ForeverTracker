@@ -1,31 +1,20 @@
 import { deviceToken, type Db } from "@ft/db";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { createHash, randomBytes } from "node:crypto";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-/**
- * Create a device token. Only the SHA-256 hex of the token is stored; the
- * plaintext is returned once. `device_token.id` is a TEXT column, so the
- * numeric id is stored as its decimal string.
- */
+/** Create a device token. Only the SHA-256 hex is stored; the plaintext is returned once. */
 export function createDeviceToken(db: Db, label: string): { id: number; token: string } {
   const token = randomBytes(32).toString("base64url");
-  const tokenHash = hashToken(token);
-  const id = db.transaction((tx) => {
-    const max = tx
-      .select({ m: sql<number | null>`max(cast(${deviceToken.id} as integer))` })
-      .from(deviceToken)
-      .get();
-    const next = (max?.m ?? 0) + 1;
-    tx.insert(deviceToken)
-      .values({ id: String(next), label, tokenHash, createdAt: Math.floor(Date.now() / 1000) })
-      .run();
-    return next;
-  });
-  return { id, token };
+  const row = db
+    .insert(deviceToken)
+    .values({ label, tokenHash: hashToken(token), createdAt: Math.floor(Date.now() / 1000) })
+    .returning({ id: deviceToken.id })
+    .get();
+  return { id: row.id, token };
 }
 
 /** Look up a token by its hash; revoked or unknown tokens give null. */
@@ -36,5 +25,5 @@ export function verifyDeviceToken(db: Db, token: string): { id: number } | null 
     .from(deviceToken)
     .where(and(eq(deviceToken.tokenHash, hashToken(token)), isNull(deviceToken.revokedAt)))
     .get();
-  return row ? { id: Number(row.id) } : null;
+  return row ? { id: row.id } : null;
 }

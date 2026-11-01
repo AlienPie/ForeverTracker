@@ -25,9 +25,7 @@ function pinDbMigrations(): Plugin {
 export default defineConfig({
   plugins: [
     pinDbMigrations(),
-    // Auth is bearer-token only (no cookies), so the form-POST CSRF origin check
-    // would only reject legitimate non-browser uploaders sending text/plain.
-    sveltekit({ adapter: adapter(), csrf: { trustedOrigins: ["*"] } }),
+    sveltekit({ adapter: adapter() }),
   ],
   ssr: { noExternal: [/^@ft\//], external: ["better-sqlite3"] },
 });

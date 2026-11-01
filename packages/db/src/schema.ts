@@ -46,7 +46,7 @@ export const snapshot = sqliteTable(
 );
 
 export const deviceToken = sqliteTable("device_token", {
-  id: text("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true }),
   label: text("label").notNull(),
   tokenHash: text("token_hash").notNull().unique(),
   createdAt: integer("created_at").notNull(),

@@ -20,6 +20,8 @@ describe("device tokens", () => {
     const db = openDb(":memory:");
     const a = createDeviceToken(db, "a");
     const b = createDeviceToken(db, "b");
+    expect(typeof a.id).toBe("number");
+    expect(b.id).toBeGreaterThan(a.id);
     expect(b.id).toBe(a.id + 1);
     expect(b.token).not.toBe(a.token);
   });
@@ -34,7 +36,7 @@ describe("device tokens", () => {
   test("revoked token fails verification", () => {
     const db = openDb(":memory:");
     const { id, token } = createDeviceToken(db, "laptop");
-    db.update(deviceToken).set({ revokedAt: 5 }).where(eq(deviceToken.id, String(id))).run();
+    db.update(deviceToken).set({ revokedAt: 5 }).where(eq(deviceToken.id, id)).run();
     expect(verifyDeviceToken(db, token)).toBeNull();
   });
 });
