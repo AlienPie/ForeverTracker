@@ -87,8 +87,8 @@ alone.
 3. **Advice engine** — pure functions `(character, content, curated data) → suggestions`.
 4. **Web UI** — SvelteKit, server-rendered from SQLite.
 
-Stack: TypeScript throughout; SvelteKit (Node adapter); SQLite via Drizzle; one Docker
-image with a data volume; the addon in Lua; the sync agent later as a single static Go
+Stack: TypeScript throughout; SvelteKit (Node adapter); SQLite via Drizzle; one container
+image (Docker or Podman) with a data volume; the addon in Lua; the sync agent later as a single static Go
 binary. SQLite fits one user and makes backup a file copy.
 
 ## 4. Content layer

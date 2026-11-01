@@ -2,17 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Everything in spec milestone M0 that can be built and tested before the game launches: monorepo, SavedVariables parser, ForeverDB client and content mirror, snapshot ingest, token-guarded upload endpoint, addon v0 tested against WoW API stubs, and a Docker image.
+**Goal:** Everything in spec milestone M0 that can be built and tested before the game launches: monorepo, SavedVariables parser, ForeverDB client and content mirror, snapshot ingest, token-guarded upload endpoint, addon v0 tested against WoW API stubs, and a container image.
 
 **Architecture:** Pure-TypeScript packages (`savedvars`, `content`, `db`, `core`) behind a thin SvelteKit app. Content comes from a rate-limited ForeverDB client into a SQLite mirror (or an on-demand cache, switched by `CONTENT_MODE`). Character data arrives as raw SavedVariables, is parsed (never executed), stored raw, and only minimally extracted at M0. The Lua addon is written defensively and tested under `busted` on LuaJIT against stubs.
 
-**Tech Stack:** Node 22 LTS, pnpm workspaces, TypeScript (strict), Vitest, SvelteKit (adapter-node), Drizzle ORM + better-sqlite3, Lua 5.1 semantics (LuaJIT + `busted`), Docker.
+**Tech Stack:** Node 22+ (v26.13.0 installed), pnpm workspaces, TypeScript (strict), Vitest, SvelteKit (adapter-node), Drizzle ORM + better-sqlite3, Lua 5.1 semantics (LuaJIT + `busted`), OCI container image built with Podman (Docker-compatible).
 
 **Spec:** `docs/superpowers/specs/2026-11-01-forevertracker-design.md`
 
 **Branch:** `feat/m0-foundations`, created from `docs/initial-design-spec`.
 
-**Prerequisites (user installs, needs sudo; none present on 2026-11-01):** `nodejs` (22+), `pnpm`, `luarocks` then `luarocks --lua-version 5.1 install busted` (LuaJIT already present), `docker` with compose. Verify with `node -v`, `pnpm -v`, `busted --version`, `docker compose version` before Task 1.
+**Toolchain (verified 2026-11-01):** pnpm 12.16.1, LuaJIT, luarocks 3.13.0, busted 2.3.0, Podman 6.1.4 (rootless, crun). Node v26.13.0 lives under nvm, which non-interactive shells do not load, so **every shell command must start with** `export PATH="$HOME/.nvm/versions/node/v26.13.0/bin:$PATH"`. There is **no compose provider** (`podman compose` fails), so Task 12 verifies with `podman build` and `podman run`; `podman-compose` is optional.
 
 ## Global Constraints
 
@@ -26,7 +26,7 @@
 - Secrets (ForeverDB key, Blizzard client ID/secret, session secret) live only in `.env` (gitignored); `.env.example` documents names. Keys and tokens are never logged or included in error messages. Device tokens are stored hashed.
 - Attribution text `Data from ForeverDB.net` with a visible link to `https://foreverdb.net` wherever its data is shown.
 - Characters are keyed by **GUID**; names are `Name-Surname`; there is no realm object.
-- SQLite via Drizzle; one Docker image with a data volume.
+- SQLite via Drizzle; one container image (OCI, built and verified with Podman) with a data volume.
 - Do not copy code from ForeverDB's GPL-3.0 addon.
 - End every commit message with the `Co-Authored-By` line from the session's attribution reminder.
 - Do not add a `LICENSE` file yet (spec open item 3).
@@ -303,26 +303,26 @@ Failure modes the spec implies but does not spell out, most likely first. Each h
 - [ ] **Step 4:** Run `busted`. Expected: PASS. Then re-run the Task 9 Step 5 round trip. Expected: ingest still succeeds with events and exploration present.
 - [ ] **Step 5:** Commit `feat(addon): track visited places, events and /ft sync`.
 
-### Task 12: Docker and runbook
+### Task 12: Container image and runbook
 
 **Files:**
-- Create: `Dockerfile`, `docker-compose.yml`, `.dockerignore`
-- Modify: `README.md` (run, env vars, token creation, upload with `curl`, how to install the addon, the launch-day verification checklist from spec section 12 item 4)
+- Create: `Dockerfile` (Podman reads it as-is), `compose.yaml` (for Docker or `podman-compose` users; not verified here), `.dockerignore`
+- Modify: `README.md` (run with `podman run`, env vars, token creation, upload with `curl`, how to install the addon, the launch-day verification checklist from spec section 12 item 4)
 
 **Interfaces:**
-- Produces: image running the SvelteKit server on port 3000 with `DATA_DIR=/data` (volume), reading `.env`; `docker compose up` serves `/api/health`.
+- Produces: image `forevertracker:dev` running the SvelteKit server on port 3000 with `DATA_DIR=/data` (volume), configured by `--env-file .env`; serves `/api/health`.
 
-- [ ] **Step 1:** Write a multi-stage `Dockerfile` (pnpm install → build web → slim runtime with the Node adapter output and the built migrations), non-root user, and `docker-compose.yml` with `env_file: .env` and a named volume on `/data`.
-- [ ] **Step 2:** Run `docker compose build`. Expected: success.
-- [ ] **Step 3:** Run `docker compose up -d` then `curl -s localhost:3000/api/health`. Expected: `{"ok":true}`. Then run `docker compose down`.
-- [ ] **Step 4:** Confirm no secret is baked into the image: `docker history --no-trunc <image> | grep -i fdb_` returns nothing.
-- [ ] **Step 5:** Commit `chore: add Docker image and runbook`.
+- [ ] **Step 1:** Write a multi-stage `Dockerfile` (pnpm install → build web → slim runtime with the Node adapter output and the built migrations), non-root user. Write `compose.yaml` with `env_file: .env` and a named volume on `/data`.
+- [ ] **Step 2:** Run `podman build -t forevertracker:dev .`. Expected: success.
+- [ ] **Step 3:** Run `podman run -d --name ft-test -p 3000:3000 -v ft-data:/data --env-file .env.example forevertracker:dev`, then `curl -s localhost:3000/api/health`. Expected: `{"ok":true}`. Then `podman rm -f ft-test && podman volume rm ft-data`.
+- [ ] **Step 4:** Confirm no secret is baked into the image: `podman history --no-trunc forevertracker:dev | grep -i fdb_` returns nothing.
+- [ ] **Step 5:** Commit `chore: add container image and runbook`.
 
 ---
 
 ## Self-review (against the spec)
 
-- **Coverage:** M0 items in spec §11 — skeleton (1), Docker (12), DB schema (3), ForeverDB client and mirror (4–6), SavedVariables parser (2), fixtures (2, 7), addon v0 against stubs (9–11) — all have tasks. Ingest (§5.3) is covered in 7 and 8 (raw store plus character row; fan-out tables are deferred to M1 because the real file is unknown). `/meta` level cap is in 5. Attribution is in 8. Sync agent, login, UI, advice and curated data belong to later plans.
+- **Coverage:** M0 items in spec §11 — skeleton (1), container image (12), DB schema (3), ForeverDB client and mirror (4–6), SavedVariables parser (2), fixtures (2, 7), addon v0 against stubs (9–11) — all have tasks. Ingest (§5.3) is covered in 7 and 8 (raw store plus character row; fan-out tables are deferred to M1 because the real file is unknown). `/meta` level cap is in 5. Attribution is in 8. Sync agent, login, UI, advice and curated data belong to later plans.
 - **Spec amendment:** `packages/db` is added in Task 1; the spec layout is updated there.
 - **Types:** `Snapshot` (7) matches what the collectors in 9–11 emit; `ForeverDbClient`, `Page` (4) match the uses in 5 and 6; `Db` (3) is used consistently.
 - **Review Focus:** every item has a named test (items 1→T2, 2→T7, 3→T4/T5, 4→T5, 5→T7, 6→T4).
