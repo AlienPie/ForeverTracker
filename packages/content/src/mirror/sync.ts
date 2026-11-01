@@ -50,20 +50,30 @@ export async function syncResource(deps: SyncDeps, spec: ResourceSpec): Promise<
       let restart = false;
       for await (const chunk of spec.fetch(client, { offset })) {
         const chunkStart = offset;
-        if (known !== null && chunk.build !== known) {
-          deleteResource(db, spec.name);
-          known = chunk.build;
-          if (chunkStart !== 0) {
-            // the earlier pages came from another build: start over so builds never mix
-            if (++restarts > MAX_RESTARTS) {
-              throw new Error(`${spec.name}: build kept changing during sync`);
-            }
-            offset = 0;
-            total = null;
-            save("running", 0);
-            restart = true;
-            break;
+        const wipe = known !== null && chunk.build !== known;
+        if (wipe && chunkStart !== 0) {
+          // the earlier pages came from another build: start over so builds never mix
+          if (++restarts > MAX_RESTARTS) {
+            throw new Error(`${spec.name}: build kept changing during sync`);
           }
+          // wipe + checkpoint reset are one atomic step: rows and state can never disagree
+          db.transaction((tx) => {
+            const t = tx as unknown as Db;
+            deleteResource(t, spec.name);
+            setSyncState(t, {
+              resource: spec.name,
+              build: chunk.build,
+              nextOffset: 0,
+              total: null,
+              status: "running",
+              updatedAt: now(),
+            });
+          });
+          known = chunk.build;
+          offset = 0;
+          total = null;
+          restart = true;
+          break;
         }
         known = chunk.build;
         if (chunk.total !== undefined) total = chunk.total;
@@ -71,6 +81,8 @@ export async function syncResource(deps: SyncDeps, spec: ResourceSpec): Promise<
         const done = chunk.nextOffset === null;
         db.transaction((tx) => {
           const t = tx as unknown as Db;
+          // first page of a new build: drop old-build rows in the same commit as this page
+          if (wipe) deleteResource(t, spec.name);
           for (const r of chunk.records) putRecord(t, spec.name, r.id, r.data, chunk.build, fetchedAt);
           const next = chunk.nextOffset ?? 0;
           setSyncState(t, {
@@ -119,7 +131,12 @@ export async function checkBuild(
   return { build, levelCap: res.data.levelCap, changed };
 }
 
-/** Sync every resource, skipping those already complete for the current build. */
+/**
+ * Sync every resource, skipping those already complete for the current build (a complete
+ * resource stored under an older build is re-synced). Aborts on the first failing resource:
+ * the error propagates and later resources are not attempted (auth/budget errors must stop
+ * everything); the failed resource keeps its checkpoint for the next run.
+ */
 export async function syncAll(deps: SyncDeps): Promise<void> {
   const { build } = await checkBuild(deps);
   for (const spec of RESOURCES) {

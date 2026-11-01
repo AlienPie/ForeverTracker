@@ -133,6 +133,51 @@ describe("syncResource", () => {
     expect(getSyncState(db, "things")).toMatchObject({ build: "B", status: "complete" });
   });
 
+  test("a build-B restart with disjoint ids leaves no build-A rows", async () => {
+    const db = openDb(":memory:");
+    let n = 0;
+    const f = fake({
+      rows: ids(1, 6),
+      buildFor: () => (n++ === 0 ? "A" : "B"),
+    });
+    // page 1 is A (ids 1,2); page 2 is B -> restart; use different rows after restart
+    const f2 = fake({ rows: ids(100, 4), buildFor: () => "B" });
+    await expect(
+      syncResource({ client: { ...f.client, pages: (p, o) => (n > 1 ? f2.client.pages(p, o) : f.client.pages(p, o)) }, db }, things),
+    ).resolves.toBeUndefined();
+    expect(listRecords(db, "things")).toEqual(ids(100, 4));
+    expect(getRecord(db, "things", "1")).toBeNull();
+    expect(getSyncState(db, "things")).toMatchObject({ build: "B", status: "complete" });
+  });
+
+  test("a failure right after the wipe leaves state consistent with the rows", async () => {
+    const db = openDb(":memory:");
+    const a = fake({ failAt: (n) => (n === 2 ? new Error("killed") : null) });
+    await expect(syncResource({ client: a.client, db }, things)).rejects.toThrow();
+    expect(listRecords(db, "things")).toHaveLength(4);
+    // resume at offset 4 sees build B -> wipe, restart at 0, then the fake fails immediately
+    let n = 0;
+    const b = fake({
+      buildFor: () => "B",
+      failAt: () => (n++ === 1 ? new Error("after wipe") : null),
+    });
+    await expect(syncResource({ client: b.client, db }, things)).rejects.toThrow("after wipe");
+    const st = getSyncState(db, "things")!;
+    expect(st.status).toBe("failed");
+    expect(st.build).toBe("B");
+    expect(listRecords(db, "things")).toHaveLength(st.nextOffset);
+    expect(listRecords(db, "things").every((r) => getRecord(db, "things", String((r as Item).id))?.build === "B")).toBe(true);
+  });
+
+  test("exhausting restarts throws with state consistent with the rows", async () => {
+    const db = openDb(":memory:");
+    const f = fake({ rows: ids(1, 40), buildFor: (n) => `b${n}` });
+    await expect(syncResource({ client: f.client, db }, things)).rejects.toThrow(/kept changing/);
+    const st = getSyncState(db, "things")!;
+    expect(st.status).toBe("failed");
+    expect(listRecords(db, "things")).toHaveLength(st.nextOffset);
+  });
+
   test("a build change on resume wipes old-build rows", async () => {
     const db = openDb(":memory:");
     const a = fake({ rows: ids(1, 6), failAt: (n) => (n === 2 ? new Error("killed") : null) });
@@ -218,21 +263,66 @@ describe("checkBuild / syncAll / getItem", () => {
     expect(r).toEqual({ build: "B", levelCap: 40, changed: true });
   });
 
+  const seed = async (db: ReturnType<typeof openDb>, build: string) => {
+    const { syncState } = await import("@ft/db");
+    for (const r of RESOURCES) {
+      db.insert(syncState)
+        .values({ resource: r.name, build, nextOffset: 0, total: 1, status: "complete", updatedAt: 1 })
+        .run();
+    }
+  };
+
   test("syncAll skips resources already complete for the current build", async () => {
     const db = openDb(":memory:");
     const f = fake();
+    let fetched = 0;
     const stub: ForeverDbClient = {
       get: f.client.get,
       async *pages() {
-        throw new Error("should not fetch");
+        fetched++;
       },
     };
-    for (const r of RESOURCES) {
-      db.insert((await import("@ft/db")).syncState)
-        .values({ resource: r.name, build: "A", nextOffset: 0, total: 1, status: "complete", updatedAt: 1 })
-        .run();
-    }
+    await seed(db, "A");
     await syncAll({ client: stub, db });
+    expect(fetched).toBe(0);
+    expect(f.calls).toEqual(["/meta"]);
+  });
+
+  test("syncAll aborts on the first failing resource and propagates the error", async () => {
+    const db = openDb(":memory:");
+    const paths: string[] = [];
+    const client: ForeverDbClient = {
+      get: fake().client.get,
+      async *pages(path) {
+        paths.push(path);
+        throw new ForeverDbAuthError(401);
+      },
+    };
+    await expect(syncAll({ client, db })).rejects.toBeInstanceOf(ForeverDbAuthError);
+    expect(paths).toEqual(["/zones"]);
+    expect(getSyncState(db, "zones")?.status).toBe("failed");
+    expect(getSyncState(db, "quests")).toBeNull();
+  });
+
+  test("syncAll re-syncs a complete resource stored under an older build", async () => {
+    const db = openDb(":memory:");
+    await seed(db, "B");
+    const { syncState } = await import("@ft/db");
+    const { eq } = await import("drizzle-orm");
+    db.update(syncState).set({ build: "A" }).where(eq(syncState.resource, "zones")).run();
+    const { putRecord } = await import("../src/mirror/store");
+    putRecord(db, "zones", "999", { id: 999 }, "A", 1);
+    const base = fake({ rows: ids(1, 2), meta: { build: "B", levelCap: 30 }, buildFor: () => "B" });
+    const client: ForeverDbClient = {
+      get: base.client.get,
+      async *pages(path, o) {
+        if (path === "/zones") yield* base.client.pages(path, o);
+      },
+    };
+    await syncAll({ client, db });
+    expect(listRecords(db, "zones")).toEqual(ids(1, 2));
+    expect(getRecord(db, "zones", "999")).toBeNull();
+    expect(getSyncState(db, "zones")).toMatchObject({ build: "B", status: "complete" });
   });
 
   test("getItem fetches once and serves later calls from the store", async () => {
