@@ -9,3 +9,4 @@ data-local/
 .superpowers/
 .remember/
 addon/tests/out/
+*.tsbuildinfo

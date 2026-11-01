@@ -230,6 +230,7 @@ apps/web/                 SvelteKit app
 packages/core/            snapshot types, advice rules (pure TS)
 packages/content/         ForeverDB client and mirror
 packages/savedvars/       SavedVariables parser (no Lua execution)
+packages/db/              Drizzle schema, migrations and DB access
 addon/ForeverTracker/     Lua addon
 tools/                    maintainer scripts (Wowhead snippet, ID validator)
 data/                     curated quest tags and guide builds

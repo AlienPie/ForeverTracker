@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/savedvars" },
+    { "path": "packages/content" },
+    { "path": "packages/db" },
+    { "path": "packages/core" }
+  ]
+}
