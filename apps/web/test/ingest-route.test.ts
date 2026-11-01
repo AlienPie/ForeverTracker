@@ -110,6 +110,25 @@ describe("POST /api/ingest", () => {
     expect(res.status).toBe(413);
   });
 
+  test("413 when the stream errors with status 413 (adapter body limit)", async () => {
+    const { db, token } = setup();
+    const body = new ReadableStream<Uint8Array>({
+      pull(c) {
+        c.error(Object.assign(new Error("limit"), { status: 413 }));
+      },
+    });
+    const res = await handleIngest(db, req(body, token));
+    expect(res.status).toBe(413);
+    expect(await res.json()).toEqual({ error: "too large" });
+  });
+
+  test("other stream read errors give 500 internal", async () => {
+    const { db, token } = setup();
+    const body = new ReadableStream<Uint8Array>({ pull: (c) => c.error(new Error("boom")) });
+    const res = await handleIngest(db, req(body, token));
+    expect(res.status).toBe(500);
+  });
+
   test("ingest 422 with position for truncated Lua", async () => {
     const { db, token } = setup();
     const res = await handleIngest(db, req(FIXTURE.slice(0, 120), token));

@@ -9,6 +9,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "prepare": "svelte-kit sync",
+    "start": "BODY_SIZE_LIMIT=${BODY_SIZE_LIMIT:-8M} node build",
     "token:create": "tsx scripts/create-token.ts"
   },
   "dependencies": {

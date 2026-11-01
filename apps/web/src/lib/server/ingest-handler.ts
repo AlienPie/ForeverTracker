@@ -21,7 +21,15 @@ async function readCapped(request: Request, max: number): Promise<string | null>
   const chunks: Uint8Array[] = [];
   let total = 0;
   for (;;) {
-    const { done, value } = await reader.read();
+    let chunk: ReadableStreamReadResult<Uint8Array>;
+    try {
+      chunk = await reader.read();
+    } catch (err) {
+      // adapter-node's BODY_SIZE_LIMIT errors the stream with a SvelteKitError(413).
+      if ((err as { status?: unknown } | null)?.status === 413) return null;
+      throw err;
+    }
+    const { done, value } = chunk;
     if (done) break;
     total += value.byteLength;
     if (total > max) {
@@ -39,7 +47,7 @@ export async function handleIngest(db: Db, request: Request): Promise<Response> 
     if (!token || !verifyDeviceToken(db, token)) return json({ error: "unauthorized" }, 401);
 
     const text = await readCapped(request, MAX_BODY_BYTES);
-    if (text === null) return json({ error: "too_large" }, 413);
+    if (text === null) return json({ error: "too large" }, 413);
 
     try {
       return json(ingestSavedVariables(db, text), 200);
