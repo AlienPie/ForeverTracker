@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "content:sync": "tsx packages/content/src/cli/sync.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
