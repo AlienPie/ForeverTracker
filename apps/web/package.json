@@ -1,0 +1,30 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prepare": "svelte-kit sync",
+    "token:create": "tsx scripts/create-token.ts"
+  },
+  "dependencies": {
+    "@ft/content": "workspace:*",
+    "@ft/core": "workspace:*",
+    "@ft/db": "workspace:*",
+    "@ft/savedvars": "workspace:*",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.4"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-node": "^6.0.1",
+    "@sveltejs/kit": "^3.1.1",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "svelte": "^5.57.3",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.5"
+  }
+}

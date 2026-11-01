@@ -1,0 +1,19 @@
+import { parseContentMode, type ContentMode } from "@ft/content";
+
+export interface Env {
+  dataDir: string;
+  contentMode: ContentMode;
+}
+
+/** Read the environment once. No secrets are required at boot (and none are held here). */
+export function readEnv(source: Record<string, string | undefined> = process.env): Env {
+  return {
+    dataDir: source.DATA_DIR || "./data-local",
+    contentMode: parseContentMode(source.CONTENT_MODE),
+  };
+}
+
+let cached: Env | undefined;
+export function env(): Env {
+  return (cached ??= readEnv());
+}

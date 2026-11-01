@@ -5,7 +5,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -b",
-    "content:sync": "tsx packages/content/src/cli/sync.ts"
+    "content:sync": "tsx packages/content/src/cli/sync.ts",
+    "token:create": "pnpm --filter web token:create"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

@@ -10,3 +10,5 @@ data-local/
 .remember/
 addon/tests/out/
 *.tsbuildinfo
+.svelte-kit/
+build/
