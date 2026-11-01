@@ -1,0 +1,10 @@
+## Interface: 16001
+## Title: ForeverTracker
+## Notes: Records character snapshots for the ForeverTracker companion app.
+## Author: Stan Jewhurst
+## Version: 0.1.0
+## SavedVariables: ForeverTrackerDB
+
+Core.lua
+Collectors\Identity.lua
+Collectors\State.lua

@@ -1,0 +1,9 @@
+return {
+  default = {
+    lua = "luajit",
+    ROOT = { "tests" },
+    pattern = "_spec",
+    lpath = "./tests/?.lua",
+    verbose = true,
+  },
+}
