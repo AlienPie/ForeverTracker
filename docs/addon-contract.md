@@ -65,7 +65,7 @@ the server understands that schema.
 ## Ingest behaviour
 
 - Parsed, never executed. A file with no `ForeverTrackerDB` table is rejected.
-- Each character is processed in its own transaction.
+- Each character is processed in its own transaction and try/catch; a character that errors is rolled back and counted in the summary's `failed` field while the rest are still ingested. The summary is `{ characters, stored, skipped, unsupported, failed }`.
 - `character.latestTakenAt` is the max `takenAt` seen; an older snapshot
   uploaded later is stored but does not move it backwards or overwrite identity.
 - M0 extraction fills the `character` row (name, class, race, level) from

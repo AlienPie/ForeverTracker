@@ -22,7 +22,7 @@ describe("ingestSavedVariables", () => {
   test("stores one snapshot per character and creates character rows", () => {
     const db = fresh();
     const r = ingestSavedVariables(db, FIXTURE, NOW);
-    expect(r).toEqual({ characters: 2, stored: 2, skipped: 0, unsupported: 0 });
+    expect(r).toEqual({ characters: 2, stored: 2, skipped: 0, unsupported: 0, failed: 0 });
     const snaps = db.select().from(snapshot).all();
     expect(snaps).toHaveLength(2);
     const a = snaps.find((s) => s.guid === A)!;
@@ -42,7 +42,7 @@ describe("ingestSavedVariables", () => {
     const db = fresh();
     ingestSavedVariables(db, FIXTURE, NOW);
     const r = ingestSavedVariables(db, FIXTURE, NOW);
-    expect(r).toEqual({ characters: 2, stored: 0, skipped: 2, unsupported: 0 });
+    expect(r).toEqual({ characters: 2, stored: 0, skipped: 2, unsupported: 0, failed: 0 });
     expect(db.select().from(snapshot).all()).toHaveLength(2);
     expect(db.select().from(character).all()).toHaveLength(2);
   });
@@ -87,7 +87,7 @@ describe("ingestSavedVariables", () => {
     const db = fresh();
     const src = FIXTURE.replace('["schema"] = 1', `["schema"] = ${SUPPORTED_SCHEMA + 1}`);
     const r = ingestSavedVariables(db, src, NOW);
-    expect(r).toEqual({ characters: 2, stored: 2, skipped: 0, unsupported: 2 });
+    expect(r).toEqual({ characters: 2, stored: 2, skipped: 0, unsupported: 2, failed: 0 });
     const snaps = db.select().from(snapshot).all();
     expect(snaps.every((s) => s.unsupported && s.schema === 2)).toBe(true);
     const c = db.select().from(character).where(eq(character.guid, A)).get()!;
@@ -134,7 +134,7 @@ describe("ingestSavedVariables", () => {
 
   test("absent or empty characters returns an all-zero summary", () => {
     const db = fresh();
-    const zero = { characters: 0, stored: 0, skipped: 0, unsupported: 0 };
+    const zero = { characters: 0, stored: 0, skipped: 0, unsupported: 0, failed: 0 };
     expect(ingestSavedVariables(db, `ForeverTrackerDB = { schema = 1 }`, NOW)).toEqual(zero);
     expect(ingestSavedVariables(db, `ForeverTrackerDB = { schema = 1, characters = {} }`, NOW)).toEqual(zero);
   });
@@ -147,7 +147,7 @@ describe("ingestSavedVariables", () => {
       ["bad3"] = { snapshot = { takenAt = "soon" } },
       ["good"] = { snapshot = { takenAt = 7, build = "b" } } } }`;
     const r = ingestSavedVariables(db, src, NOW);
-    expect(r).toEqual({ characters: 1, stored: 1, skipped: 3, unsupported: 0 });
+    expect(r).toEqual({ characters: 1, stored: 1, skipped: 3, unsupported: 0, failed: 0 });
     expect(db.select().from(character).all().map((c) => c.guid)).toEqual(["good"]);
   });
 
@@ -157,5 +157,16 @@ describe("ingestSavedVariables", () => {
     expect(r.unsupported).toBe(1);
     const s = db.select().from(snapshot).get()!;
     expect(s).toMatchObject({ schema: 0, unsupported: true, build: "" });
+  });
+
+  test("a DB failure for one character is counted as failed and does not lose the others", () => {
+    const db = fresh();
+    (db as unknown as { $client: { exec(sql: string): void } }).$client.exec(
+      `CREATE TRIGGER boom BEFORE INSERT ON snapshot WHEN NEW.guid = '${B}' BEGIN SELECT RAISE(ABORT, 'boom'); END`,
+    );
+    const r = ingestSavedVariables(db, FIXTURE, NOW);
+    expect(r).toEqual({ characters: 1, stored: 1, skipped: 0, unsupported: 0, failed: 1 });
+    expect(db.select().from(snapshot).all().map((s) => s.guid)).toEqual([A]);
+    expect(db.select().from(character).all().map((c) => c.guid)).toEqual([A]);
   });
 });

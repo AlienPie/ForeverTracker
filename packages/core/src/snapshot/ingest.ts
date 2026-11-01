@@ -8,6 +8,8 @@ export type IngestSummary = {
   stored: number;
   skipped: number;
   unsupported: number;
+  /** characters whose processing threw; rolled back, others still processed */
+  failed: number;
 };
 
 /** The uploaded file is not a ForeverTracker SavedVariables file. */
@@ -41,7 +43,7 @@ export function ingestSavedVariables(db: Db, source: string, now: () => number =
   const unsupported = fileSchema === null || fileSchema > SUPPORTED_SCHEMA;
   const schemaColumn = fileSchema === null ? 0 : Math.trunc(fileSchema);
 
-  const summary: IngestSummary = { characters: 0, stored: 0, skipped: 0, unsupported: 0 };
+  const summary: IngestSummary = { characters: 0, stored: 0, skipped: 0, unsupported: 0, failed: 0 };
   const chars = isObject(root.characters) ? root.characters : {};
 
   for (const [guid, entry] of Object.entries(chars)) {
@@ -53,9 +55,9 @@ export function ingestSavedVariables(db: Db, source: string, now: () => number =
     const takenAt = Math.trunc(snap.takenAt);
     const build = typeof snap.build === "string" ? snap.build : "";
     const raw = JSON.stringify(snap);
-    summary.characters++;
-
-    const inserted = db.transaction((tx) => {
+    let inserted: boolean;
+    try {
+      inserted = db.transaction((tx) => {
       const existing = tx.select().from(character).where(eq(character.guid, guid)).get();
       const newest = !existing || takenAt > existing.latestTakenAt;
       const identity = unsupported || !newest ? null : extractIdentity(snap);
@@ -92,6 +94,11 @@ export function ingestSavedVariables(db: Db, source: string, now: () => number =
         .run();
       return res.changes > 0;
     });
+    } catch {
+      summary.failed++;
+      continue;
+    }
+    summary.characters++;
 
     if (inserted) {
       summary.stored++;
