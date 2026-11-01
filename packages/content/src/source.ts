@@ -18,6 +18,15 @@ export function parseContentMode(value: string | undefined): ContentMode {
   throw new Error('Invalid CONTENT_MODE: allowed values are "mirror" or "on-demand"');
 }
 
+export const MAX_CACHE_ENTRIES = 500;
+const RESOURCE_PATTERN = /^[a-z][a-z0-9-]*$/;
+
+function assertResource(resource: string): void {
+  if (!RESOURCE_PATTERN.test(resource)) {
+    throw new Error("Invalid resource name: must match /^[a-z][a-z0-9-]*$/");
+  }
+}
+
 export function createContentSource(opts: {
   mode: ContentMode;
   client: ForeverDbClient;
@@ -27,8 +36,14 @@ export function createContentSource(opts: {
   const { mode, client, db } = opts;
   if (mode === "mirror") {
     return {
-      get: async (resource, id) => getRecord(db, resource, id)?.data ?? null,
-      list: async (resource, o) => listRecords(db, resource, o),
+      get: async (resource, id) => {
+        assertResource(resource);
+        return getRecord(db, resource, id)?.data ?? null;
+      },
+      list: async (resource, o) => {
+        assertResource(resource);
+        return listRecords(db, resource, o);
+      },
     };
   }
 
@@ -37,23 +52,35 @@ export function createContentSource(opts: {
 
   async function cached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
     const hit = cache.get(key);
-    if (hit && now() < hit.expires) return hit.value as T;
+    if (hit) {
+      if (now() < hit.expires) return hit.value as T;
+      cache.delete(key);
+    }
     const value = await fetcher();
+    cache.delete(key);
     cache.set(key, { value, expires: now() + ON_DEMAND_TTL_MS });
+    while (cache.size > MAX_CACHE_ENTRIES) {
+      const oldest = cache.keys().next().value;
+      if (oldest === undefined) break;
+      cache.delete(oldest);
+    }
     return value;
   }
 
   return {
-    get: (resource, id) =>
-      cached(JSON.stringify(["get", resource, id]), async () => {
+    get: async (resource, id) => {
+      assertResource(resource);
+      return cached(JSON.stringify(["get", resource, id]), async () => {
         try {
           return (await client.get<unknown>(`/${resource}/${encodeURIComponent(id)}`)).data;
         } catch (e) {
           if (e instanceof ForeverDbHttpError && e.status === 404) return null;
           throw e;
         }
-      }),
-    list: (resource, o) => {
+      });
+    },
+    list: async (resource, o) => {
+      assertResource(resource);
       const query: Record<string, number> = {};
       if (o?.limit !== undefined) query.limit = o.limit;
       if (o?.offset !== undefined) query.offset = o.offset;

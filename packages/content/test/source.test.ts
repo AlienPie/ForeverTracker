@@ -79,4 +79,44 @@ describe("content source", () => {
     expect(parseContentMode("on-demand")).toBe("on-demand");
     expect(() => parseContentMode("bogus")).toThrow(/mirror.*on-demand/);
   });
+
+  test("resource names are validated in both modes before any DB or API access", async () => {
+    for (const mode of ["mirror", "on-demand"] as const) {
+      const db = openDb(":memory:");
+      putRecord(db, "first-aid", "1", { ok: 1 }, "B", 1);
+      const { client, calls } = fakeClient(() => ({ ok: 1 }));
+      const src = createContentSource({ mode, client, db });
+      for (const bad of ["../meta", "quests?x=1", "quests#x", "a/b", "", "Quests"]) {
+        await expect(src.get(bad, "x")).rejects.toThrow(/resource/i);
+        await expect(src.list(bad)).rejects.toThrow(/resource/i);
+      }
+      expect(calls).toHaveLength(0);
+      await expect(src.get("first-aid", "1")).resolves.toEqual({ ok: 1 });
+      await expect(src.list("quests")).resolves.toBeDefined();
+    }
+  });
+
+  test("on-demand cache removes expired entries on access", async () => {
+    const db = openDb(":memory:");
+    let t = 0;
+    const { client, calls } = fakeClient(() => ({}));
+    const src = createContentSource({ mode: "on-demand", client, db, now: () => t });
+    await src.get("quests", "1");
+    t = 60_000;
+    await src.get("quests", "1");
+    await src.get("quests", "1");
+    expect(calls).toHaveLength(2);
+  });
+
+  test("on-demand cache is capped at 500 entries, evicting the oldest", async () => {
+    const db = openDb(":memory:");
+    const { client, calls } = fakeClient(() => ({}));
+    const src = createContentSource({ mode: "on-demand", client, db, now: () => 0 });
+    for (let i = 0; i < 501; i++) await src.get("quests", String(i));
+    expect(calls).toHaveLength(501);
+    await src.get("quests", "500");
+    expect(calls).toHaveLength(501);
+    await src.get("quests", "0");
+    expect(calls).toHaveLength(502);
+  });
 });
