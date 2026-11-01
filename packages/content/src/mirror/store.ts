@@ -1,14 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
 import { contentRecord, syncState, type Db } from "@ft/db";
 
-/**
- * NOTE: `content_record.id` is declared INTEGER in @ft/db, but mirrored keys can be strings
- * ("mage", "alchemy@100"). SQLite's integer affinity stores non-numeric text as text and
- * numeric-looking text as an integer, and comparisons apply the same affinity, so string keys
- * round-trip correctly. The cast below is confined to this file.
- */
-const key = (id: string): number => id as unknown as number;
-
 export type StoredRecord = { data: unknown; build: string; fetchedAt: number };
 export type SyncRow = typeof syncState.$inferSelect;
 
@@ -16,7 +8,7 @@ export function getRecord(db: Db, resource: string, id: string): StoredRecord | 
   const row = db
     .select()
     .from(contentRecord)
-    .where(and(eq(contentRecord.resource, resource), eq(contentRecord.id, key(id))))
+    .where(and(eq(contentRecord.resource, resource), eq(contentRecord.id, id)))
     .get();
   return row ? { data: JSON.parse(row.data), build: row.build, fetchedAt: row.fetchedAt } : null;
 }
@@ -29,7 +21,7 @@ export function putRecord(
   build: string,
   fetchedAt: number,
 ): void {
-  const row = { resource, id: key(id), build, data: JSON.stringify(data), fetchedAt };
+  const row = { resource, id: id, build, data: JSON.stringify(data), fetchedAt };
   db.insert(contentRecord)
     .values(row)
     .onConflictDoUpdate({

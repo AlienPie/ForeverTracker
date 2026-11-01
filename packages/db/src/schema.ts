@@ -4,7 +4,7 @@ export const contentRecord = sqliteTable(
   "content_record",
   {
     resource: text("resource").notNull(),
-    id: integer("id").notNull(),
+    id: text("id").notNull(),
     build: text("build").notNull(),
     /** JSON text */
     data: text("data").notNull(),

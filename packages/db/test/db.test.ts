@@ -14,7 +14,7 @@ describe("db", () => {
 
   test("contentRecord rejects duplicate (resource,id)", () => {
     const db = openDb(":memory:");
-    const row = { resource: "item", id: 1, build: "1", data: "{}", fetchedAt: 1 };
+    const row = { resource: "item", id: "1", build: "1", data: "{}", fetchedAt: 1 };
     db.insert(contentRecord).values(row).run();
     expect(() => db.insert(contentRecord).values(row).run()).toThrow();
   });
@@ -39,5 +39,17 @@ describe("db", () => {
     const db = openDb(":memory:");
     db.insert(syncState).values({ resource: "item", build: "1", nextOffset: 0, status: "idle", updatedAt: 1 }).run();
     expect(db.select().from(syncState).all()[0]?.total).toBeNull();
+  });
+
+  test("contentRecord ids are text: 'alchemy@100' and '1' round-trip as strings", () => {
+    const db = openDb(":memory:");
+    for (const id of ["alchemy@100", "1"]) {
+      db.insert(contentRecord).values({ resource: "r", id, build: "1", data: "{}", fetchedAt: 1 }).run();
+    }
+    const ids = db.select().from(contentRecord).all().map((r) => r.id).sort();
+    expect(ids).toEqual(["1", "alchemy@100"]);
+    expect(ids.every((i) => typeof i === "string")).toBe(true);
+    const dup = { resource: "r", id: "alchemy@100", build: "1", data: "{}", fetchedAt: 1 };
+    expect(() => db.insert(contentRecord).values(dup).run()).toThrow();
   });
 });
