@@ -9,22 +9,7 @@ local SLOTS = {
   RangedSlot = 18, TabardSlot = 19,
 }
 
-local function str(v)
-  if type(v) == "string" and v ~= "" then return v end
-  return nil
-end
-
-local function num(v)
-  if type(v) == "number" then return v end
-  return nil
-end
-
--- Returns the value, or nil when the read fails.
-local function try(fn, ...)
-  local ok, v = pcall(fn, ...)
-  if ok then return v end
-  return nil
-end
+local str, num, try = FT.str, FT.num, FT.try
 
 local function equipped()
   local out = {}

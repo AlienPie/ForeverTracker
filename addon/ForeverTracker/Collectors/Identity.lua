@@ -1,15 +1,7 @@
 local FT = FT
 local call = FT.call
 
-local function str(v)
-  if type(v) == "string" and v ~= "" then return v end
-  return nil
-end
-
-local function num(v)
-  if type(v) == "number" then return v end
-  return nil
-end
+local str, num = FT.str, FT.num
 
 FT.register({
   key = "identity",

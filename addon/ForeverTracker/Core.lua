@@ -22,10 +22,49 @@ function FT.safe(fn, ...)
   return unavailable(reason)
 end
 
+-- Returns v when it is a non-empty string, else nil.
+function FT.str(v)
+  if type(v) == "string" and v ~= "" then return v end
+  return nil
+end
+
+-- Returns v when it is a number, else nil.
+function FT.num(v)
+  if type(v) == "number" then return v end
+  return nil
+end
+
+-- Returns fn(...)'s first value, or nil when the call throws.
+function FT.try(fn, ...)
+  local ok, v = pcall(fn, ...)
+  if ok then return v end
+  return nil
+end
+
 -- Appends a collector: { key = string, section = string?, run = function }.
+-- Fails loudly (error) on a malformed or conflicting entry.
 function FT.register(entry)
-  if type(entry) ~= "table" or type(entry.key) ~= "string" or type(entry.run) ~= "function" then
-    return false
+  if type(entry) ~= "table" then error("FT.register: entry must be a table", 2) end
+  local key, section = entry.key, entry.section
+  if type(key) ~= "string" or key == "" then
+    error("FT.register: key must be a non-empty string", 2)
+  end
+  if type(entry.run) ~= "function" then
+    error("FT.register: run must be a function (key " .. key .. ")", 2)
+  end
+  if section ~= nil and (type(section) ~= "string" or section == "") then
+    error("FT.register: section must be a non-empty string (key " .. key .. ")", 2)
+  end
+  for _, c in ipairs(FT.collectors) do
+    if c.section == section and c.key == key then
+      error("FT.register: duplicate key " .. key, 2)
+    end
+    if section ~= nil and c.section == nil and c.key == section then
+      error("FT.register: section " .. section .. " clashes with a top-level key", 2)
+    end
+    if section == nil and c.section == key then
+      error("FT.register: key " .. key .. " clashes with a section name", 2)
+    end
   end
   FT.collectors[#FT.collectors + 1] = entry
   return true
