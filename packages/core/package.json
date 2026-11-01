@@ -5,5 +5,10 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@ft/db": "workspace:*",
+    "@ft/savedvars": "workspace:*",
+    "drizzle-orm": "^0.45.4"
   }
 }

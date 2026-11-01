@@ -1,0 +1,97 @@
+# Addon contract: ForeverTracker SavedVariables
+
+The WoW addon records one snapshot per character into the `ForeverTrackerDB`
+SavedVariables table. Players upload the resulting `ForeverTracker.lua`; the
+server parses it as data (the Lua is never executed) and stores each snapshot's
+raw JSON.
+
+## Shape
+
+```lua
+ForeverTrackerDB = {
+  schema = 1,
+  characters = {
+    ["<GUID>"] = {
+      snapshot = { ... },
+      events = {
+        { t = <unix>, kind = "<string>", data = { ... } },
+      },
+    },
+  },
+}
+```
+
+- `schema` is a single integer for the whole file.
+- `characters` is keyed by the character GUID (e.g. `Player-1234-0A1B2C3D`).
+- `snapshot` is the latest snapshot for that character. It must carry a numeric
+  `takenAt` (unix seconds); a character without one is skipped by ingest.
+  `(guid, takenAt)` is the idempotency key, so uploading a file twice stores
+  nothing new.
+- `events` is an append-only list of `{ t, kind, data }` records kept by the
+  addon beside the snapshot. The addon replaces only `snapshot` on save.
+
+## Snapshot sections
+
+`takenAt`, `build`, `identity`, `time`, `state`, `progress`, `exploration`.
+See `packages/core/src/snapshot/types.ts` for the exact field types.
+
+`state.equipped` is keyed by slot NAME strings (for example `"HeadSlot"`,
+`"MainHandSlot"`), never by integer slot numbers: the parser turns contiguous
+`1..n` integer keys into arrays, which would make the shape ambiguous.
+
+A later addon task will add a persistent `visited` list beside `snapshot` and
+`events`; it is documented here when it lands.
+
+## The `unavailable` convention
+
+Capture is defensive. Any section or sub-section that cannot be read at
+snapshot time is written as
+
+```lua
+time = { unavailable = true, reason = "RequestTimePlayed pending" }
+```
+
+A section may also be absent entirely. Consumers must treat both as "no data"
+and must never fail because of them. Ingest stores the snapshot as-is.
+
+## Schema versioning
+
+`schema` is incremented on any breaking change to the shape. The server
+supports schemas up to `SUPPORTED_SCHEMA` (currently 1). A file with a newer
+(or non-numeric/missing) `schema` is still stored raw with `unsupported = true`
+so nothing is lost, but no extraction is attempted; it can be re-processed once
+the server understands that schema.
+
+## Ingest behaviour
+
+- Parsed, never executed. A file with no `ForeverTrackerDB` table is rejected.
+- Each character is processed in its own transaction.
+- `character.latestTakenAt` is the max `takenAt` seen; an older snapshot
+  uploaded later is stored but does not move it backwards or overwrite identity.
+- M0 extraction fills the `character` row (name, class, race, level) from
+  `identity` when it is a normal object and not an `unavailable` marker.
+
+## Example
+
+```lua
+ForeverTrackerDB = {
+  schema = 1,
+  characters = {
+    ["Player-1234-0A1B2C3D"] = {
+      snapshot = {
+        takenAt = 1730000000,
+        build = "1.15.4.58000",
+        identity = { name = "Thalindra", class = "MAGE", race = "Human",
+                     faction = "Alliance", level = 34, xp = 12500, xpMax = 41000 },
+        time = { unavailable = true, reason = "RequestTimePlayed pending" },
+        state = { zone = "Stranglethorn Vale", subzone = "Booty Bay", mapId = 1434,
+                  x = 0.2731, y = 0.7712, money = 183420,
+                  equipped = { HeadSlot = 4320, ChestSlot = 14136 } },
+      },
+      events = {
+        { t = 1729999000, kind = "levelup", data = { level = 34 } },
+      },
+    },
+  },
+}
+```
