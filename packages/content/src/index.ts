@@ -14,3 +14,4 @@ export type {
 export { RESOURCES, type ResourceChunk, type ResourceSpec } from "./mirror/resources";
 export { checkBuild, getItem, syncAll, syncResource, type SyncDeps, type SyncProgress } from "./mirror/sync";
 export { getRecord, listRecords } from "./mirror/store";
+export { createContentSource, parseContentMode, type ContentMode, type ContentSource } from "./source";
