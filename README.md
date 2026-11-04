@@ -22,12 +22,14 @@ Addon file contract: `docs/addon-contract.md`. **Launch day: follow `docs/launch
 ```sh
 cp .env.example .env        # then edit; .env is git-ignored and never baked into the image
 podman build -t forevertracker:dev .
-podman run -d --name forevertracker -p 3000:3000 \
+podman run -d --name forevertracker -p 127.0.0.1:3000:3000 \
   -v ft-data:/data \
   --env-file .env -e DATA_DIR=/data \
   forevertracker:dev
 curl -s localhost:3000/api/health      # {"ok":true}
 ```
+
+The port is published on loopback only. Bearer tokens and uploads cross the network in clear text over plain HTTP, so to reach the server from another machine put a TLS reverse proxy in front of it (do not publish the plain port on a LAN or the internet).
 
 `-e DATA_DIR=/data` must come after `--env-file` because `.env.example` sets `DATA_DIR=./data-local` for local development. The database lives at `/data/forevertracker.sqlite` on the `ft-data` volume. The container runs as the unprivileged `node` user.
 
@@ -63,7 +65,7 @@ In development: `pnpm token:create my-laptop`.
 curl -X POST http://localhost:3000/api/ingest \
   -H 'Content-Type: application/octet-stream' \
   -H 'Authorization: Bearer <token>' \
-  --data-binary @ForeverTrackerDB.lua
+  --data-binary @ForeverTracker.lua
 ```
 
 `Content-Type: application/octet-stream` is required (SvelteKit's CSRF check rejects other form-like types). The reply is a summary such as `{"characters":2,"stored":2,"skipped":0,"unsupported":0,"failed":0}`. Uploading the same file again stores nothing new (`stored: 0`). Status codes: 401 bad or missing token, 413 over 8 MB, 422 unparseable file.
@@ -74,12 +76,12 @@ curl -X POST http://localhost:3000/api/ingest \
 2. Start the game and enable the addon on the character select AddOns screen.
 3. Log in. Type `/ft sync` to refresh the snapshot (it requests played time, saves, then reloads the UI). `/ft` alone prints usage.
 4. SavedVariables are written on logout or UI reload to
-   `<WoW install>/WTF/Account/<ACCOUNT>/SavedVariables/ForeverTrackerDB.lua`.
+   `<WoW install>/WTF/Account/<ACCOUNT>/SavedVariables/ForeverTracker.lua`. The file is named after the addon folder (the `.toc` name), not after the `ForeverTrackerDB` variable.
 
 Example locations (replace the placeholders):
 
-- Wine/Proton prefix: `<prefix>/drive_c/Program Files (x86)/World of Warcraft/<flavour>/WTF/Account/<ACCOUNT>/SavedVariables/ForeverTrackerDB.lua`
-- macOS: `/Applications/World of Warcraft/<flavour>/WTF/Account/<ACCOUNT>/SavedVariables/ForeverTrackerDB.lua`
+- Wine/Proton prefix: `<prefix>/drive_c/Program Files (x86)/World of Warcraft/<flavour>/WTF/Account/<ACCOUNT>/SavedVariables/ForeverTracker.lua`
+- macOS: `/Applications/World of Warcraft/<flavour>/WTF/Account/<ACCOUNT>/SavedVariables/ForeverTracker.lua`
 
 Where the Forever client actually keeps these files is itself a launch-day check.
 
@@ -93,4 +95,4 @@ cd addon && ./test.sh   # addon specs under LuaJIT
 pnpm --filter web build && pnpm --filter web start
 ```
 
-Copy `.env.example` to `.env` and fill in values.
+Environment variables: only the container's `--env-file` and variables exported in your shell are read. Nothing in development loads `.env` automatically, so export what you need (for example `export FOREVERDB_API_KEY=...`) before running `pnpm content:sync` or `pnpm --filter web start`. When `DATA_DIR` is unset or relative, the web app, `pnpm token:create` and `pnpm content:sync` all use `<workspace root>/data-local/forevertracker.sqlite`.

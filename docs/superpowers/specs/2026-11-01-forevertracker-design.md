@@ -236,7 +236,7 @@ tools/                    maintainer scripts (Wowhead snippet, ID validator)
 data/                     curated quest tags and guide builds
 agent/                    sync agent (later)
 docs/superpowers/specs/   design documents
-Dockerfile, docker-compose.yml, .env.example, .gitignore
+Dockerfile, compose.yaml, .env.example, .gitignore
 ```
 
 Secrets (ForeverDB key, Blizzard client ID/secret, session secret) live only in `.env`,
