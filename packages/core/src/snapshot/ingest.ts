@@ -1,4 +1,4 @@
-import { character, snapshot, type Db } from "@ft/db";
+import { character, characterEvent, snapshot, type Db } from "@ft/db";
 import { parseSavedVariables, type LuaValue } from "@ft/savedvars";
 import { eq } from "drizzle-orm";
 import { SUPPORTED_SCHEMA } from "./types";
@@ -35,6 +35,38 @@ function extractIdentity(snap: { [key: string]: LuaValue }): Identity | null {
   return { name: str(id.name), class: str(id.class), race: str(id.race), level: num(id.level) };
 }
 
+/** JSON.stringify with object keys sorted, so equal data always yields equal text. */
+function canonicalJson(v: LuaValue | undefined): string {
+  const norm = (x: unknown): unknown => {
+    if (Array.isArray(x)) return x.map(norm);
+    if (typeof x === "object" && x !== null) {
+      return Object.fromEntries(
+        Object.keys(x)
+          .sort()
+          .map((k) => [k, norm((x as Record<string, unknown>)[k])]),
+      );
+    }
+    return x;
+  };
+  return JSON.stringify(norm(v ?? {}));
+}
+
+type EventRow = { t: number; kind: string; data: string };
+
+/** Well-formed events from the addon's event log (array, or map if the parser kept keys). */
+function extractEvents(entry: { [key: string]: LuaValue }): EventRow[] {
+  const evs = entry.events;
+  const list = Array.isArray(evs) ? evs : isObject(evs) ? Object.values(evs) : [];
+  const out: EventRow[] = [];
+  for (const ev of list) {
+    if (!isObject(ev)) continue;
+    if (typeof ev.t !== "number" || !Number.isFinite(ev.t)) continue;
+    if (typeof ev.kind !== "string" || ev.kind === "") continue;
+    out.push({ t: Math.trunc(ev.t), kind: ev.kind, data: canonicalJson(ev.data) });
+  }
+  return out;
+}
+
 export function ingestSavedVariables(db: Db, source: string, now: () => number = () => Math.floor(Date.now() / 1000)): IngestSummary {
   const root = parseSavedVariables(source).ForeverTrackerDB;
   if (!isObject(root)) throw new IngestError("File does not contain a ForeverTrackerDB table");
@@ -55,12 +87,21 @@ export function ingestSavedVariables(db: Db, source: string, now: () => number =
     const takenAt = Math.trunc(snap.takenAt);
     const build = typeof snap.build === "string" ? snap.build : "";
     const raw = JSON.stringify(snap);
+    const events = extractEvents(entry as { [key: string]: LuaValue });
+    const extras = JSON.stringify(
+      Object.fromEntries(Object.entries(entry as object).filter(([k]) => k !== "snapshot" && k !== "events")),
+    );
     let inserted: boolean;
     try {
       inserted = db.transaction((tx) => {
       const existing = tx.select().from(character).where(eq(character.guid, guid)).get();
       const newest = !existing || takenAt > existing.latestTakenAt;
       const identity = unsupported || !newest ? null : extractIdentity(snap);
+
+      // Events are facts: stored regardless of snapshot ordering, idempotent across uploads.
+      for (const ev of events) {
+        tx.insert(characterEvent).values({ guid, ...ev }).onConflictDoNothing().run();
+      }
 
       if (!existing) {
         tx.insert(character)
@@ -72,12 +113,14 @@ export function ingestSavedVariables(db: Db, source: string, now: () => number =
             level: identity?.level ?? null,
             firstSeenAt: now(),
             latestTakenAt: takenAt,
+            extras,
           })
           .run();
       } else if (newest) {
         tx.update(character)
           .set({
             latestTakenAt: takenAt,
+            extras,
             name: identity?.name ?? existing.name,
             class: identity?.class ?? existing.class,
             race: identity?.race ?? existing.race,

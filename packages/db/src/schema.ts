@@ -30,7 +30,21 @@ export const character = sqliteTable("character", {
   level: integer("level"),
   firstSeenAt: integer("first_seen_at").notNull(),
   latestTakenAt: integer("latest_taken_at").notNull(),
+  /** JSON of every character-entry key other than snapshot/events (visited, taxi, ...), from the newest snapshot upload */
+  extras: text("extras"),
 });
+
+/** Addon event log entries: facts, idempotent across uploads (data is canonical JSON text). */
+export const characterEvent = sqliteTable(
+  "character_event",
+  {
+    guid: text("guid").notNull(),
+    t: integer("t").notNull(),
+    kind: text("kind").notNull(),
+    data: text("data").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.guid, t.t, t.kind, t.data] })],
+);
 
 export const snapshot = sqliteTable(
   "snapshot",

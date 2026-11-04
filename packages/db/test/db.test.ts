@@ -1,13 +1,13 @@
 import { describe, expect, test } from "vitest";
 import { sql } from "drizzle-orm";
-import { openDb, contentRecord, snapshot, deviceToken, character, syncState } from "../src/index";
+import { openDb, characterEvent, contentRecord, snapshot, deviceToken, character, syncState } from "../src/index";
 
 describe("db", () => {
   test('openDb(":memory:") creates all tables', () => {
     const db = openDb(":memory:");
     const rows = db.all<{ name: string }>(sql`select name from sqlite_master where type = 'table'`);
     const names = rows.map((r) => r.name);
-    for (const t of ["content_record", "sync_state", "character", "snapshot", "device_token"]) {
+    for (const t of ["content_record", "sync_state", "character", "snapshot", "device_token", "character_event"]) {
       expect(names).toContain(t);
     }
   });
@@ -25,6 +25,15 @@ describe("db", () => {
     const row = { guid: "g1", takenAt: 5, build: "1", schema: 1, raw: "{}", unsupported: false };
     db.insert(snapshot).values(row).run();
     expect(() => db.insert(snapshot).values(row).run()).toThrow();
+  });
+
+  test("character_event rejects duplicate (guid,t,kind,data) and character.extras is nullable", () => {
+    const db = openDb(":memory:");
+    db.insert(character).values({ guid: "g1", firstSeenAt: 1, latestTakenAt: 1 }).run();
+    expect(db.select().from(character).get()?.extras).toBeNull();
+    const row = { guid: "g1", t: 1, kind: "level_up", data: "{}" };
+    db.insert(characterEvent).values(row).run();
+    expect(() => db.insert(characterEvent).values(row).run()).toThrow();
   });
 
   test("deviceToken.tokenHash is unique", () => {

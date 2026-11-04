@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
-import { openDb, character, snapshot } from "@ft/db";
+import { openDb, character, characterEvent, snapshot } from "@ft/db";
 import { LuaParseError } from "@ft/savedvars";
 import { describe, expect, test } from "vitest";
 import { IngestError, ingestSavedVariables, SUPPORTED_SCHEMA } from "../src/index";
@@ -27,7 +27,7 @@ describe("ingestSavedVariables", () => {
     expect(snaps).toHaveLength(2);
     const a = snaps.find((s) => s.guid === A)!;
     expect(a.takenAt).toBe(1730000000);
-    expect(a.build).toBe("1.15.4.58000");
+    expect(a.build).toBe("1.60.1.70707");
     expect(a.schema).toBe(1);
     expect(a.unsupported).toBe(false);
     expect(JSON.parse(a.raw).state.equipped.HeadSlot).toBe(4320);
@@ -168,5 +168,81 @@ describe("ingestSavedVariables", () => {
     expect(r).toEqual({ characters: 1, stored: 1, skipped: 0, unsupported: 0, failed: 1 });
     expect(db.select().from(snapshot).all().map((s) => s.guid)).toEqual([A]);
     expect(db.select().from(character).all().map((c) => c.guid)).toEqual([A]);
+  });
+
+  test("a DB failure rolls back that character's events too", () => {
+    const db = fresh();
+    (db as unknown as { $client: { exec(sql: string): void } }).$client.exec(
+      `CREATE TRIGGER boom BEFORE INSERT ON snapshot WHEN NEW.guid = '${A}' BEGIN SELECT RAISE(ABORT, 'boom'); END`,
+    );
+    const r = ingestSavedVariables(db, FIXTURE, NOW);
+    expect(r.failed).toBe(1);
+    expect(db.select().from(characterEvent).all()).toEqual([]);
+    expect(db.select().from(character).where(eq(character.guid, A)).all()).toEqual([]);
+  });
+});
+
+function withEvents(guid: string, takenAt: number, events: string, extra = "") {
+  return single(guid, `{ takenAt = ${takenAt}, build = "b" }`).replace(
+    `{ snapshot = { takenAt = ${takenAt}, build = "b" } }`,
+    `{ snapshot = { takenAt = ${takenAt}, build = "b" }, events = ${events}${extra} }`,
+  );
+}
+
+describe("ingest of events and extras", () => {
+  test("events are stored once and a re-upload adds none", () => {
+    const db = fresh();
+    ingestSavedVariables(db, FIXTURE, NOW);
+    ingestSavedVariables(db, FIXTURE, NOW);
+    const rows = db.select().from(characterEvent).all();
+    expect(rows).toEqual([{ guid: A, t: 1729999000, kind: "level_up", data: '{"level":34}' }]);
+  });
+
+  test("uploads with disjoint events accumulate both sets", () => {
+    const db = fresh();
+    ingestSavedVariables(db, withEvents(A, 10, `{ { t = 1, kind = "a", data = { n = 1 } } }`), NOW);
+    ingestSavedVariables(db, withEvents(A, 20, `{ { t = 2, kind = "b" } }`), NOW);
+    const rows = db.select().from(characterEvent).all().sort((x, y) => x.t - y.t);
+    expect(rows.map((r) => [r.t, r.kind, r.data])).toEqual([
+      [1, "a", '{"n":1}'],
+      [2, "b", "{}"],
+    ]);
+  });
+
+  test("event data key order does not create duplicates", () => {
+    const db = fresh();
+    ingestSavedVariables(db, withEvents(A, 10, `{ { t = 1, kind = "a", data = { x = 1, y = 2 } } }`), NOW);
+    ingestSavedVariables(db, withEvents(A, 11, `{ { t = 1, kind = "a", data = { y = 2, x = 1 } } }`), NOW);
+    expect(db.select().from(characterEvent).all()).toHaveLength(1);
+  });
+
+  test("malformed events are skipped silently; empty events are fine", () => {
+    const db = fresh();
+    const evs = `{ { t = "x", kind = "a" }, { t = 1, kind = "" }, { t = 2 }, "junk", { t = 3, kind = "ok" } }`;
+    const r = ingestSavedVariables(db, withEvents(A, 10, evs), NOW);
+    expect(r.failed).toBe(0);
+    expect(db.select().from(characterEvent).all().map((e) => e.kind)).toEqual(["ok"]);
+    expect(ingestSavedVariables(fresh(), withEvents(A, 10, `{}`), NOW).stored).toBe(1);
+  });
+
+  test("extras holds visited and taxi (not snapshot/events) from the fixture", () => {
+    const db = fresh();
+    ingestSavedVariables(db, FIXTURE, NOW);
+    const a = db.select().from(character).where(eq(character.guid, A)).get()!;
+    const extras = JSON.parse(a.extras!);
+    expect(Object.keys(extras).sort()).toEqual(["taxi", "visited"]);
+    expect(extras.taxi).toEqual([3, 7]);
+    expect(extras.visited["1434:Booty Bay"].mapId).toBe(1434);
+    // character B has no extras keys: stored as an empty object
+    expect(JSON.parse(db.select().from(character).where(eq(character.guid, B)).get()!.extras!)).toEqual({});
+  });
+
+  test("an older snapshot does not regress extras but its events are still stored", () => {
+    const db = fresh();
+    ingestSavedVariables(db, withEvents(A, 100, `{}`, `, taxi = { 1, 2, 3 }`), NOW);
+    ingestSavedVariables(db, withEvents(A, 50, `{ { t = 9, kind = "old" } }`, `, taxi = { 1 }`), NOW);
+    const c = db.select().from(character).where(eq(character.guid, A)).get()!;
+    expect(JSON.parse(c.extras!)).toEqual({ taxi: [1, 2, 3] });
+    expect(db.select().from(characterEvent).all().map((e) => e.kind)).toEqual(["old"]);
   });
 });

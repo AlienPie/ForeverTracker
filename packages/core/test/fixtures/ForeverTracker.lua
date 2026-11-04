@@ -4,7 +4,7 @@ ForeverTrackerDB = {
 		["Player-1234-0A1B2C3D"] = {
 			["snapshot"] = {
 				["takenAt"] = 1730000000,
-				["build"] = "1.15.4.58000",
+				["build"] = "1.60.1.70707",
 				["identity"] = {
 					["name"] = "Thalindra",
 					["class"] = "MAGE",
@@ -72,17 +72,27 @@ ForeverTrackerDB = {
 			["events"] = {
 				{
 					["t"] = 1729999000,
-					["kind"] = "levelup",
+					["kind"] = "level_up",
 					["data"] = {
 						["level"] = 34,
 					},
 				},
 			},
+			["visited"] = {
+				["1434:Booty Bay"] = {
+					["mapId"] = 1434,
+					["subzone"] = "Booty Bay",
+					["firstSeen"] = 1729990000,
+				},
+			},
+			["taxi"] = {
+				3, 7,
+			},
 		},
 		["Player-1234-0F9E8D7C"] = {
 			["snapshot"] = {
 				["takenAt"] = 1730000100,
-				["build"] = "1.15.4.58000",
+				["build"] = "1.60.1.70707",
 				["identity"] = {
 					["name"] = "Brokk",
 					["surname"] = "Ironvale",

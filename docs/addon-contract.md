@@ -125,6 +125,23 @@ supports schemas up to `SUPPORTED_SCHEMA` (currently 1). A file with a newer
 so nothing is lost, but no extraction is attempted; it can be re-processed once
 the server understands that schema.
 
+## Server storage
+
+For each character in an uploaded file, ingest stores, in one transaction:
+
+- `snapshot.raw`: the JSON of `characters[guid].snapshot` only, one row per
+  `(guid, takenAt)`.
+- `character_event`: every well-formed entry of `events` (`t` a finite number,
+  `kind` a non-empty string; `data` stored as canonical JSON text, `{}` when
+  absent), keyed `(guid, t, kind, data)` with `INSERT OR IGNORE`. Events are
+  facts: they are stored whatever the snapshot's age, a re-upload adds
+  nothing, and uploads accumulate events beyond the addon's 500-event cap.
+  Malformed entries are skipped silently.
+- `character.extras`: JSON of every key of the character entry other than
+  `snapshot` and `events` (`visited`, `taxi`, `played`, and any future key),
+  updated only when the uploaded snapshot is the newest for the character
+  (the same gate as the identity update).
+
 ## Ingest behaviour
 
 - Parsed, never executed. A file with no `ForeverTrackerDB` table is rejected.
@@ -143,7 +160,7 @@ ForeverTrackerDB = {
     ["Player-1234-0A1B2C3D"] = {
       snapshot = {
         takenAt = 1730000000,
-        build = "1.15.4.58000",
+        build = "1.60.1.70707",
         identity = { name = "Thalindra", class = "MAGE", race = "Human",
                      faction = "Alliance", level = 34, xp = 12500, xpMax = 41000 },
         time = { unavailable = true, reason = "RequestTimePlayed pending" },
@@ -152,7 +169,7 @@ ForeverTrackerDB = {
                   equipped = { HeadSlot = 4320, ChestSlot = 14136 } },
       },
       events = {
-        { t = 1729999000, kind = "levelup", data = { level = 34 } },
+        { t = 1729999000, kind = "level_up", data = { level = 34 } },
       },
     },
   },
