@@ -1,18 +1,96 @@
 # ForeverTracker
 
-Self-hosted companion app for WoW: Forever. pnpm TypeScript monorepo.
+Self-hosted companion app for WoW: Forever. pnpm TypeScript monorepo plus a Lua addon.
 
+- `apps/web`: SvelteKit server (`/api/health`, token-guarded `/api/ingest`)
+- `addon/ForeverTracker`: the in-game addon that writes SavedVariables
 - `packages/savedvars`: SavedVariables parser
 - `packages/content`: ForeverDB client and mirror
 - `packages/db`: Drizzle schema and DB access
 - `packages/core`: snapshot types and advice rules
 
+Design spec: `docs/superpowers/specs/2026-11-01-forevertracker-design.md`.
+Addon file contract: `docs/addon-contract.md`. **Launch day: follow `docs/launch-day-checklist.md`.**
+
+## Prerequisites
+
+- Podman (rootless is fine) to run the image. Use fully-qualified image names; the Dockerfile pulls `docker.io/library/node:26-slim`.
+- For development: Node 26, pnpm 12, and busted on LuaJIT for the addon specs.
+
+## Build and run (Podman)
+
+```sh
+cp .env.example .env        # then edit; .env is git-ignored and never baked into the image
+podman build -t forevertracker:dev .
+podman run -d --name forevertracker -p 3000:3000 \
+  -v ft-data:/data \
+  --env-file .env -e DATA_DIR=/data \
+  forevertracker:dev
+curl -s localhost:3000/api/health      # {"ok":true}
+```
+
+`-e DATA_DIR=/data` must come after `--env-file` because `.env.example` sets `DATA_DIR=./data-local` for local development. The database lives at `/data/forevertracker.sqlite` on the `ft-data` volume. The container runs as the unprivileged `node` user.
+
+Logs: `podman logs forevertracker`. Stop and start: `podman stop|start forevertracker`. Data survives restarts and image rebuilds as long as the volume is kept.
+
+`compose.yaml` is provided for Docker or `podman-compose` users. It is **untested** here (this host has no compose provider).
+
+## Environment variables
+
+From `.env.example` (no secrets are committed; leave unused ones empty):
+
+| Variable | Purpose |
+| --- | --- |
+| `FOREVERDB_API_KEY` | ForeverDB API key, used by `pnpm content:sync` and `tools/live-check.ts` (not needed to serve the web app) |
+| `CONTENT_MODE` | `mirror` (default, serve the local copy) or `on-demand` |
+| `DATA_DIR` | Directory for the SQLite database. `./data-local` for development; `/data` in the container |
+| `SESSION_SECRET`, `OWNER_BATTLETAG`, `BLIZZARD_CLIENT_ID`, `BLIZZARD_CLIENT_SECRET`, `BLIZZARD_REDIRECT_URI` | Reserved for login (later milestone); unused in M0 |
+| `BODY_SIZE_LIMIT` | adapter-node request body limit; must be at least the ingest cap of 8 MB (default `8M`) |
+
+## Create a device token
+
+Uploads are authorised by a device token. It is shown once; only its hash is stored.
+
+```sh
+podman exec forevertracker node /app/create-token.mjs my-laptop
+```
+
+In development: `pnpm token:create my-laptop`.
+
+## Upload SavedVariables
+
+```sh
+curl -X POST http://localhost:3000/api/ingest \
+  -H 'Content-Type: application/octet-stream' \
+  -H 'Authorization: Bearer <token>' \
+  --data-binary @ForeverTrackerDB.lua
+```
+
+`Content-Type: application/octet-stream` is required (SvelteKit's CSRF check rejects other form-like types). The reply is a summary such as `{"characters":2,"stored":2,"skipped":0,"unsupported":0,"failed":0}`. Uploading the same file again stores nothing new (`stored: 0`). Status codes: 401 bad or missing token, 413 over 8 MB, 422 unparseable file.
+
+## Install the addon
+
+1. Copy the folder `addon/ForeverTracker` to `<WoW install>/Interface/AddOns/ForeverTracker` (the folder name must match the `.toc` file).
+2. Start the game and enable the addon on the character select AddOns screen.
+3. Log in. Type `/ft sync` to refresh the snapshot (it requests played time, saves, then reloads the UI). `/ft` alone prints usage.
+4. SavedVariables are written on logout or UI reload to
+   `<WoW install>/WTF/Account/<ACCOUNT>/SavedVariables/ForeverTrackerDB.lua`.
+
+Example locations (replace the placeholders):
+
+- Wine/Proton prefix: `<prefix>/drive_c/Program Files (x86)/World of Warcraft/<flavour>/WTF/Account/<ACCOUNT>/SavedVariables/ForeverTrackerDB.lua`
+- macOS: `/Applications/World of Warcraft/<flavour>/WTF/Account/<ACCOUNT>/SavedVariables/ForeverTrackerDB.lua`
+
+Where the Forever client actually keeps these files is itself a launch-day check.
+
 ## Development
 
 ```sh
 pnpm install
-pnpm test
+pnpm test            # TypeScript packages and apps/web
 pnpm typecheck
+cd addon && ./test.sh   # addon specs under LuaJIT
+pnpm --filter web build && pnpm --filter web start
 ```
 
-Copy `.env.example` to `.env` and fill in values. See `docs/` for the design spec.
+Copy `.env.example` to `.env` and fill in values.

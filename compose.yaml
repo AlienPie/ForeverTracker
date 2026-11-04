@@ -1,0 +1,17 @@
+# For Docker or podman-compose users. UNTESTED (the project host has no compose provider);
+# the Podman commands in README.md are the verified path.
+services:
+  forevertracker:
+    build: .
+    image: forevertracker:dev
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      DATA_DIR: /data   # after env_file, overrides DATA_DIR=./data-local
+    volumes:
+      - ft-data:/data
+    restart: unless-stopped
+
+volumes:
+  ft-data:
