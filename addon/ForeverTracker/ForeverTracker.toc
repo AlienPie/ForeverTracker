@@ -12,3 +12,6 @@ Collectors\Time.lua
 Collectors\Talents.lua
 Collectors\Professions.lua
 Collectors\Quests.lua
+Collectors\Exploration.lua
+Events.lua
+Slash.lua

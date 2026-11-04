@@ -8,6 +8,9 @@ function FT.onTimePlayed(total, level)
   if num(total) and num(level) then
     cached = { played = total, playedLevel = level }
   end
+  -- A /ft sync in progress is waiting for this reply (set by Slash.lua).
+  local pending = FT.pendingPlayed
+  if type(pending) == "function" then pending() end
 end
 
 -- Asks the client for /played; the answer arrives via TIME_PLAYED_MSG and is

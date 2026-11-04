@@ -70,8 +70,13 @@ describe("FT.takeSnapshot", function()
 
   it("keeps registration order", function()
     local FT = stubs.load()
-    assert.are.equal("identity", FT.collectors[1].key)
-    assert.are.equal("state", FT.collectors[2].key)
+    local order = {}
+    for i, c in ipairs(FT.collectors) do
+      order[i] = (c.section and (c.section .. ".") or "") .. c.key
+    end
+    assert.are.same({ "identity", "state", "time", "progress.talents",
+      "progress.professions", "progress.questsCompleted", "progress.questLog",
+      "exploration" }, order)
   end)
 end)
 

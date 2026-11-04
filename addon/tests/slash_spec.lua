@@ -1,0 +1,85 @@
+local stubs = require("stubs")
+
+local function spyOrder(FT)
+  local order = {}
+  local save = FT.save
+  FT.save = function(...) order[#order + 1] = "save"; return save(...) end
+  _G.ReloadUI = function() order[#order + 1] = "ReloadUI" end
+  return order
+end
+
+describe("slash command", function()
+  it("registers the globals", function()
+    stubs.load()
+    assert.are.equal("/ft", _G.SLASH_FOREVERTRACKER1)
+    assert.are.equal("/forevertracker", _G.SLASH_FOREVERTRACKER2)
+    assert.is_function(_G.SlashCmdList["FOREVERTRACKER"])
+  end)
+
+  it("/ft sync saves before calling ReloadUI", function()
+    local FT = stubs.load()
+    stubs.setDB(nil)
+    local order = spyOrder(FT)
+    _G.SlashCmdList["FOREVERTRACKER"]("sync")
+    assert.are.equal(1, stubs.playedRequests)
+    assert.are.same({}, order) -- waiting for TIME_PLAYED_MSG or the timeout
+    assert.are.equal(2, stubs.timers[1].sec)
+    FT.onTimePlayed(5000, 100)
+    assert.are.same({ "save", "ReloadUI" }, order)
+    assert.are.equal(5000, stubs.getDB().characters["Player-1234-0A1B2C3D"].snapshot.time.played)
+  end)
+
+  it("finishes once even if both the message and the timeout fire", function()
+    local FT = stubs.load()
+    stubs.setDB(nil)
+    local order = spyOrder(FT)
+    _G.SlashCmdList["FOREVERTRACKER"](" SYNC ")
+    FT.onTimePlayed(1, 1)
+    stubs.timers[1].fn()
+    FT.onTimePlayed(2, 2)
+    assert.are.same({ "save", "ReloadUI" }, order)
+  end)
+
+  it("the timeout alone finishes the sync", function()
+    local FT = stubs.load()
+    stubs.setDB(nil)
+    local order = spyOrder(FT)
+    FT.sync()
+    stubs.timers[1].fn()
+    assert.are.same({ "save", "ReloadUI" }, order)
+  end)
+
+  it("finishes immediately when C_Timer is nil", function()
+    local FT = stubs.load({ C_Timer = stubs.NIL })
+    stubs.setDB(nil)
+    local order = spyOrder(FT)
+    assert.has_no.errors(function() FT.sync() end)
+    assert.are.same({ "save", "ReloadUI" }, order)
+  end)
+
+  it("tolerates a missing ReloadUI", function()
+    local FT = stubs.load({ ReloadUI = stubs.NIL, C_Timer = stubs.NIL })
+    stubs.setDB(nil)
+    assert.has_no.errors(function() FT.sync() end)
+  end)
+
+  it("unknown or missing argument prints usage and does nothing else", function()
+    local FT = stubs.load()
+    stubs.setDB(nil)
+    local order = spyOrder(FT)
+    _G.SlashCmdList["FOREVERTRACKER"]("bogus")
+    _G.SlashCmdList["FOREVERTRACKER"]("")
+    assert.are.equal(2, #stubs.printed)
+    assert.is_truthy(stubs.printed[1]:find("sync", 1, true))
+    assert.are.same({}, order)
+    assert.are.equal(0, stubs.playedRequests)
+    assert.is_nil(stubs.getDB())
+    assert.is_nil(FT.pendingPlayed)
+  end)
+
+  it("tolerates a missing print and SlashCmdList", function()
+    stubs.load({ print = stubs.NIL })
+    assert.has_no.errors(function() _G.SlashCmdList["FOREVERTRACKER"]("x") end)
+    assert.has_no.errors(function() stubs.load({ SlashCmdList = stubs.NIL }) end)
+  end)
+end)

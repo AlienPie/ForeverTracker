@@ -1,6 +1,6 @@
 -- Hand-written stubs of the WoW Classic-era globals, plus a loader that
 -- resets the world and loads the addon files fresh for every test.
-local M = { frames = {}, playedRequests = 0 }
+local M = { frames = {}, playedRequests = 0, calls = {}, timers = {}, printed = {}, now = 1730000000 }
 
 local WOW_GLOBALS = {
   "FT", "ForeverTrackerDB", "time", "GetBuildInfo", "UnitGUID", "UnitName",
@@ -10,6 +10,8 @@ local WOW_GLOBALS = {
   "C_ClassTalents", "C_Traits", "GetNumTalentTabs", "GetNumTalents",
   "GetTalentInfo", "UnitCharacterPoints", "GetNumSkillLines",
   "GetSkillLineInfo", "GetProfessions", "GetProfessionInfo", "C_QuestLog",
+  "ReloadUI", "C_Timer", "print", "C_TaxiMap", "GetTaxiNodesForMap",
+  "SlashCmdList", "SLASH_FOREVERTRACKER1", "SLASH_FOREVERTRACKER2",
 }
 
 local ADDON_FILES = {
@@ -20,6 +22,9 @@ local ADDON_FILES = {
   "ForeverTracker/Collectors/Talents.lua",
   "ForeverTracker/Collectors/Professions.lua",
   "ForeverTracker/Collectors/Quests.lua",
+  "ForeverTracker/Collectors/Exploration.lua",
+  "ForeverTracker/Events.lua",
+  "ForeverTracker/Slash.lua",
 }
 
 function M.defaults()
@@ -29,7 +34,7 @@ function M.defaults()
     [16] = "|Hitem:1234:0:0:0:0:0:0:0:60|h[Staff]|h",
   }
   return {
-    time = function() return 1730000000 end,
+    time = function() return M.now end,
     GetBuildInfo = function() return "1.60.1", "70707", "Jan 1 2026", 16001 end,
     UnitGUID = function() return "Player-1234-0A1B2C3D" end,
     UnitName = function() return "Thalindra", nil end,
@@ -88,6 +93,16 @@ function M.defaults()
       local r = rows[index]
       if r then return unpack(r, 1, 10) end
     end,
+    ReloadUI = function() M.calls[#M.calls + 1] = "ReloadUI" end,
+    C_Timer = { After = function(sec, fn) M.timers[#M.timers + 1] = { sec = sec, fn = fn } end },
+    print = function(...) M.printed[#M.printed + 1] = table.concat({ ... }, " ") end,
+    SlashCmdList = {},
+    -- Retail-shaped: array of { nodeID, name, ... } for the given UI map.
+    C_TaxiMap = {
+      GetTaxiNodesForMap = function()
+        return { { nodeID = 12, name = "Stormwind" }, { nodeID = 3, name = "Ironforge" }, { nodeID = 12, name = "Stormwind" } }
+      end,
+    },
     C_QuestLog = {
       IsQuestFlaggedCompleted = function(id) return id == 100 or id == 300 end,
       GetNumQuestLogEntries = function() return 3, 2 end,
@@ -114,6 +129,10 @@ M.NIL = {}
 function M.load(overrides)
   M.frames = {}
   M.playedRequests = 0
+  M.calls = {}
+  M.timers = {}
+  M.printed = {}
+  M.now = 1730000000
   for _, name in ipairs(WOW_GLOBALS) do _G[name] = nil end
   local env = M.defaults()
   for k, v in pairs(overrides or {}) do

@@ -16,6 +16,10 @@ ForeverTrackerDB = {
       events = {
         { t = <unix>, kind = "<string>", data = { ... } },
       },
+      visited = {
+        ["<mapId>:<subzone>"] = { mapId = <int>, subzone = "<string>", firstSeen = <unix> },
+      },
+      taxi = { <nodeId>, ... },
     },
   },
 }
@@ -27,8 +31,15 @@ ForeverTrackerDB = {
   `takenAt` (unix seconds); a character without one is skipped by ingest.
   `(guid, takenAt)` is the idempotency key, so uploading a file twice stores
   nothing new.
-- `events` is an append-only list of `{ t, kind, data }` records kept by the
-  addon beside the snapshot. The addon replaces only `snapshot` on save.
+- `events` is a list of `{ t, kind, data }` records kept by the addon beside
+  the snapshot, capped at the newest 500. The addon replaces only `snapshot`
+  on save. `data` holds plain values only.
+- `visited` is the addon's persistent set of places the character has been,
+  keyed `"<mapId>:<subzone>"` (subzone may be the empty string). `firstSeen` is
+  the earliest time seen; re-visits never overwrite it.
+- `taxi` is an ascending list of unique flight-path node IDs seen on the taxi
+  map. It is absent until a taxi map has been opened (or if the client lacks
+  the API).
 
 ## Snapshot sections
 
@@ -39,8 +50,29 @@ See `packages/core/src/snapshot/types.ts` for the exact field types.
 `"MainHandSlot"`), never by integer slot numbers: the parser turns contiguous
 `1..n` integer keys into arrays, which would make the shape ambiguous.
 
-A later addon task will add a persistent `visited` list beside `snapshot` and
-`events`; it is documented here when it lands.
+`exploration` is `{ visited, taxi? }`: `visited` is an ARRAY of
+`{ mapId, subzone, firstSeen }` built from the persistent `visited` map, sorted
+by `firstSeen` then key; `taxi` is an array of node IDs, omitted when none are
+recorded. The whole section is `unavailable` when `C_Map` is missing.
+
+### Event kinds
+
+| kind | `data` | when |
+| --- | --- | --- |
+| `level_up` | `{ level }` | `PLAYER_LEVEL_UP` |
+| `quest_turned_in` | `{ questId }` | `QUEST_TURNED_IN` |
+| `zone_first_visit` | `{ mapId, subzone }` | a zone-changed event adds a new place |
+| `profession_changed` | `{}` | `SKILL_LINES_CHANGED` |
+
+The addon also saves a snapshot on entering/leaving the world, logout, level
+up, quest turn-in and skill changes.
+
+### `/ft sync`
+
+`/ft sync` (also `/forevertracker sync`) requests `/played`, waits for the
+`TIME_PLAYED_MSG` reply (or 2 seconds), saves a snapshot, then calls
+`ReloadUI()` so the SavedVariables file is written to disk. Any other
+argument prints a one-line usage.
 
 ## The `unavailable` convention
 
