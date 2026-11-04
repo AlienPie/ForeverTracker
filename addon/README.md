@@ -11,6 +11,14 @@ Copy (or symlink) `addon/ForeverTracker/` to
 `<WoW folder>/Interface/AddOns/ForeverTracker`. The saved file appears at
 `WTF/Account/<ACCOUNT>/SavedVariables/ForeverTracker.lua`.
 
+## Quest probing and /played
+
+`FT.setQuestIdList(ids)` sets the quest IDs probed for `progress.questsCompleted`
+(`C_QuestLog.IsQuestFlaggedCompleted` per ID). It defaults to an empty list
+until a server-supplied list exists. `FT.requestPlayed()` calls
+`RequestTimePlayed()`; the `TIME_PLAYED_MSG` reply is cached for the next
+snapshot's `time` section.
+
 ## Tests
 
 The specs use [busted](https://lunarmodules.github.io/busted/) on **LuaJIT**

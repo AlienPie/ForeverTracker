@@ -61,10 +61,10 @@ describe("FT.takeSnapshot", function()
 
   it("places sectioned collectors under snapshot[section][key]", function()
     local FT = stubs.load()
-    FT.register({ key = "talents", section = "progress", run = function() return { unspent = 2 } end })
+    FT.register({ key = "extra", section = "progress", run = function() return { unspent = 2 } end })
     FT.register({ key = "bad", section = "progress", run = function() error("x") end })
     local snap = FT.takeSnapshot()
-    assert.are.equal(2, snap.progress.talents.unspent)
+    assert.are.equal(2, snap.progress.extra.unspent)
     assert.is_true(snap.progress.bad.unavailable)
   end)
 

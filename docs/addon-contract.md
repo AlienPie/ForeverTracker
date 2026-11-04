@@ -54,6 +54,26 @@ time = { unavailable = true, reason = "RequestTimePlayed pending" }
 A section may also be absent entirely. Consumers must treat both as "no data"
 and must never fail because of them. Ingest stores the snapshot as-is.
 
+## `time` and `progress`
+
+`time` is a top-level section `{ played, playedLevel }` (seconds). It comes from
+the last `TIME_PLAYED_MSG`, so it is `unavailable` ("RequestTimePlayed pending")
+until the addon has called `FT.requestPlayed()` and the client has answered.
+
+`progress` holds independent subsections, each of which may be `unavailable`:
+
+- `talents = { nodes, unspent }`: `nodes` maps a node key (string) to its
+  current rank, only ranks above 0. From the trait tree the key is the trait
+  node ID (for example `"9001"`); from the legacy tab API it is
+  `"<tab>.<index>"`. `unspent` is the unspent talent points.
+- `professions`: a list of `{ skillLine, name, rank, max }` for primary and
+  secondary professions only (not weapon skills, languages or armor).
+- `questsCompleted`: a list of quest IDs, from the probe list, that the client
+  reports as completed. The probe list is set with `FT.setQuestIdList(ids)` and
+  is empty until the server supplies one, so the list is empty by default.
+- `questLog`: a list of `{ id }` for the quests currently in the log (headers
+  skipped).
+
 ## Schema versioning
 
 `schema` is incremented on any breaking change to the shape. The server

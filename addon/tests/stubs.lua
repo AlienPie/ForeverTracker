@@ -1,18 +1,25 @@
 -- Hand-written stubs of the WoW Classic-era globals, plus a loader that
 -- resets the world and loads the addon files fresh for every test.
-local M = {}
+local M = { frames = {}, playedRequests = 0 }
 
 local WOW_GLOBALS = {
   "FT", "ForeverTrackerDB", "time", "GetBuildInfo", "UnitGUID", "UnitName",
   "UnitClass", "UnitRace", "UnitFactionGroup", "UnitLevel", "UnitXP",
   "UnitXPMax", "GetRealZoneText", "GetSubZoneText", "GetMoney",
-  "GetInventoryItemLink", "C_Map", "CreateFrame",
+  "GetInventoryItemLink", "C_Map", "CreateFrame", "RequestTimePlayed",
+  "C_ClassTalents", "C_Traits", "GetNumTalentTabs", "GetNumTalents",
+  "GetTalentInfo", "UnitCharacterPoints", "GetNumSkillLines",
+  "GetSkillLineInfo", "C_QuestLog",
 }
 
 local ADDON_FILES = {
   "ForeverTracker/Core.lua",
   "ForeverTracker/Collectors/Identity.lua",
   "ForeverTracker/Collectors/State.lua",
+  "ForeverTracker/Collectors/Time.lua",
+  "ForeverTracker/Collectors/Talents.lua",
+  "ForeverTracker/Collectors/Professions.lua",
+  "ForeverTracker/Collectors/Quests.lua",
 }
 
 function M.defaults()
@@ -36,6 +43,45 @@ function M.defaults()
     GetSubZoneText = function() return "Booty Bay" end,
     GetMoney = function() return 183420 end,
     GetInventoryItemLink = function(unit, slot) return links[slot] end,
+    CreateFrame = function()
+      local frame = { events = {} }
+      function frame:RegisterEvent(e) self.events[e] = true end
+      function frame:SetScript(name, fn) self[name] = fn end
+      M.frames[#M.frames + 1] = frame
+      return frame
+    end,
+    RequestTimePlayed = function() M.playedRequests = M.playedRequests + 1 end,
+    C_ClassTalents = { GetActiveConfigID = function() return 77 end },
+    C_Traits = {
+      GetConfigInfo = function() return { treeIDs = { 500 } } end,
+      GetTreeNodes = function() return { 9001, 9002, 9003 } end,
+      GetNodeInfo = function(_, nodeID)
+        return ({ [9001] = { currentRank = 2 }, [9002] = { currentRank = 0 },
+                  [9003] = { currentRank = 1 } })[nodeID]
+      end,
+      GetTreeCurrencyInfo = function() return { { quantity = 3, spent = 5 } } end,
+    },
+    GetNumSkillLines = function() return 5 end,
+    GetSkillLineInfo = function(i)
+      -- name, header, expanded, rank, temp, mod, max, abandonable, ..., skillLineID (14th)
+      local rows = {
+        { "Professions", true },
+        { "Alchemy", false, nil, 150, 0, 0, 225, nil, nil, nil, nil, nil, nil, 171 },
+        { "Secondary Skills", true },
+        { "Cooking", false, nil, 75, 0, 0, 150, nil, nil, nil, nil, nil, nil, 185 },
+        { "Swords", false, nil, 100, 0, 0, 300, nil, nil, nil, nil, nil, nil, 43 },
+      }
+      local r = rows[i]
+      if r then return unpack(r, 1, 14) end
+    end,
+    C_QuestLog = {
+      IsQuestFlaggedCompleted = function(id) return id == 100 or id == 300 end,
+      GetNumQuestLogEntries = function() return 3, 2 end,
+      GetInfo = function(i)
+        return ({ { questID = 0, isHeader = true }, { questID = 555, isHeader = false },
+                  { questID = 556, isHeader = false } })[i]
+      end,
+    },
     C_Map = {
       GetBestMapForUnit = function() return 1434 end,
       GetPlayerMapPosition = function()
@@ -52,6 +98,8 @@ function M.getDB() return _G.ForeverTrackerDB end
 M.NIL = {}
 
 function M.load(overrides)
+  M.frames = {}
+  M.playedRequests = 0
   for _, name in ipairs(WOW_GLOBALS) do _G[name] = nil end
   local env = M.defaults()
   for k, v in pairs(overrides or {}) do

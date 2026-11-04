@@ -8,3 +8,7 @@
 Core.lua
 Collectors\Identity.lua
 Collectors\State.lua
+Collectors\Time.lua
+Collectors\Talents.lua
+Collectors\Professions.lua
+Collectors\Quests.lua
