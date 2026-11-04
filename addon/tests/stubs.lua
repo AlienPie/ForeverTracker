@@ -1,6 +1,6 @@
 -- Hand-written stubs of the WoW Classic-era globals, plus a loader that
 -- resets the world and loads the addon files fresh for every test.
-local M = { frames = {}, playedRequests = 0, calls = {}, timers = {}, printed = {}, now = 1730000000 }
+local M = { frames = {}, playedRequests = 0, calls = {}, timers = {}, tickers = {}, printed = {}, now = 1730000000 }
 
 local WOW_GLOBALS = {
   "FT", "ForeverTrackerDB", "time", "GetBuildInfo", "UnitGUID", "UnitName",
@@ -10,7 +10,7 @@ local WOW_GLOBALS = {
   "C_ClassTalents", "C_Traits", "GetNumTalentTabs", "GetNumTalents",
   "GetTalentInfo", "UnitCharacterPoints", "GetNumSkillLines",
   "GetSkillLineInfo", "GetProfessions", "GetProfessionInfo", "C_QuestLog",
-  "ReloadUI", "C_Timer", "print", "C_TaxiMap", "GetTaxiNodesForMap", "GetTaxiMapID",
+  "C_Timer", "print", "C_TaxiMap", "GetTaxiNodesForMap", "GetTaxiMapID",
   "SlashCmdList", "SLASH_FOREVERTRACKER1", "SLASH_FOREVERTRACKER2",
 }
 
@@ -93,8 +93,10 @@ function M.defaults()
       local r = rows[index]
       if r then return unpack(r, 1, 10) end
     end,
-    ReloadUI = function() M.calls[#M.calls + 1] = "ReloadUI" end,
-    C_Timer = { After = function(sec, fn) M.timers[#M.timers + 1] = { sec = sec, fn = fn } end },
+    C_Timer = {
+      After = function(sec, fn) M.timers[#M.timers + 1] = { sec = sec, fn = fn } end,
+      NewTicker = function(sec, fn) M.tickers[#M.tickers + 1] = { sec = sec, fn = fn } end,
+    },
     print = function(...) M.printed[#M.printed + 1] = table.concat({ ... }, " ") end,
     SlashCmdList = {},
     -- Retail-shaped: array of { nodeID, name, ... } for the given UI map.
@@ -131,6 +133,7 @@ function M.load(overrides)
   M.playedRequests = 0
   M.calls = {}
   M.timers = {}
+  M.tickers = {}
   M.printed = {}
   M.now = 1730000000
   for _, name in ipairs(WOW_GLOBALS) do _G[name] = nil end

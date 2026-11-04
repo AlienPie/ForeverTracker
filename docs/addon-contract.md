@@ -67,17 +67,28 @@ recorded. The whole section is `unavailable` when `C_Map` is missing.
 | `level_up` | `{ level }` | `PLAYER_LEVEL_UP` |
 | `quest_turned_in` | `{ questId }` | `QUEST_TURNED_IN` |
 | `zone_first_visit` | `{ mapId, subzone }` | a zone-changed event adds a new place |
-| `profession_changed` | `{}` | `SKILL_LINES_CHANGED` |
+| `profession_changed` | `{ count }` | `SKILL_LINES_CHANGED`, only when the professions really changed (`count` = number of professions) |
 
-The addon also saves a snapshot on entering/leaving the world, logout, level
-up, quest turn-in and skill changes.
+Snapshots are taken on login (entering the world), level-up, quest turn-in,
+profession change (debounced: one save 5 seconds after the first
+`SKILL_LINES_CHANGED` of a burst), a 2-minute autosave ticker and `/ft sync`.
+They are NOT taken at logout or `/reload`: unit APIs have already stopped
+answering by then and would overwrite the last good snapshot.
+
+`profession_changed` is logged only when the professions signature (sorted
+`name:rank` joined by `|`) differs from the persisted
+`characters[guid].profSig` (a string, created lazily beside `snapshot`; a
+missing value counts as the empty signature).
 
 ### `/ft sync`
 
 `/ft sync` (also `/forevertracker sync`) requests `/played`, waits for the
-`TIME_PLAYED_MSG` reply (or 2 seconds), saves a snapshot, then calls
-`ReloadUI()` so the SavedVariables file is written to disk. Any other
-argument prints a one-line usage.
+`TIME_PLAYED_MSG` reply (or 2 seconds), saves a snapshot and prints
+`ForeverTracker: snapshot saved. Type /reload to write the data file to disk.`
+(or `ForeverTracker: could not save a snapshot.` on failure). The addon never
+calls `ReloadUI()` (blocked for addons on this client); type `/reload`
+yourself so the SavedVariables file is written to disk. Any other argument
+prints a one-line usage.
 
 ## The `unavailable` convention
 

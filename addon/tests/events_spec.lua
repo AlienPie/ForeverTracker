@@ -79,14 +79,6 @@ describe("event handlers", function()
     assert.is_table(char().snapshot)
   end)
 
-  it("SKILL_LINES_CHANGED logs profession_changed and saves", function()
-    local FT = stubs.load()
-    stubs.setDB(nil)
-    FT.handlers.SKILL_LINES_CHANGED()
-    assert.are.equal("profession_changed", char().events[1].kind)
-    assert.is_table(char().snapshot)
-  end)
-
   it("zone_first_visit is logged only for a newly added place", function()
     local FT = stubs.load()
     stubs.setDB(nil)
@@ -98,16 +90,27 @@ describe("event handlers", function()
     assert.are.same({ mapId = 1434, subzone = "Booty Bay" }, char().events[1].data)
   end)
 
-  it("PLAYER_ENTERING_WORLD records a visit and saves; PLAYER_LOGOUT saves", function()
+  it("PLAYER_ENTERING_WORLD records a visit and saves", function()
     local FT = stubs.load()
     stubs.setDB(nil)
     FT.handlers.PLAYER_ENTERING_WORLD()
     assert.is_table(char().visited["1434:Booty Bay"])
     assert.is_table(char().snapshot)
-    char().snapshot = nil
-    FT.handlers.PLAYER_LOGOUT()
-    assert.is_table(char().snapshot)
-    assert.is_function(FT.handlers.PLAYER_LEAVING_WORLD)
+  end)
+
+  it("PLAYER_LOGOUT and PLAYER_LEAVING_WORLD leave the stored snapshot untouched", function()
+    local FT = stubs.load()
+    stubs.setDB(nil)
+    FT.save()
+    local before = char().snapshot
+    stubs.now = stubs.now + 100
+    local frame = stubs.frames[#stubs.frames]
+    assert.has_no.errors(function() frame.OnEvent(frame, "PLAYER_LOGOUT") end)
+    assert.has_no.errors(function() frame.OnEvent(frame, "PLAYER_LEAVING_WORLD") end)
+    assert.is_nil(FT.handlers.PLAYER_LOGOUT)
+    assert.is_nil(FT.handlers.PLAYER_LEAVING_WORLD)
+    assert.are.equal(before, char().snapshot)
+    assert.are.equal(1730000000, char().snapshot.takenAt)
   end)
 
   it("PLAYER_ENTERING_WORLD requests /played only on initial login", function()
@@ -143,13 +146,13 @@ describe("event handlers", function()
   it("a throwing handler never escapes the frame script", function()
     local FT = stubs.load()
     local frame = stubs.frames[#stubs.frames]
-    FT.handlers.PLAYER_LOGOUT = function() error("boom") end
-    assert.has_no.errors(function() frame.OnEvent(frame, "PLAYER_LOGOUT") end)
+    FT.handlers.PLAYER_LEVEL_UP = function() error("boom") end
+    assert.has_no.errors(function() frame.OnEvent(frame, "PLAYER_LEVEL_UP") end)
   end)
 
   it("loads without CreateFrame", function()
     local FT = stubs.load({ CreateFrame = stubs.NIL })
-    assert.is_function(FT.handlers.PLAYER_LOGOUT)
+    assert.is_function(FT.handlers.PLAYER_LEVEL_UP)
   end)
 end)
 
@@ -186,5 +189,109 @@ describe("taxi map id", function()
     assert.has_no.errors(function() FT.handlers.TAXIMAP_OPENED() end)
     assert.are.same({}, seen)
     assert.is_nil(stubs.getDB())
+  end)
+end)
+
+describe("autosave ticker", function()
+  it("is created once even after several PLAYER_ENTERING_WORLD events", function()
+    local FT = stubs.load()
+    stubs.setDB(nil)
+    FT.handlers.PLAYER_ENTERING_WORLD(true, false)
+    FT.handlers.PLAYER_ENTERING_WORLD(false, true)
+    FT.handlers.PLAYER_ENTERING_WORLD(false, false)
+    assert.are.equal(1, #stubs.tickers)
+    assert.are.equal(120, stubs.tickers[1].sec)
+  end)
+
+  it("saves when it fires", function()
+    local FT = stubs.load()
+    stubs.setDB(nil)
+    FT.handlers.PLAYER_ENTERING_WORLD()
+    char().snapshot = nil
+    stubs.tickers[1].fn()
+    assert.is_table(char().snapshot)
+  end)
+
+  it("a throwing save does not escape the ticker", function()
+    local FT = stubs.load()
+    FT.handlers.PLAYER_ENTERING_WORLD()
+    FT.save = function() error("boom") end
+    assert.has_no.errors(function() stubs.tickers[1].fn() end)
+  end)
+
+  it("missing C_Timer or NewTicker means no ticker and no error", function()
+    local FT = stubs.load({ C_Timer = stubs.NIL })
+    stubs.setDB(nil)
+    assert.has_no.errors(function() FT.handlers.PLAYER_ENTERING_WORLD() end)
+    FT = stubs.load({ C_Timer = { After = function() end } })
+    assert.has_no.errors(function() FT.handlers.PLAYER_ENTERING_WORLD() end)
+    assert.are.equal(0, #stubs.tickers)
+  end)
+end)
+
+describe("SKILL_LINES_CHANGED", function()
+  local function fire(FT, n) for _ = 1, n do FT.handlers.SKILL_LINES_CHANGED() end end
+  local SIG = "Alchemy:150|Cooking:75"
+
+  it("debounces to one scheduled save and logs nothing when the signature is unchanged", function()
+    local FT = stubs.load()
+    stubs.setDB({ characters = { [GUID] = { profSig = SIG } } })
+    fire(FT, 30)
+    assert.are.equal(1, #stubs.timers)
+    assert.are.equal(5, stubs.timers[1].sec)
+    assert.is_nil(char().snapshot)
+    assert.is_nil(char().events)
+    stubs.timers[1].fn()
+    assert.is_table(char().snapshot)
+    fire(FT, 2) -- a new burst may schedule again after the save ran
+    assert.are.equal(2, #stubs.timers)
+  end)
+
+  it("logs exactly one event with the count on a real change and updates profSig", function()
+    local FT = stubs.load()
+    stubs.setDB({ characters = { [GUID] = { profSig = SIG } } })
+    fire(FT, 3)
+    assert.are.equal(0, #(char().events or {}))
+    local rows = { { "Alchemy", "icon", 150, 225, 2, 0, 171, 0, 0, 0 },
+                   { "Cooking", "icon", 75, 150, 1, 0, 185, 0, 0, 0 },
+                   { "Mining", "icon", 1, 75, 1, 0, 186, 0, 0, 0 } }
+    _G.GetProfessions = function() return 1, 2, 3 end
+    _G.GetProfessionInfo = function(i) local r = rows[i]; if r then return unpack(r, 1, 10) end end
+    fire(FT, 5)
+    assert.are.equal(1, #char().events)
+    assert.are.equal("profession_changed", char().events[1].kind)
+    assert.are.same({ count = 3 }, char().events[1].data)
+    assert.are.equal("Alchemy:150|Cooking:75|Mining:1", char().profSig)
+  end)
+
+  it("first observation with no persisted signature and no professions logs nothing", function()
+    local FT = stubs.load({ GetProfessions = function() return end })
+    stubs.setDB(nil)
+    fire(FT, 2)
+    assert.are.equal(0, #(char() and char().events or {}))
+  end)
+
+  it("uses an empty signature when the collector is unavailable", function()
+    local FT = stubs.load({ GetProfessions = function() error("x") end })
+    stubs.setDB({ characters = { [GUID] = { profSig = SIG } } })
+    FT.handlers.SKILL_LINES_CHANGED()
+    assert.are.equal(1, #char().events)
+    assert.are.same({ count = 0 }, char().events[1].data)
+    assert.are.equal("", char().profSig)
+  end)
+
+  it("no-ops without a GUID", function()
+    local FT = stubs.load({ UnitGUID = function() return nil end })
+    stubs.setDB(nil)
+    assert.has_no.errors(function() fire(FT, 3) end)
+    assert.is_nil(stubs.getDB())
+  end)
+
+  it("works inline when C_Timer is missing", function()
+    local FT = stubs.load({ C_Timer = stubs.NIL })
+    stubs.setDB({ characters = { [GUID] = { profSig = "" } } })
+    assert.has_no.errors(function() FT.handlers.SKILL_LINES_CHANGED() end)
+    assert.is_table(char().snapshot)
+    assert.are.equal(1, #char().events)
   end)
 end)

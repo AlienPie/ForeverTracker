@@ -295,7 +295,7 @@ Failure modes the spec implies but does not spell out, most likely first. Each h
   - `FT.recordVisit()` — adds `{ mapId, subzone, firstSeen }` to a persistent per-character set (key `mapId .. ":" .. subzone`); idempotent.
   - `FT.logEvent(kind: string, data: table)` — appends `{ t, kind, data }` to the character's `events`, capped at the newest 500.
   - Event wiring: `PLAYER_ENTERING_WORLD`, `PLAYER_LEAVING_WORLD`, `PLAYER_LOGOUT` (save), `PLAYER_LEVEL_UP` (`level_up`), `QUEST_TURNED_IN` (`quest_turned_in`), `ZONE_CHANGED`, `ZONE_CHANGED_INDOORS`, `ZONE_CHANGED_NEW_AREA` (visit), `SKILL_LINES_CHANGED` (`profession_changed`), `TAXIMAP_OPENED` (record known taxi nodes via `GetTaxiNodesForMap`, unavailable if missing).
-  - Slash command `/ft sync` → `FT.requestPlayed()`, `FT.save()`, then `ReloadUI()`.
+  - Slash command `/ft sync` → `FT.requestPlayed()`, `FT.save()`, then `ReloadUI()`. (SUPERSEDED: ReloadUI is blocked; see docs/addon-contract.md)
 
 - [ ] **Step 1: Write failing specs:** `recordVisit stores a place once and keeps the earliest firstSeen`; `events are capped at 500 and keep the newest`; `PLAYER_LEVEL_UP logs a level_up event with the new level`; `/ft sync saves before calling ReloadUI` (assert call order); `exploration is unavailable when C_Map is missing`; `taxi is omitted, not an error, when GetTaxiNodesForMap is missing`.
 - [ ] **Step 2:** Run `busted`. Expected: FAIL.

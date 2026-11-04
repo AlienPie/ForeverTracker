@@ -1,10 +1,12 @@
 local stubs = require("stubs")
 
+local HINT = "ForeverTracker: snapshot saved. Type /reload to write the data file to disk."
+local FAIL = "ForeverTracker: could not save a snapshot."
+
 local function spyOrder(FT)
   local order = {}
   local save = FT.save
   FT.save = function(...) order[#order + 1] = "save"; return save(...) end
-  _G.ReloadUI = function() order[#order + 1] = "ReloadUI" end
   return order
 end
 
@@ -16,7 +18,7 @@ describe("slash command", function()
     assert.is_function(_G.SlashCmdList["FOREVERTRACKER"])
   end)
 
-  it("/ft sync saves before calling ReloadUI", function()
+  it("/ft sync saves once and prints the reload hint", function()
     local FT = stubs.load()
     stubs.setDB(nil)
     local order = spyOrder(FT)
@@ -25,7 +27,8 @@ describe("slash command", function()
     assert.are.same({}, order) -- waiting for TIME_PLAYED_MSG or the timeout
     assert.are.equal(2, stubs.timers[1].sec)
     FT.onTimePlayed(5000, 100)
-    assert.are.same({ "save", "ReloadUI" }, order)
+    assert.are.same({ "save" }, order)
+    assert.are.same({ HINT }, stubs.printed)
     assert.are.equal(5000, stubs.getDB().characters["Player-1234-0A1B2C3D"].snapshot.time.played)
   end)
 
@@ -37,7 +40,7 @@ describe("slash command", function()
     FT.onTimePlayed(1, 1)
     stubs.timers[1].fn()
     FT.onTimePlayed(2, 2)
-    assert.are.same({ "save", "ReloadUI" }, order)
+    assert.are.same({ "save" }, order)
   end)
 
   it("the timeout alone finishes the sync", function()
@@ -46,7 +49,7 @@ describe("slash command", function()
     local order = spyOrder(FT)
     FT.sync()
     stubs.timers[1].fn()
-    assert.are.same({ "save", "ReloadUI" }, order)
+    assert.are.same({ "save" }, order)
   end)
 
   it("finishes immediately when C_Timer is nil", function()
@@ -54,13 +57,7 @@ describe("slash command", function()
     stubs.setDB(nil)
     local order = spyOrder(FT)
     assert.has_no.errors(function() FT.sync() end)
-    assert.are.same({ "save", "ReloadUI" }, order)
-  end)
-
-  it("tolerates a missing ReloadUI", function()
-    local FT = stubs.load({ ReloadUI = stubs.NIL, C_Timer = stubs.NIL })
-    stubs.setDB(nil)
-    assert.has_no.errors(function() FT.sync() end)
+    assert.are.same({ "save" }, order)
   end)
 
   it("unknown or missing argument prints usage and does nothing else", function()
@@ -85,7 +82,7 @@ describe("slash command", function()
 end)
 
 describe("sync robustness", function()
-  it("a throwing save still reloads exactly once and no error escapes", function()
+  it("a throwing save prints only the failure line, once, and no error escapes", function()
     local FT = stubs.load()
     stubs.setDB(nil)
     local order = spyOrder(FT)
@@ -93,7 +90,15 @@ describe("sync robustness", function()
     FT.sync()
     assert.has_no.errors(function() stubs.frames[1].OnEvent(stubs.frames[1], "TIME_PLAYED_MSG", 9, 9) end)
     assert.has_no.errors(function() stubs.timers[1].fn() end)
-    assert.are.same({ "ReloadUI" }, order)
+    assert.are.same({ FAIL }, stubs.printed)
+  end)
+
+  it("a save that reports failure prints the failure line", function()
+    local FT = stubs.load({ UnitGUID = function() return nil end })
+    stubs.setDB(nil)
+    FT.sync()
+    stubs.timers[1].fn()
+    assert.are.same({ FAIL }, stubs.printed)
   end)
 
   it("a throwing pending callback does not break the cached played values", function()
@@ -109,13 +114,15 @@ describe("sync robustness", function()
     local order = spyOrder(FT)
     FT.sync()
     FT.onTimePlayed(1, 1)
-    assert.are.same({ "save", "ReloadUI" }, order)
+    assert.are.same({ "save" }, order)
+    assert.are.same({ HINT }, stubs.printed)
     FT.sync()
     stubs.timers[1].fn() -- first sync's stale timeout: must be a no-op
-    assert.are.same({ "save", "ReloadUI" }, order)
+    assert.are.same({ "save" }, order)
     FT.onTimePlayed(2, 2)
-    assert.are.same({ "save", "ReloadUI", "save", "ReloadUI" }, order)
+    assert.are.same({ "save", "save" }, order)
+    assert.are.same({ HINT, HINT }, stubs.printed)
     stubs.timers[2].fn()
-    assert.are.equal(4, #order)
+    assert.are.equal(2, #order)
   end)
 end)

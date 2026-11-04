@@ -23,6 +23,14 @@ snapshot's `time` section. Each reply is also saved per character
 `/played` once on initial login only (not on reloads or zone changes), which
 makes the game print one "Total time played" chat line at login.
 
+## Saving the data file
+
+SavedVariables are only written to disk on logout or `/reload`. Type
+`/ft sync` (it saves a fresh snapshot and prints a confirmation), then type
+`/reload`. The addon never calls `ReloadUI()` itself (blocked for addons).
+Snapshots are also taken on login, level-up, quest turn-in, profession change
+and every 2 minutes, but not at logout.
+
 ## Tests
 
 The specs use [busted](https://lunarmodules.github.io/busted/) on **LuaJIT**

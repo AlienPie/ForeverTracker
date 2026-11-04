@@ -118,16 +118,83 @@ local function onZone()
   if added then FT.logEvent("zone_first_visit", { mapId = mapId, subzone = sub }) end
 end
 
+-- Autosave: PLAYER_LOGOUT / PLAYER_LEAVING_WORLD are deliberately NOT handled.
+-- By then (logout and /reload) unit APIs already stop answering, so a snapshot
+-- taken there is degraded and would overwrite the last good one. Instead the
+-- snapshot is refreshed by a ticker started once per session.
+local AUTOSAVE_SECONDS = 120
+local autosaveStarted = false
+local function startAutosave()
+  if autosaveStarted then return end
+  local timer = _G.C_Timer
+  if type(timer) ~= "table" or type(timer.NewTicker) ~= "function" then return end
+  autosaveStarted = pcall(timer.NewTicker, AUTOSAVE_SECONDS, function() pcall(FT.save) end)
+end
+
+-- Debounced save for bursty events (SKILL_LINES_CHANGED fires dozens of times).
+local SAVE_DELAY = 5
+local savePending = false
+local function scheduleSave()
+  local timer = _G.C_Timer
+  if type(timer) ~= "table" or type(timer.After) ~= "function" then
+    pcall(FT.save)
+    return
+  end
+  if savePending then return end
+  savePending = true
+  local ok = pcall(timer.After, SAVE_DELAY, function()
+    savePending = false
+    pcall(FT.save)
+  end)
+  if not ok then
+    savePending = false
+    pcall(FT.save)
+  end
+end
+
+-- "name:rank" for each profession, sorted and joined by "|"; "" when there are
+-- none or the collector is unavailable. Returns the signature and the count.
+local function professionSignature()
+  local list
+  for _, c in ipairs(FT.collectors) do
+    if c.key == "professions" and c.section == "progress" then
+      list = FT.safe(c.run)
+      break
+    end
+  end
+  if type(list) ~= "table" or FT.isUnavailable(list) then return "", 0 end
+  local parts = {}
+  for _, p in ipairs(list) do
+    if type(p) == "table" and str(p.name) and num(p.rank) then
+      parts[#parts + 1] = p.name .. ":" .. p.rank
+    end
+  end
+  table.sort(parts)
+  return table.concat(parts, "|"), #parts
+end
+
+local function onSkillLines()
+  scheduleSave()
+  local rec = FT.getCharacter(true)
+  if not rec then return end
+  local sig, count = professionSignature()
+  local old = rec.profSig
+  if type(old) ~= "string" then old = "" end
+  if sig ~= old then
+    rec.profSig = sig
+    FT.logEvent("profession_changed", { count = count })
+  end
+end
+
 FT.handlers = {
   -- isInitialLogin is true only on a fresh login (not on reloads or zone
   -- changes); /played prints a chat line, so only request it then.
   PLAYER_ENTERING_WORLD = function(isInitialLogin)
     FT.recordVisit()
     FT.save()
+    startAutosave()
     if isInitialLogin == true then FT.requestPlayed() end
   end,
-  PLAYER_LEAVING_WORLD = function() FT.save() end,
-  PLAYER_LOGOUT = function() FT.save() end,
   PLAYER_LEVEL_UP = function(level)
     FT.logEvent("level_up", { level = num(level) })
     FT.save()
@@ -139,10 +206,7 @@ FT.handlers = {
   ZONE_CHANGED = onZone,
   ZONE_CHANGED_INDOORS = onZone,
   ZONE_CHANGED_NEW_AREA = onZone,
-  SKILL_LINES_CHANGED = function()
-    FT.logEvent("profession_changed", {})
-    FT.save()
-  end,
+  SKILL_LINES_CHANGED = onSkillLines,
   TAXIMAP_OPENED = function() FT.recordTaxi() end,
 }
 

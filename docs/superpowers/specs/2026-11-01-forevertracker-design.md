@@ -139,7 +139,7 @@ no realm object and are named `Name-Surname`):
   profession change). Powers "what did I do last session" and the later daily plan.
 
 Snapshot triggers: login, logout, level-up, quest turn-in, profession change, and a
-`/ft sync` command that captures and calls `ReloadUI()` to flush the file immediately.
+`/ft sync` command that captures a snapshot; the player then types `/reload` to flush the file (an addon call to `ReloadUI()` was observed to be blocked).
 
 Deferred past v1: bags/bank, reputation, mounts, combat data.
 
@@ -272,7 +272,7 @@ supplies their own keys. Keys and tokens are never logged.
 4. **Verify in-game at launch** (addon API assumptions):
    - trait-node talent capture works as inferred;
    - per-ID quest completion checks are fast enough at logout;
-   - `/played` and `ReloadUI()` behave as expected from a slash command;
+   - `/played` behaves as expected from a slash command (`ReloadUI()` from the addon was observed to be BLOCKED; the player types `/reload`);
    - zone/subzone events give a usable visited-places set;
    - flight-path data availability;
    - whether Forever loadout strings can be imported/exported (for the playground);
