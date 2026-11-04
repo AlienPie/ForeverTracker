@@ -10,7 +10,7 @@ function FT.onTimePlayed(total, level)
   end
   -- A /ft sync in progress is waiting for this reply (set by Slash.lua).
   local pending = FT.pendingPlayed
-  if type(pending) == "function" then pending() end
+  if type(pending) == "function" then pcall(pending) end
 end
 
 -- Asks the client for /played; the answer arrives via TIME_PLAYED_MSG and is

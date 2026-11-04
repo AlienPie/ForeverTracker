@@ -141,3 +141,39 @@ describe("event handlers", function()
     assert.is_function(FT.handlers.PLAYER_LOGOUT)
   end)
 end)
+
+describe("taxi map id", function()
+  local function stubNodes(seen)
+    return { GetTaxiNodesForMap = function(id) seen[#seen + 1] = id; return { { nodeID = 7 } } end }
+  end
+
+  it("queries GetTaxiMapID's map when it exists", function()
+    local seen = {}
+    local FT = stubs.load({ C_TaxiMap = stubNodes(seen), GetTaxiMapID = function() return 1414 end })
+    stubs.setDB(nil)
+    FT.handlers.TAXIMAP_OPENED()
+    assert.are.same({ 1414 }, seen)
+    assert.are.same({ 7 }, char().taxi)
+  end)
+
+  it("falls back to the best map when GetTaxiMapID is absent or unusable", function()
+    local seen = {}
+    local FT = stubs.load({ C_TaxiMap = stubNodes(seen) })
+    stubs.setDB(nil)
+    FT.handlers.TAXIMAP_OPENED()
+    FT = stubs.load({ C_TaxiMap = stubNodes(seen), GetTaxiMapID = function() return nil end })
+    stubs.setDB(nil)
+    FT.handlers.TAXIMAP_OPENED()
+    assert.are.same({ 1434, 1434 }, seen)
+  end)
+
+  it("records nothing and does not error when no map id is available", function()
+    local seen = {}
+    local FT = stubs.load({ C_TaxiMap = stubNodes(seen), C_Map = stubs.NIL,
+      GetTaxiMapID = function() error("boom") end })
+    stubs.setDB(nil)
+    assert.has_no.errors(function() FT.handlers.TAXIMAP_OPENED() end)
+    assert.are.same({}, seen)
+    assert.is_nil(stubs.getDB())
+  end)
+end)

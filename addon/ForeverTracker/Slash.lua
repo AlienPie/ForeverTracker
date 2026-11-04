@@ -10,7 +10,7 @@ function FT.sync()
     if done then return end
     done = true
     FT.pendingPlayed = nil
-    FT.save()
+    pcall(FT.save)
     local reload = _G.ReloadUI
     if type(reload) == "function" then pcall(reload) end
   end

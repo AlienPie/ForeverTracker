@@ -38,7 +38,10 @@ ForeverTrackerDB = {
   keyed `"<mapId>:<subzone>"` (subzone may be the empty string). `firstSeen` is
   the earliest time seen; re-visits never overwrite it.
 - `taxi` is an ascending list of unique flight-path node IDs seen on the taxi
-  map. It is absent until a taxi map has been opened (or if the client lacks
+  map. It records the node IDs the API returns for the taxi map while it is
+  open (`GetTaxiMapID`, falling back to the player's map), accumulates across
+  opens, may be partial, and is not filtered by discovery state (to be
+  verified on launch day). It is absent until a taxi map has been opened (or if the client lacks
   the API).
 
 ## Snapshot sections

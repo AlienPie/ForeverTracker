@@ -10,7 +10,7 @@ local WOW_GLOBALS = {
   "C_ClassTalents", "C_Traits", "GetNumTalentTabs", "GetNumTalents",
   "GetTalentInfo", "UnitCharacterPoints", "GetNumSkillLines",
   "GetSkillLineInfo", "GetProfessions", "GetProfessionInfo", "C_QuestLog",
-  "ReloadUI", "C_Timer", "print", "C_TaxiMap", "GetTaxiNodesForMap",
+  "ReloadUI", "C_Timer", "print", "C_TaxiMap", "GetTaxiNodesForMap", "GetTaxiMapID",
   "SlashCmdList", "SLASH_FOREVERTRACKER1", "SLASH_FOREVERTRACKER2",
 }
 

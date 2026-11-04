@@ -84,7 +84,15 @@ function FT.recordTaxi()
     fn = _G.GetTaxiNodesForMap
   end
   if not fn then return false end
-  local mapId = try(function() return _G.C_Map.GetBestMapForUnit("player") end)
+  -- Prefer the map the open taxi window shows (normally continent-level);
+  -- GetBestMapForUnit is a zone map and may yield few or no nodes. The nodes
+  -- are recorded as the API returns them, NOT filtered by discovery state (the
+  -- state enum is unverified); results accumulate across opens and may be
+  -- partial. Verify on launch day.
+  local mapId = type(_G.GetTaxiMapID) == "function" and try(_G.GetTaxiMapID) or nil
+  if not num(mapId) then
+    mapId = try(function() return _G.C_Map.GetBestMapForUnit("player") end)
+  end
   if not num(mapId) then return false end
   local nodes = try(fn, mapId)
   if type(nodes) ~= "table" then return false end
