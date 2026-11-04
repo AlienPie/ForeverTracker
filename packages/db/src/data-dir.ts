@@ -1,4 +1,5 @@
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
+import { openDb, type Db } from "./client";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
 /**
@@ -19,4 +20,14 @@ export function resolveDataDir(
     if (parent === dir) return resolve(cwd, configured);
     dir = parent;
   }
+}
+
+/** Open the app database at `${resolveDataDir(env)}/forevertracker.sqlite`, creating the directory. */
+export function openDataDb(
+  source: { DATA_DIR?: string | undefined } = process.env,
+  cwd: string = process.cwd(),
+): Db {
+  const dir = resolveDataDir(source, cwd);
+  mkdirSync(dir, { recursive: true });
+  return openDb(join(dir, "forevertracker.sqlite"));
 }

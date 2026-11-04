@@ -2,7 +2,9 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, test } from "vitest";
-import { resolveDataDir } from "../src/lib/server/data-dir";
+import { existsSync } from "node:fs";
+import { sql } from "drizzle-orm";
+import { openDataDb, resolveDataDir } from "../src/index";
 
 describe("resolveDataDir", () => {
   test("absolute DATA_DIR is used as-is", () => {
@@ -21,5 +23,16 @@ describe("resolveDataDir", () => {
   test("no workspace file -> relative to cwd", () => {
     const dir = mkdtempSync(join(tmpdir(), "ft-nows-"));
     expect(resolveDataDir({ DATA_DIR: "data" }, dir)).toBe(resolve(dir, "data"));
+  });
+});
+
+describe("openDataDb", () => {
+  test("creates the directory, opens forevertracker.sqlite and migrates it", () => {
+    const base = mkdtempSync(join(tmpdir(), "ft-open-"));
+    const dir = join(base, "nested", "data");
+    const db = openDataDb({ DATA_DIR: dir });
+    expect(existsSync(join(dir, "forevertracker.sqlite"))).toBe(true);
+    const names = db.all<{ name: string }>(sql`select name from sqlite_master where type = 'table'`).map((r) => r.name);
+    expect(names).toContain("snapshot");
   });
 });
