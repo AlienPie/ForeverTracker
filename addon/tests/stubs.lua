@@ -9,7 +9,7 @@ local WOW_GLOBALS = {
   "GetInventoryItemLink", "C_Map", "CreateFrame", "RequestTimePlayed",
   "C_ClassTalents", "C_Traits", "GetNumTalentTabs", "GetNumTalents",
   "GetTalentInfo", "UnitCharacterPoints", "GetNumSkillLines",
-  "GetSkillLineInfo", "C_QuestLog",
+  "GetSkillLineInfo", "GetProfessions", "GetProfessionInfo", "C_QuestLog",
 }
 
 local ADDON_FILES = {
@@ -62,17 +62,31 @@ function M.defaults()
       GetTreeCurrencyInfo = function() return { { quantity = 3, spent = 5 } } end,
     },
     GetNumSkillLines = function() return 5 end,
+    -- Faithful Classic 13-return signature: name, isHeader, isExpanded, rank,
+    -- numTemp, modifier, maxRank, isAbandonable, stepCost, rankCost, minLevel,
+    -- costType, description.
     GetSkillLineInfo = function(i)
-      -- name, header, expanded, rank, temp, mod, max, abandonable, ..., skillLineID (14th)
       local rows = {
-        { "Professions", true },
-        { "Alchemy", false, nil, 150, 0, 0, 225, nil, nil, nil, nil, nil, nil, 171 },
-        { "Secondary Skills", true },
-        { "Cooking", false, nil, 75, 0, 0, 150, nil, nil, nil, nil, nil, nil, 185 },
-        { "Swords", false, nil, 100, 0, 0, 300, nil, nil, nil, nil, nil, nil, 43 },
+        { "Professions", true, true },
+        { "Alchemy", false, nil, 150, 0, 0, 225, nil, nil, nil, nil, nil, "" },
+        { "Secondary Skills", true, true },
+        { "Cooking", false, nil, 75, 0, 0, 150, nil, nil, nil, nil, nil, "" },
+        { "Swords", false, nil, 100, 0, 0, 300, nil, nil, nil, nil, nil, "" },
       }
       local r = rows[i]
-      if r then return unpack(r, 1, 14) end
+      if r then return unpack(r, 1, 13) end
+    end,
+    -- prof1, prof2, archaeology, fishing, cooking (indices; any may be nil)
+    GetProfessions = function() return 1, nil, nil, nil, 2 end,
+    -- name, icon, skillLevel, maxSkillLevel, numAbilities, spelloffset,
+    -- skillLine, skillModifier, specializationIndex, specializationOffset
+    GetProfessionInfo = function(index)
+      local rows = {
+        { "Alchemy", "icon", 150, 225, 2, 0, 171, 0, 0, 0 },
+        { "Cooking", "icon", 75, 150, 1, 0, 185, 0, 0, 0 },
+      }
+      local r = rows[index]
+      if r then return unpack(r, 1, 10) end
     end,
     C_QuestLog = {
       IsQuestFlaggedCompleted = function(id) return id == 100 or id == 300 end,

@@ -67,7 +67,15 @@ until the addon has called `FT.requestPlayed()` and the client has answered.
   node ID (for example `"9001"`); from the legacy tab API it is
   `"<tab>.<index>"`. `unspent` is the unspent talent points.
 - `professions`: a list of `{ skillLine, name, rank, max }` for primary and
-  secondary professions only (not weapon skills, languages or armor).
+  secondary professions only (not weapon skills, languages or armor). The
+  primary source is `GetProfessions`/`GetProfessionInfo`, which is
+  locale-independent and gives the real `skillLine` id. If those APIs are
+  absent the addon falls back to scanning the skill window by ENGLISH
+  profession name (case-insensitive) and writes `skillLine = 0`; the fallback is
+  English-only. When the fallback recognises nothing but non-header skill lines
+  exist (non-English client or collapsed headers) the subsection is
+  `unavailable` rather than an empty list. The addon never expands or collapses
+  skill headers.
 - `questsCompleted`: a list of quest IDs, from the probe list, that the client
   reports as completed. The probe list is set with `FT.setQuestIdList(ids)` and
   is empty until the server supplies one, so the list is empty by default.
