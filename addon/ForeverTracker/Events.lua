@@ -119,7 +119,13 @@ local function onZone()
 end
 
 FT.handlers = {
-  PLAYER_ENTERING_WORLD = function() FT.recordVisit(); FT.save() end,
+  -- isInitialLogin is true only on a fresh login (not on reloads or zone
+  -- changes); /played prints a chat line, so only request it then.
+  PLAYER_ENTERING_WORLD = function(isInitialLogin)
+    FT.recordVisit()
+    FT.save()
+    if isInitialLogin == true then FT.requestPlayed() end
+  end,
   PLAYER_LEAVING_WORLD = function() FT.save() end,
   PLAYER_LOGOUT = function() FT.save() end,
   PLAYER_LEVEL_UP = function(level)

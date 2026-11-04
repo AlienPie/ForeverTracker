@@ -17,7 +17,11 @@ Copy (or symlink) `addon/ForeverTracker/` to
 (`C_QuestLog.IsQuestFlaggedCompleted` per ID). It defaults to an empty list
 until a server-supplied list exists. `FT.requestPlayed()` calls
 `RequestTimePlayed()`; the `TIME_PLAYED_MSG` reply is cached for the next
-snapshot's `time` section.
+snapshot's `time` section. Each reply is also saved per character
+(`characters[guid].played = { played, playedLevel, at }`), so `time` survives
+`/reload` and relogin; `at` is when it was measured. The addon requests
+`/played` once on initial login only (not on reloads or zone changes), which
+makes the game print one "Total time played" chat line at login.
 
 ## Tests
 

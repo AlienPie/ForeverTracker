@@ -20,6 +20,7 @@ ForeverTrackerDB = {
         ["<mapId>:<subzone>"] = { mapId = <int>, subzone = "<string>", firstSeen = <unix> },
       },
       taxi = { <nodeId>, ... },
+      played = { played = <sec>, playedLevel = <sec>, at = <unix> },
     },
   },
 }
@@ -43,6 +44,7 @@ ForeverTrackerDB = {
   opens, may be partial, and is not filtered by discovery state (to be
   verified on launch day). It is absent until a taxi map has been opened (or if the client lacks
   the API).
+- `played` is the last `/played` reply (see `time` below).
 
 ## Snapshot sections
 
@@ -91,9 +93,15 @@ and must never fail because of them. Ingest stores the snapshot as-is.
 
 ## `time` and `progress`
 
-`time` is a top-level section `{ played, playedLevel }` (seconds). It comes from
-the last `TIME_PLAYED_MSG`, so it is `unavailable` ("RequestTimePlayed pending")
-until the addon has called `FT.requestPlayed()` and the client has answered.
+`time` is a top-level section `{ played, playedLevel, at }` (seconds; `at` is
+the unix time the values were measured, so `played` may be stale by the time
+elapsed since `at`). Each `TIME_PLAYED_MSG` reply is persisted per character
+(`characters[guid].played = { played, playedLevel, at }`), and the section is
+emitted from the in-memory value, else the persisted one, so it survives
+reloads and relogins. The addon requests `/played` on initial login only
+(`PLAYER_ENTERING_WORLD` with `isInitialLogin = true`) and in `/ft sync`. It is
+`unavailable` ("RequestTimePlayed pending") only if no reply has ever been
+stored for the character.
 
 `progress` holds independent subsections, each of which may be `unavailable`:
 

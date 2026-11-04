@@ -100,7 +100,7 @@ describe("sync robustness", function()
     local FT = stubs.load()
     FT.pendingPlayed = function() error("pending boom") end
     assert.has_no.errors(function() stubs.frames[1].OnEvent(stubs.frames[1], "TIME_PLAYED_MSG", 4000, 50) end)
-    assert.are.same({ played = 4000, playedLevel = 50 }, FT.takeSnapshot().time)
+    assert.are.same({ played = 4000, playedLevel = 50, at = stubs.now }, FT.takeSnapshot().time)
   end)
 
   it("a second sync is not disturbed by the first one's leftover callbacks", function()

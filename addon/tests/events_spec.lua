@@ -110,6 +110,17 @@ describe("event handlers", function()
     assert.is_function(FT.handlers.PLAYER_LEAVING_WORLD)
   end)
 
+  it("PLAYER_ENTERING_WORLD requests /played only on initial login", function()
+    local FT = stubs.load()
+    stubs.setDB(nil)
+    FT.handlers.PLAYER_ENTERING_WORLD(true, false)
+    assert.are.equal(1, stubs.playedRequests)
+    FT.handlers.PLAYER_ENTERING_WORLD(false, true)  -- reload
+    FT.handlers.PLAYER_ENTERING_WORLD(false, false) -- zone change
+    FT.handlers.PLAYER_ENTERING_WORLD()
+    assert.are.equal(1, stubs.playedRequests)
+  end)
+
   it("TAXIMAP_OPENED records unique ascending node ids", function()
     local FT = stubs.load()
     stubs.setDB(nil)

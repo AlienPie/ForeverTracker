@@ -19,7 +19,8 @@ export type Snapshot = {
     xp: number;
     xpMax: number;
   }>;
-  time: Maybe<{ played: number; playedLevel: number }>;
+  /** `at` = unix time the values were measured (played may be stale by now - at) */
+  time: Maybe<{ played: number; playedLevel: number; at?: number }>;
   state: Maybe<{
     zone: string;
     subzone: string;
