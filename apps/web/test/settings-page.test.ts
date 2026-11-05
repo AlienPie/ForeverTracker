@@ -10,6 +10,7 @@ vi.mock("../src/lib/server/env", () => ({ env: () => state.e }));
 
 import { actions, load, type SettingsData } from "../src/routes/settings/+page.server";
 import { verifyDeviceToken, createDeviceToken } from "../src/lib/server/tokens";
+import { ingestCommand } from "../src/lib/ingest-command";
 
 type R = { status?: number; data?: Record<string, unknown>; created?: { label: string; token: string }; revoked?: number };
 const post = (name: "create" | "revoke", fields: Record<string, string>) => {
@@ -17,7 +18,8 @@ const post = (name: "create" | "revoke", fields: Record<string, string>) => {
   for (const [k, v] of Object.entries(fields)) fd.set(k, v);
   return (actions[name] as (e: unknown) => Promise<R>)({ request: new Request("http://localhost/settings", { method: "POST", body: fd }) });
 };
-const data = () => (load as unknown as () => SettingsData)();
+const ORIGIN = "http://tracker.localhost:3000";
+const data = () => (load as unknown as (e: { url: URL }) => SettingsData)({ url: new URL(`${ORIGIN}/settings?x=1`) });
 
 beforeEach(() => {
   state.db = openDb(":memory:");
@@ -51,6 +53,23 @@ describe("device tokens", () => {
     expect(data().tokens[0]!.revoked).toBe(true);
     expect(await post("revoke", { id: String(id) })).toMatchObject({ status: 400 });
     for (const bad of ["", "0", "-1", "1.5", "abc", "1e3"]) expect(await post("revoke", { id: bad })).toMatchObject({ status: 400 });
+  });
+});
+
+describe("upload command shown with a new token", () => {
+  test("load returns the server origin, so the command works without JavaScript", () => {
+    expect(data().origin).toBe(ORIGIN);
+  });
+
+  test("command POSTs octet-stream with a bearer header to the origin's /api/ingest", () => {
+    const cmd = ingestCommand(ORIGIN);
+    expect(cmd).toContain("-X POST");
+    expect(cmd).toContain("-H 'Content-Type: application/octet-stream'");
+    expect(cmd).toContain('-H "Authorization: Bearer $TOKEN"');
+    expect(cmd).toContain("--data-binary @ForeverTracker.lua");
+    expect(cmd).toContain(`${ORIGIN}/api/ingest`);
+    // The token stays out of the command (it goes in $TOKEN, never in the URL).
+    expect(cmd).not.toMatch(/api\/ingest\?/);
   });
 });
 

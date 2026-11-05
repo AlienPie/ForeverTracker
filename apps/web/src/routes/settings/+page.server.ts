@@ -1,4 +1,4 @@
-import { fail, type Actions } from "@sveltejs/kit";
+import { fail, type Actions, type ServerLoad } from "@sveltejs/kit";
 import { contentRecord, syncState } from "@ft/db";
 import { and, eq } from "drizzle-orm";
 import { formatDay } from "../../lib/journey";
@@ -12,6 +12,8 @@ export type SettingsData = {
   tokens: TokenRow[];
   content: { build: string | null; levelCap: number | null; resources: ResourceRow[] };
   loginEnabled: boolean;
+  /** This server's origin as the request saw it, for the upload command (no JavaScript needed). */
+  origin: string;
 };
 
 const MAX_LABEL = 60;
@@ -35,7 +37,7 @@ function readMeta(): { build: string | null; levelCap: number | null } {
   }
 }
 
-export const load = (): SettingsData => {
+export const load: ServerLoad = ({ url }): SettingsData => {
   const db = getDb();
   const resources: ResourceRow[] = db
     .select()
@@ -58,6 +60,7 @@ export const load = (): SettingsData => {
       resources,
     },
     loginEnabled: env().ownerPassword !== null,
+    origin: url.origin,
   };
 };
 

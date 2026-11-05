@@ -35,7 +35,7 @@ async function signIn(page: Page, pw: string) {
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
-test("owner journey: login, upload, browse, settings, sign out", async ({ page }) => {
+test("owner journey: login, upload, browse, settings, sign out", async ({ page, request }) => {
   const consoleErrors: string[] = [];
   const foreign: string[] = [];
   const failed: string[] = [];
@@ -46,8 +46,12 @@ test("owner journey: login, upload, browse, settings, sign out", async ({ page }
     if (!r.url().startsWith(base) && !r.url().startsWith("data:") && !r.url().startsWith("blob:")) foreign.push(r.url());
   });
   page.on("response", (r) => r.status() >= 400 && badResponses.push(`${r.status()} ${r.request().method()} ${r.url()}`));
-  // ERR_ABORTED is a request cancelled by a navigation, not a failure.
-  page.on("requestfailed", (r) => r.failure()?.errorText !== "net::ERR_ABORTED" && failed.push(`${r.url()} ${r.failure()?.errorText}`));
+  // ERR_ABORTED on a subresource (script, style, fetch) is a request cancelled by a
+  // navigation, not a failure. An aborted document is a broken navigation: still fail it.
+  page.on("requestfailed", (r) => {
+    const aborted = r.failure()?.errorText === "net::ERR_ABORTED";
+    if (!aborted || r.resourceType() === "document") failed.push(`${r.resourceType()} ${r.url()} ${r.failure()?.errorText}`);
+  });
 
   // Unauthenticated -> login
   await page.goto("/");
@@ -97,11 +101,29 @@ test("owner journey: login, upload, browse, settings, sign out", async ({ page }
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
   await page.getByLabel("New token label").fill("e2e-token");
   await page.getByRole("button", { name: "Create token" }).click();
-  await expect(page.getByLabel("New token", { exact: true })).not.toHaveValue("");
+  const tokenBox = page.getByLabel("New token", { exact: true });
+  await expect(tokenBox).not.toHaveValue("");
+  const token = await tokenBox.inputValue();
+
+  // The displayed upload command must actually work: same method, headers and URL.
+  const command = page.locator(".secret pre code");
+  await expect(command).toContainText("-X POST");
+  await expect(command).toContainText("-H 'Content-Type: application/octet-stream'");
+  await expect(command).toContainText('-H "Authorization: Bearer $TOKEN"');
+  await expect(command).toContainText(`'${base}/api/ingest'`);
+  // `request` has no browser cookies: only the bearer token authenticates this.
+  const newer = LUA.replace('["takenAt"] = 1730000000', '["takenAt"] = 1730000600');
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/octet-stream" };
+  const ingest = await request.post(`${base}/api/ingest`, { headers, data: Buffer.from(newer) });
+  expect(ingest.status(), await ingest.text()).toBe(200);
+  expect(await ingest.json()).toEqual({ characters: 1, stored: 1, skipped: 0, unsupported: 0, failed: 0 });
+
   await page.goto("/settings");
   await expect(page.getByLabel("New token", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Revoke token e2e-token" }).click();
   await expect(page.getByText("revoked", { exact: true })).toBeVisible();
+  const afterRevoke = await request.post(`${base}/api/ingest`, { headers, data: Buffer.from(newer) });
+  expect(afterRevoke.status()).toBe(401);
 
   // Sign out
   await page.getByRole("button", { name: "Sign out" }).click();

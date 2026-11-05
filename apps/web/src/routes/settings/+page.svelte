@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
+  import { ingestCommand } from "../../lib/ingest-command";
   import type { ActionData, PageData } from "./$types";
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -52,8 +53,7 @@
           <p><b>Token "{created.label}" created. It is shown once; store it now.</b> It cannot be shown again.</p>
           <input class="tokenbox" readonly value={created.token} aria-label="New token" onfocus={(e) => e.currentTarget.select()} />
           <p class="hint">Use it as a header, keeping it out of the address:</p>
-          <pre><code>TOKEN='paste the token here'
-curl -H "Authorization: Bearer $TOKEN" --data-binary @ForeverTracker.lua {typeof location === "undefined" ? "" : location.origin}/api/ingest</code></pre>
+          <pre><code>{ingestCommand(data.origin)}</code></pre>
         </div>
       {/if}
     </div>
