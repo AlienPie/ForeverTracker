@@ -62,11 +62,18 @@ In development: `pnpm token:create my-laptop`.
 ## Upload SavedVariables
 
 ```sh
+# Put the file path in a variable and quote it: the usual Wine/Proton path contains spaces and parentheses.
+F="$HOME/Games/.../WTF/Account/<ACCOUNT>/SavedVariables/ForeverTracker.lua"
+read -rs TOKEN        # paste the token and press Enter (not echoed, not stored in shell history)
 curl -X POST http://localhost:3000/api/ingest \
   -H 'Content-Type: application/octet-stream' \
-  -H 'Authorization: Bearer <token>' \
-  --data-binary @ForeverTracker.lua
+  -H "Authorization: Bearer $TOKEN" \
+  --data-binary @"$F"
 ```
+
+The `@` before the path is essential: without it curl uploads the path text itself, and the server answers `{"error":"parse","line":1,"column":1}`. `~` is not expanded after the `@`, so use `$HOME`.
+
+The server speaks plain HTTP only. If curl reports `(35) TLS connect error ... wrong version number`, or a browser reports `SSL_ERROR_RX_RECORD_TOO_LONG`, an `https://` URL was used against it: write `http://localhost:3000` explicitly (some browsers silently upgrade a bare `localhost:3000` to `https://`).
 
 `Content-Type: application/octet-stream` is required (SvelteKit's CSRF check rejects other form-like types). The reply is a summary such as `{"characters":2,"stored":2,"skipped":0,"unsupported":0,"failed":0}`. Uploading the same file again stores nothing new (`stored: 0`). Status codes: 401 bad or missing token, 413 over 8 MB, 422 unparseable file.
 
