@@ -1,4 +1,4 @@
-import { contentRecord, openDb, type Db } from "@ft/db";
+import { characterEvent, contentRecord, openDb, type Db } from "@ft/db";
 import { ingestSavedVariables } from "@ft/core";
 import { sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -203,7 +203,63 @@ describe("quests tab", () => {
   });
 });
 
-type JourneyData = { events: JourneyEvent[]; places: Place[] };
+type JourneyData = { events: JourneyEvent[]; places: Place[]; eventsTotal: number };
+
+/** SQL text of every statement prepared on `db` while `fn` runs. */
+async function preparedDuring(db: Db, fn: () => Promise<unknown>): Promise<string[]> {
+  // drizzle's better-sqlite3 driver prepares every query on the underlying client.
+  const client = (db as unknown as { $client: { prepare: (sql: string) => unknown } }).$client;
+  const prepare = client.prepare;
+  const sqls: string[] = [];
+  client.prepare = (text: string) => {
+    sqls.push(text);
+    return prepare.call(client, text);
+  };
+  try {
+    await fn();
+  } finally {
+    client.prepare = prepare;
+  }
+  return sqls;
+}
+
+describe("bounded event reads", () => {
+  test("roster, layout, quests, talents and professions never query events", async () => {
+    state.db = seeded(true);
+    for (const [name, run] of [
+      ["roster", () => rosterLoad({} as never)],
+      ["layout", () => layoutLoad(ev(HERO))],
+      ["quests", () => questsLoad(ev(HERO))],
+      ["talents", () => talentsLoad(ev(HERO))],
+      ["professions", () => professionsLoad(ev(HERO))],
+    ] as const) {
+      const sqls = await preparedDuring(state.db as Db, async () => run());
+      expect(sqls.length, name).toBeGreaterThan(0);
+      expect(sqls.filter((q) => q.includes("character_event")), name).toEqual([]);
+    }
+    const journey = await preparedDuring(state.db as Db, async () => journeyLoad(ev(HERO)));
+    expect(journey.some((q) => q.includes("character_event"))).toBe(true);
+  });
+
+  test("journey shows the newest 200 events and reports the total", async () => {
+    state.db = seeded(false);
+    (state.db as Db)
+      .insert(characterEvent)
+      .values(Array.from({ length: 250 }, (_, i) => ({ guid: BARE, t: NOW - 1000 + i, kind: "level_up", data: JSON.stringify({ level: i }) })))
+      .run();
+    const data = (await journeyLoad(ev(BARE))) as JourneyData;
+    expect(data.events).toHaveLength(200);
+    expect(data.eventsTotal).toBe(250);
+    expect(data.events[0]!.t).toBe(NOW - 1000 + 249);
+    expect(data.events.at(-1)!.t).toBe(NOW - 1000 + 50);
+  });
+
+  test("journey total equals the shown count under the cap", async () => {
+    state.db = seeded(true);
+    const data = (await journeyLoad(ev(HERO))) as JourneyData;
+    expect(data.eventsTotal).toBe(data.events.length);
+  });
+});
 
 describe("journey tab", () => {
   test("visited = {} gives an empty places list and no events", async () => {

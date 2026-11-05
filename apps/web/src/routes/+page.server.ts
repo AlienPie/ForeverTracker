@@ -28,7 +28,7 @@ export const load: ServerLoad = async (): Promise<RosterPageData> => {
   for (const card of roster.characters) {
     nextByGuid[card.guid] = null;
     if (!contentReady || card.level === null) continue;
-    const view = getCharacter(db, card.guid, now);
+    const view = getCharacter(db, card.guid, now, { events: false });
     if (!view) continue;
     const [first] = nextUp(
       {

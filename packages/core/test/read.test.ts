@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { openDb } from "@ft/db";
+import { character, characterEvent, openDb, snapshot } from "@ft/db";
 import { describe, expect, test } from "vitest";
 import { formatMoney, formatPlayed, getCharacter, getRoster, ingestSavedVariables, staleness } from "../src/index";
 
@@ -85,6 +85,7 @@ describe("getRoster / getCharacter", () => {
     ]);
     expect(c.events.map((e) => e.t)).toEqual([1799500000, 1799000000]);
     expect(c.events[0]).toEqual({ t: 1799500000, kind: "level_up", data: { level: 23 } });
+    expect(c.eventsTotal).toBe(2);
   });
 
   test("xpPct is an exact floored percentage, capped at 100", () => {
@@ -218,6 +219,74 @@ describe("getRoster / getCharacter", () => {
 
   test("an empty database gives an empty roster", () => {
     expect(getRoster(fresh(), NOW)).toEqual({ characters: [], totals: { count: 0, playedSeconds: 0, money: 0 } });
+  });
+
+  test("a huge questLog dedupes in linear time, keeping first-seen order", () => {
+    const db = fresh();
+    const g = "Player-9-big";
+    // 200k entries: 100k distinct ids (half as { id }), each twice, plus odd values.
+    const log: unknown[] = [];
+    for (let i = 1; i <= 100_000; i++) log.push(i % 2 ? i : { id: i });
+    for (let i = 100_000; i >= 1; i--) log.push(i);
+    log.push("x", -1, 0, 1.5, { id: "y" }, null);
+    db.insert(character).values({ guid: g, name: "Vexa", firstSeenAt: NOW, latestTakenAt: NOW - 100 }).run();
+    db.insert(snapshot)
+      .values({ guid: g, takenAt: NOW - 100, build: "1", schema: 1, raw: JSON.stringify({ takenAt: NOW - 100, progress: { questLog: log } }) })
+      .run();
+    const started = performance.now();
+    const c = getCharacter(db, g, NOW, { events: false })!;
+    const ms = performance.now() - started;
+    expect(c.questLogIds).toHaveLength(100_000);
+    expect(c.questLogIds.slice(0, 3)).toEqual([1, 2, 3]);
+    expect(c.questLogIds.at(-1)).toBe(100_000);
+    // Generous bound: the old includes()-in-a-loop took many seconds here.
+    expect(ms).toBeLessThan(1500);
+  });
+
+  test("events: capped to the newest 200 by default, with the total", () => {
+    const db = fresh();
+    const g = "Player-9-ev";
+    db.insert(character).values({ guid: g, name: "Vexa", firstSeenAt: NOW, latestTakenAt: NOW - 100 }).run();
+    db.insert(characterEvent)
+      .values(Array.from({ length: 500 }, (_, i) => ({ guid: g, t: NOW - 10_000 + i, kind: "level_up", data: JSON.stringify({ level: i }) })))
+      .run();
+    const c = getCharacter(db, g, NOW)!;
+    expect(c.events).toHaveLength(200);
+    expect(c.eventsTotal).toBe(500);
+    expect(c.events[0]).toEqual({ t: NOW - 10_000 + 499, kind: "level_up", data: { level: 499 } });
+    expect(c.events.at(-1)!.t).toBe(NOW - 10_000 + 300);
+    const ts = c.events.map((e) => e.t);
+    expect(ts).toEqual([...ts].sort((a, b) => b - a));
+
+    const few = getCharacter(db, g, NOW, { events: 3 })!;
+    expect(few.events.map((e) => e.t)).toEqual([NOW - 10_000 + 499, NOW - 10_000 + 498, NOW - 10_000 + 497]);
+    expect(few.eventsTotal).toBe(500);
+
+    const all = getCharacter(db, g, NOW, { events: 1000 })!;
+    expect(all.events).toHaveLength(500);
+    expect(all.eventsTotal).toBe(500);
+  });
+
+  test("events: false loads no events and runs no event query", () => {
+    const db = load(ROSTER);
+    const sqls: string[] = [];
+    // drizzle's better-sqlite3 driver prepares every query on the underlying client.
+    const client = (db as unknown as { $client: { prepare: (sql: string) => unknown } }).$client;
+    const prepare = client.prepare.bind(client);
+    client.prepare = (sql: string) => {
+      sqls.push(sql);
+      return prepare(sql);
+    };
+    const c = getCharacter(db, M, NOW, { events: false })!;
+    expect(c.events).toEqual([]);
+    expect(c.eventsTotal).toBeNull();
+    expect(c.questLogIds).toEqual([575, 288]);
+    expect(sqls.length).toBeGreaterThan(0);
+    expect(sqls.filter((s) => s.includes("character_event"))).toEqual([]);
+    // The default does query events.
+    sqls.length = 0;
+    expect(getCharacter(db, M, NOW)!.events).toHaveLength(2);
+    expect(sqls.some((s) => s.includes("character_event"))).toBe(true);
   });
 
   test("(h) getCharacter with an unknown guid returns null", () => {

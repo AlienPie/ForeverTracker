@@ -13,7 +13,10 @@
         after your next upload.
       </p>
     {:else}
-      <p class="sub">Newest first. Times are UTC.</p>
+      <p class="sub">
+        Newest first. Times are UTC.{#if data.eventsTotal > data.events.length}
+          Showing the newest {data.events.length} of {data.eventsTotal} events.{/if}
+      </p>
       <ol class="timeline">
         {#each data.events as e, i (i)}
           <li class="ev ev-{e.kind}">

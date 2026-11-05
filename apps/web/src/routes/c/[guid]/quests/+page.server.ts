@@ -27,7 +27,7 @@ function pips(done: number, total: number): Pip[] {
 }
 
 export const load: ServerLoad = async ({ params }): Promise<QuestsPageData> => {
-  const view = characterOr404(params.guid);
+  const view = characterOr404(params.guid, undefined, { events: false });
   const catalog = await getQuestCatalogSafe();
   const contentReady = catalog.quests.length > 0;
   const completed = new Set(view.completedIds);

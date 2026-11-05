@@ -11,7 +11,7 @@ export type CharacterLayoutData = {
 
 export const load: ServerLoad = ({ params }): CharacterLayoutData => {
   const now = Math.floor(Date.now() / 1000);
-  const v = characterOr404(params.guid, now);
+  const v = characterOr404(params.guid, now, { events: false });
   const character: CharacterCard = {
     guid: v.guid,
     name: v.name,

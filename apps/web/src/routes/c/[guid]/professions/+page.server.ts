@@ -5,6 +5,6 @@ import { characterOr404 } from "../../../../lib/server/character";
 export type ProfessionsPageData = { professions: CharacterCard["professions"] };
 
 export const load: ServerLoad = ({ params }): ProfessionsPageData => {
-  const view = characterOr404(params.guid);
+  const view = characterOr404(params.guid, undefined, { events: false });
   return { professions: view.professions };
 };

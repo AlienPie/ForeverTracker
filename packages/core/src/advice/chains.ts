@@ -48,8 +48,9 @@ const byLevelThenId = (a: QuestRow, b: QuestRow) => a.level - b.level || a.id - 
  * first member not completed.
  *
  * Class quests (`zone.n` is a class name) for any class other than `classToken` (snapshot token,
- * e.g. "PRIEST"; all class quests when null or omitted) are left out before linking, so a shared
- * starter quest such as "Dwarven Outfitters" does not pull every class's rune into one chain.
+ * e.g. "PRIEST") are left out before linking, so a shared starter quest such as "Dwarven
+ * Outfitters" does not pull every class's rune into one chain. When `classToken` is null or
+ * omitted the class is unknown and every class quest is left out.
  *
  * Only chains the character has started (at least one member completed or in the log) and not
  * finished are reported, so `complete` is always false in v1 output. Ordered by root level, then id.

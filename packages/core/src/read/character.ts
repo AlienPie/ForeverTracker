@@ -1,5 +1,5 @@
 import { character, characterEvent, snapshot, type Db } from "@ft/db";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, count, desc, eq } from "drizzle-orm";
 import type { Snapshot } from "../snapshot/types";
 import { staleness } from "./format";
 
@@ -34,7 +34,21 @@ export type CharacterView = CharacterCard & {
   mapId: number | null;
   visitedMaps: VisitedMap[];
   talents: { unspent: number } | null;
+  /**
+   * The newest events, newest first, capped by `GetCharacterOptions.events`
+   * (default {@link DEFAULT_EVENT_LIMIT}); empty when events were not loaded.
+   */
   events: { t: number; kind: string; data: unknown }[];
+  /** How many events are stored in all; null when events were not loaded (`events: false`). */
+  eventsTotal: number | null;
+};
+
+/** How many events `getCharacter` returns unless told otherwise. */
+export const DEFAULT_EVENT_LIMIT = 200;
+
+export type GetCharacterOptions = {
+  /** Newest events to load (a positive count), or false to skip the event query. Default {@link DEFAULT_EVENT_LIMIT}. */
+  events?: number | false;
 };
 
 /** Shown when no snapshot ever carried a name. */
@@ -128,12 +142,13 @@ function completedIds(progress: Obj | null): number[] {
 
 function questLogIds(progress: Obj | null): number[] {
   if (!progress) return [];
-  const out: number[] = [];
+  // A Set keeps first-seen order and stays linear on a huge (up to 8 MB) snapshot.
+  const out = new Set<number>();
   for (const q of list(progress.questLog)) {
     const id = positiveIntId(isObj(q) ? q.id : q);
-    if (id !== null && !out.includes(id)) out.push(id);
+    if (id !== null) out.add(id);
   }
-  return out;
+  return [...out];
 }
 
 function talents(progress: Obj | null): { unspent: number } | null {
@@ -167,7 +182,7 @@ function visitedMaps(snap: Obj | null, extras: Obj | null): VisitedMap[] {
   );
 }
 
-type Parsed = { card: CharacterCard; view: Omit<CharacterView, keyof CharacterCard | "events"> };
+type Parsed = { card: CharacterCard; view: Omit<CharacterView, keyof CharacterCard | "events" | "eventsTotal"> };
 
 /** Pure: build the card and view fields from stored rows. Never throws on odd data. */
 function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number): Parsed {
@@ -234,17 +249,41 @@ export function cardFor(db: Db, row: CharacterRow, now: number): CharacterCard {
   return build(row, newestSnapshot(db, row.guid), now).card;
 }
 
-/** Everything the character page needs, or null for an unknown guid. */
-export function getCharacter(db: Db, guid: string, now: number = nowSeconds()): CharacterView | null {
-  const row = db.select().from(character).where(eq(character.guid, guid)).get();
-  if (!row) return null;
-  const { card, view } = build(row, newestSnapshot(db, guid), now);
+/** The newest `limit` events, newest first, and the stored total (counted only when the cap is hit). */
+function newestEvents(db: Db, guid: string, limit: number): Pick<CharacterView, "events" | "eventsTotal"> {
   const events = db
     .select()
     .from(characterEvent)
     .where(eq(characterEvent.guid, guid))
     .orderBy(desc(characterEvent.t), asc(characterEvent.kind), asc(characterEvent.data))
+    .limit(limit)
     .all()
     .map((e) => ({ t: e.t, kind: e.kind, data: parseJson(e.data) }));
-  return { ...card, ...view, events };
+  const eventsTotal =
+    events.length < limit
+      ? events.length
+      : (db.select({ n: count() }).from(characterEvent).where(eq(characterEvent.guid, guid)).get()?.n ?? events.length);
+  return { events, eventsTotal };
+}
+
+/**
+ * Everything the character page needs, or null for an unknown guid. Events are
+ * capped (see {@link GetCharacterOptions}); pass `{ events: false }` when the
+ * caller does not show them.
+ */
+export function getCharacter(
+  db: Db,
+  guid: string,
+  now: number = nowSeconds(),
+  opts: GetCharacterOptions = {},
+): CharacterView | null {
+  const row = db.select().from(character).where(eq(character.guid, guid)).get();
+  if (!row) return null;
+  const { card, view } = build(row, newestSnapshot(db, guid), now);
+  const limit = opts.events ?? DEFAULT_EVENT_LIMIT;
+  const ev =
+    limit === false
+      ? { events: [], eventsTotal: null }
+      : newestEvents(db, guid, Number.isInteger(limit) && limit > 0 ? limit : DEFAULT_EVENT_LIMIT);
+  return { ...card, ...view, ...ev };
 }
