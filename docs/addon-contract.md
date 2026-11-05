@@ -130,10 +130,21 @@ stored for the character.
   exist (non-English client or collapsed headers) the subsection is
   `unavailable` rather than an empty list. The addon never expands or collapses
   skill headers.
-- `questsCompleted`: an array of quest IDs that the client reports as
-  completed (`C_QuestLog.IsQuestFlaggedCompleted`). It is populated from the
-  bundled `Data/QuestIds.lua` list (`FT.setQuestIdList(ids)`), so it may lag
-  newly added quests until that list is regenerated with `pnpm addon:quest-ids`.
+- `questsCompleted`: a sorted, de-duplicated array of positive quest IDs
+  the client reports as completed. Source order: (1) `C_QuestLog.GetAllCompletedQuestIDs`,
+  (2) the legacy global `GetQuestsCompleted` (keys of its id-to-true map), (3) probing
+  each ID of the bundled `Data/QuestIds.lua` list (`FT.setQuestIdList(ids)`) with
+  `C_QuestLog.IsQuestFlaggedCompleted`, unioned with the witnessed turn-ins below.
+  A bulk call that errors or returns a non-table falls through to the next source.
+  The bulk sources are complete; the probe source is not: ForeverDB's list undercounts
+  (its `/meta` says 6,614 quests, but only 3,862 are listed), so it lags new quests
+  until regenerated with `pnpm addon:quest-ids`.
+- `questsSource`: a string, `"c_questlog_bulk"`, `"legacy_bulk"` or `"probe"`, naming
+  which source produced `questsCompleted` in that snapshot.
+- Persisted state `characters[guid].turnedIn`: a string-keyed map
+  (`{ ["98581"] = true }`, string keys avoid array ambiguity in the server parser) of
+  quest IDs seen in `QUEST_TURNED_IN`, capped at 5,000 entries. Only the probe source
+  uses it.
 - `questLog`: a list of `{ id }` for the quests currently in the log (headers
   skipped).
 

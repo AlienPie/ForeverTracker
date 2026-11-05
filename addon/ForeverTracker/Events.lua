@@ -186,6 +186,26 @@ local function onSkillLines()
   end
 end
 
+local MAX_TURNED_IN = 5000
+
+-- Remembers a turned-in quest id in characters[guid].turnedIn, a string-keyed
+-- map ({ ["98581"] = true }) so the server parser never sees an array.
+local function recordTurnIn(questId)
+  local id = num(questId)
+  if not id or id <= 0 or id % 1 ~= 0 then return end
+  local rec = FT.getCharacter(true)
+  if not rec then return end
+  if type(rec.turnedIn) ~= "table" then rec.turnedIn = {} end
+  local key = string.format("%d", id)
+  if rec.turnedIn[key] then return end
+  local n = 0
+  for _ in pairs(rec.turnedIn) do
+    n = n + 1
+    if n >= MAX_TURNED_IN then return end
+  end
+  rec.turnedIn[key] = true
+end
+
 FT.handlers = {
   -- isInitialLogin is true only on a fresh login (not on reloads or zone
   -- changes); /played prints a chat line, so only request it then.
@@ -201,6 +221,7 @@ FT.handlers = {
   end,
   QUEST_TURNED_IN = function(questId)
     FT.logEvent("quest_turned_in", { questId = num(questId) })
+    recordTurnIn(questId)
     FT.save()
   end,
   ZONE_CHANGED = onZone,

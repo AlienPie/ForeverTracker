@@ -75,7 +75,7 @@ describe("FT.takeSnapshot", function()
       order[i] = (c.section and (c.section .. ".") or "") .. c.key
     end
     assert.are.same({ "identity", "state", "time", "progress.talents",
-      "progress.professions", "progress.questsCompleted", "progress.questLog",
+      "progress.professions", "progress.questsCompleted", "progress.questsSource", "progress.questLog",
       "exploration" }, order)
   end)
 end)

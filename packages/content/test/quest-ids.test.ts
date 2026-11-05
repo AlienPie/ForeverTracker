@@ -26,6 +26,22 @@ describe("renderQuestIdsLua", () => {
     expect(lua).toContain("pnpm addon:quest-ids");
   });
 
+  test("a normal build is preserved", () => {
+    expect(renderQuestIdsLua([1], "1.60.1.70790")).toContain("-- Game build: 1.60.1.70790\n");
+  });
+
+  test.each(["1.0\nos.execute('x')", "1.0\rfoo", "a]]b", "a--b", 'os.execute("x")', "x".repeat(41), ""])(
+    "hostile or invalid build %j renders as unknown without injection",
+    (build) => {
+      const lua = renderQuestIdsLua([1, 2], build);
+      expect(lua).toContain("-- Game build: unknown\n");
+      const lines = lua.split("\n").filter((l) => l !== "");
+      const code = lines.filter((l) => !l.startsWith("--"));
+      expect(code).toEqual(["FT.setQuestIdList({", "  1, 2,", "})"]);
+      expect(lua).not.toMatch(/os\.execute/);
+    },
+  );
+
   test("empty list is a valid call", () => {
     expect(renderQuestIdsLua([], "B")).toContain("FT.setQuestIdList({})");
   });

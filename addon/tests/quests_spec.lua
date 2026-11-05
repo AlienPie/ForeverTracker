@@ -92,3 +92,66 @@ describe("bundled quest ID list", function()
     assert.are.same({ a, b }, FT.takeSnapshot().progress.questsCompleted)
   end)
 end)
+
+describe("questsCompleted source order", function()
+  local function snap(overrides, setup)
+    local FT = stubs.load(overrides)
+    if setup then setup(FT) end
+    local p = FT.takeSnapshot().progress
+    return p.questsCompleted, p.questsSource
+  end
+
+  it("uses C_QuestLog.GetAllCompletedQuestIDs first, sorted and unique", function()
+    local done, src = snap({ C_QuestLog = {
+      GetAllCompletedQuestIDs = function() return { 98581, 5, 5, 12, -1, "x" } end,
+      IsQuestFlaggedCompleted = function() return true end,
+    }, GetQuestsCompleted = function() return { [999] = true } end })
+    assert.are.same({ 5, 12, 98581 }, done)
+    assert.are.equal("c_questlog_bulk", src)
+  end)
+
+  it("falls back to legacy GetQuestsCompleted keys", function()
+    local done, src = snap({ GetQuestsCompleted = function() return { [30] = true, [4] = true, [9] = false } end })
+    assert.are.same({ 4, 30 }, done)
+    assert.are.equal("legacy_bulk", src)
+  end)
+
+  it("erroring or non-table C_QuestLog bulk falls through to legacy, then to probe", function()
+    local ql = { GetAllCompletedQuestIDs = function() error("boom") end,
+      IsQuestFlaggedCompleted = function(id) return id == 100 end }
+    local done, src = snap({ C_QuestLog = ql, GetQuestsCompleted = function() return { [7] = true } end })
+    assert.are.same({ 7 }, done)
+    assert.are.equal("legacy_bulk", src)
+    ql.GetAllCompletedQuestIDs = function() return "nope" end
+    done, src = snap({ C_QuestLog = ql, GetQuestsCompleted = function() error("x") end })
+    assert.are.same({ 100 }, done)
+    assert.are.equal("probe", src)
+  end)
+
+  it("probe path unions witnessed turn-ins, dedups and sorts", function()
+    local FT = stubs.load({ C_QuestLog = {
+      IsQuestFlaggedCompleted = function(id) return id == 100 or id == 17 end,
+    } })
+    stubs.setDB(nil)
+    FT.handlers.QUEST_TURNED_IN(98581)
+    FT.handlers.QUEST_TURNED_IN(100)
+    local p = FT.takeSnapshot().progress
+    assert.are.same({ 17, 100, 98581 }, p.questsCompleted)
+    assert.are.equal("probe", p.questsSource)
+  end)
+
+  it("bulk paths do not add witnessed ids", function()
+    local FT = stubs.load({ C_QuestLog = {
+      GetAllCompletedQuestIDs = function() return { 5 } end,
+    } })
+    stubs.setDB(nil)
+    FT.handlers.QUEST_TURNED_IN(98581)
+    assert.are.same({ 5 }, FT.takeSnapshot().progress.questsCompleted)
+  end)
+
+  it("is unavailable when no source works", function()
+    local FT = stubs.load({ C_QuestLog = stubs.NIL })
+    local p = FT.takeSnapshot().progress
+    assert.is_true(p.questsCompleted.unavailable)
+  end)
+end)
