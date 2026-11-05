@@ -35,7 +35,16 @@ The port is published on loopback only. Bearer tokens and uploads cross the netw
 
 Logs: `podman logs forevertracker`. Stop and start: `podman stop|start forevertracker`. Data survives restarts and image rebuilds as long as the volume is kept.
 
-`compose.yaml` is provided for Docker or `podman-compose` users. It is **untested** here (this host has no compose provider).
+### Compose alternative
+
+`compose.yaml` does the same with one command:
+
+```sh
+podman compose up -d --build     # or podman-compose / docker compose
+# a different host port: FT_PORT=3100 podman compose up -d
+```
+
+Verified with `podman compose` (podman-compose 1.6.0): the stack comes up, uploads are stored, and data survives a restart. It publishes the port on loopback only, as above. Compose keeps its own volume (`<project>_ft-data`), separate from the `ft-data` volume used by the `podman run` commands, so the two setups do not share a database or tokens. Docker Compose is untested.
 
 ## Environment variables
 

@@ -38,6 +38,8 @@ consider stripping a leading UTF-8 BOM in the parser; change the 413 body code t
 
 ## Part 2: Binding rulings (verbatim)
 
+> Correction (2026-11-05): the rulings below say the host has "no compose provider". That was true when they were written; `podman compose` (podman-compose 1.6.0) has since been installed and `compose.yaml` is verified. Nothing else in the rulings changes.
+
 # Controller rulings for the M0 plan (binding; read with your task brief)
 
 Spec is the authority; these resolve conflicts the pre-flight scan found. They override the plan text where they differ.

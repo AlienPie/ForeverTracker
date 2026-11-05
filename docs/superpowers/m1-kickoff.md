@@ -46,7 +46,7 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 
 ## Practical notes for the next session
 
-- Node v26 lives under nvm and is not on the PATH of non-interactive shells; pnpm 12; Podman 6 rootless without a compose provider.
+- Node v26 lives under nvm and is not on the PATH of non-interactive shells; pnpm 12; Podman 6 rootless; `podman compose` works (podman-compose 1.6.0 provider; `compose.yaml` verified on 2026-11-05).
 - Checks: `pnpm test`, `pnpm typecheck`, `cd addon && ./test.sh` (LuaJIT, Lua 5.1 semantics). Rebuild/run the container per `README.md`.
 - Git: `origin` is HTTPS with no credentials here; pushing works over SSH with `git push git@github.com:AlienPie/ForeverTracker.git main`.
 - Never commit `.env`, tokens, the WoW account folder name, character names, or home paths; scan tracked files before every push.

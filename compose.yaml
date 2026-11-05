@@ -1,11 +1,14 @@
-# For Docker or podman-compose users. UNTESTED (the project host has no compose provider);
-# the Podman commands in README.md are the verified path.
+# Run with: podman compose up -d --build   (or podman-compose / docker compose)
+# The host port is published on loopback only (tokens and uploads are plain HTTP).
+# Change the port with FT_PORT, e.g. FT_PORT=3100 podman compose up -d
+# Compose keeps its own data volume (<project>_ft-data), separate from the `ft-data` volume
+# used by the `podman run` commands in README.md, so the two setups do not share a database.
 services:
   forevertracker:
     build: .
     image: forevertracker:dev
     ports:
-      - "3000:3000"
+      - "127.0.0.1:${FT_PORT:-3000}:3000"
     env_file: .env
     environment:
       DATA_DIR: /data   # after env_file, overrides DATA_DIR=./data-local
