@@ -1,13 +1,15 @@
-// Bundle scripts/create-token.ts into one standalone ESM file (used by the container image,
+// Bundle the token CLIs (create/list/revoke) into standalone ESM files (used by the container image,
 // which has no tsx). better-sqlite3 and drizzle-orm stay external (runtime node_modules).
-// Usage: node scripts/bundle-token.mjs [outfile]   (default: ./create-token.mjs)
+// Usage: node scripts/bundle-token.mjs [create-token outfile]   (default: ./create-token.mjs)
+// list-tokens.mjs and revoke-token.mjs are written next to it.
 import { build } from "esbuild";
 import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 const migrationsDir = fileURLToPath(new URL("../../../packages/db/drizzle", import.meta.url));
-const outfile = resolve(process.argv[2] ?? "create-token.mjs");
+const createOut = resolve(process.argv[2] ?? "create-token.mjs");
+const outdir = dirname(createOut);
 
 // Same pin as the vite plugin in vite.config.ts: @ft/db finds its migrations relative to its
 // own source file, which no longer exists once bundled.
@@ -24,14 +26,22 @@ const pinDbMigrations = {
   },
 };
 
-await build({
-  entryPoints: [fileURLToPath(new URL("./create-token.ts", import.meta.url))],
-  outfile,
-  bundle: true,
-  platform: "node",
-  format: "esm",
-  target: "node22",
-  external: ["better-sqlite3", "drizzle-orm", "drizzle-orm/*"],
-  plugins: [pinDbMigrations],
-  logLevel: "info",
-});
+const entries = [
+  ["create-token.ts", createOut],
+  ["list-tokens.ts", join(outdir, "list-tokens.mjs")],
+  ["revoke-token.ts", join(outdir, "revoke-token.mjs")],
+];
+
+for (const [entry, outfile] of entries) {
+  await build({
+    entryPoints: [fileURLToPath(new URL(`./${entry}`, import.meta.url))],
+    outfile,
+    bundle: true,
+    platform: "node",
+    format: "esm",
+    target: "node22",
+    external: ["better-sqlite3", "drizzle-orm", "drizzle-orm/*"],
+    plugins: [pinDbMigrations],
+    logLevel: "info",
+  });
+}

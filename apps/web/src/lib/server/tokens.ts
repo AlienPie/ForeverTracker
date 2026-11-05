@@ -27,3 +27,29 @@ export function verifyDeviceToken(db: Db, token: string): { id: number } | null 
     .get();
   return row ? { id: row.id } : null;
 }
+
+/** All device tokens for the operator. Never includes the hash. */
+export function listDeviceTokens(
+  db: Db,
+): { id: number; label: string; createdAt: number; revokedAt: number | null }[] {
+  return db
+    .select({
+      id: deviceToken.id,
+      label: deviceToken.label,
+      createdAt: deviceToken.createdAt,
+      revokedAt: deviceToken.revokedAt,
+    })
+    .from(deviceToken)
+    .orderBy(deviceToken.id)
+    .all();
+}
+
+/** Revoke a token. False when the id is unknown or the token is already revoked. */
+export function revokeDeviceToken(db: Db, id: number): boolean {
+  const res = db
+    .update(deviceToken)
+    .set({ revokedAt: Math.floor(Date.now() / 1000) })
+    .where(and(eq(deviceToken.id, id), isNull(deviceToken.revokedAt)))
+    .run();
+  return res.changes > 0;
+}

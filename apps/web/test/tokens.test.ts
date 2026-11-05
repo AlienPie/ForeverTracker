@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { deviceToken, openDb } from "@ft/db";
 import { eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
-import { createDeviceToken, verifyDeviceToken } from "../src/lib/server/tokens";
+import { createDeviceToken, listDeviceTokens, revokeDeviceToken, verifyDeviceToken } from "../src/lib/server/tokens";
 
 describe("device tokens", () => {
   test("tokens are stored hashed, never plaintext", () => {
@@ -38,5 +38,27 @@ describe("device tokens", () => {
     const { id, token } = createDeviceToken(db, "laptop");
     db.update(deviceToken).set({ revokedAt: 5 }).where(eq(deviceToken.id, id)).run();
     expect(verifyDeviceToken(db, token)).toBeNull();
+  });
+
+  test("list shows label and revoked state, never the hash", () => {
+    const db = openDb(":memory:");
+    const a = createDeviceToken(db, "laptop");
+    const b = createDeviceToken(db, "desk");
+    revokeDeviceToken(db, b.id);
+    const rows = listDeviceTokens(db);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ id: a.id, label: "laptop", revokedAt: null });
+    expect(rows[1]!.revokedAt).toEqual(expect.any(Number));
+    for (const r of rows) expect(Object.keys(r).sort()).toEqual(["createdAt", "id", "label", "revokedAt"]);
+    expect(JSON.stringify(rows)).not.toContain(a.token);
+  });
+
+  test("revoke makes verification fail; second revoke and unknown id give false", () => {
+    const db = openDb(":memory:");
+    const { id, token } = createDeviceToken(db, "laptop");
+    expect(revokeDeviceToken(db, id)).toBe(true);
+    expect(verifyDeviceToken(db, token)).toBeNull();
+    expect(revokeDeviceToken(db, id)).toBe(false);
+    expect(revokeDeviceToken(db, 9999)).toBe(false);
   });
 });

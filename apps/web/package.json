@@ -11,6 +11,8 @@
     "prepare": "svelte-kit sync",
     "start": "BODY_SIZE_LIMIT=${BODY_SIZE_LIMIT:-8M} node build",
     "token:create": "tsx scripts/create-token.ts",
+    "token:list": "tsx scripts/list-tokens.ts",
+    "token:revoke": "tsx scripts/revoke-token.ts",
     "bundle:token": "node scripts/bundle-token.mjs"
   },
   "dependencies": {

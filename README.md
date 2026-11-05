@@ -68,6 +68,15 @@ podman exec forevertracker node /app/create-token.mjs my-laptop
 
 In development: `pnpm token:create my-laptop`.
 
+List tokens (id, label, created, active or revoked; never the token itself) and revoke one by id:
+
+```sh
+podman exec forevertracker node /app/list-tokens.mjs
+podman exec forevertracker node /app/revoke-token.mjs <id>
+```
+
+In development: `pnpm token:list` and `pnpm token:revoke <id>`. A revoked token is rejected at once with 401.
+
 ## Upload SavedVariables
 
 ```sh

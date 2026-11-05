@@ -24,7 +24,7 @@ WORKDIR /app
 # @ft/db's migrations folder is pinned to /app/packages/db/drizzle at build time (same path here).
 COPY --from=build /app/packages/db/drizzle ./packages/db/drizzle
 COPY --from=build /app/apps/web/build ./build
-COPY --from=build /app/create-token.mjs ./create-token.mjs
+COPY --from=build /app/create-token.mjs /app/list-tokens.mjs /app/revoke-token.mjs ./
 COPY --from=build /deploy/node_modules ./node_modules
 RUN mkdir /data && chown node:node /data
 USER node
