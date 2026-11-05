@@ -219,6 +219,12 @@ for a patch means editing data.
   opened — which extracts (quest ID, name, level, required level) into JSON. About 22
   pages (9 classes, ~13 professions) once per patch. A validation script checks every ID
   against the ForeverDB mirror and reports misses. The app never fetches Wowhead.
+- **Zones:** Wowhead's Forever zones page (one table, about 144 rows) gives each zone's level
+  range, territory (Alliance, Horde or Contested), instance type (dungeon, raid, battleground)
+  and whether it is new or changed. The same maintainer tool extracts it to `data/zones.json`;
+  a validation script matches names to the ForeverDB `zones` mirror. Ranges can be wide or
+  missing, so the app cross-checks them against the quest-derived band (the spread of quest
+  levels per zone) and says "no recommendation yet" when neither source has a range.
 - **Talent builds:** recorded from guides (Icy Veins, Wowhead and similar) as lists of
   node ranks with the guide link, author/date and game build. Facts only; no guide text.
   Absent builds are represented as "no recommendation".
@@ -255,10 +261,19 @@ supplies their own keys. Keys and tokens are never logged.
 
 - **M0 (before launch):** repo skeleton, Docker, DB schema, ForeverDB client and mirror
   sync, SavedVariables parser, fixtures, addon v0 written against stubs.
-- **M1 (launch week):** real snapshots; collectors fixed against the real file; roster,
-  character overview, manual upload, basic Quests tab with "next up".
-- **M2:** class/race/profession chains, talent playground with guide builds, profession
-  advice, Journey tab with visited places.
+- **M1 (launch week, done 2026-11-05):** real snapshots; collectors fixed against the real file;
+  roster, character pages (Journey, Quests, Talents, Professions), manual upload, settings and
+  token management, local login, "next up" from the content mirror, theme.
+- **M1.1 (follow-up, from using M1 on real data; plan
+  `docs/superpowers/plans/2026-11-05-m1-1-quests-journey.md`):** Journey rebuilt as play sessions
+  with a pace strip and a route strip; quest chains you can open; quest log lists (in progress
+  and completed); interim profession-quest rule (from the quest names, ForeverDB data only);
+  surname on the roster. No new external data sources.
+- **M2:** the maintainer snippet tool and curated data (class/race/profession quest tags, zone
+  level ranges and territory from Wowhead); class/race/profession chains using those tags
+  (replacing the interim profession rule); "Where to next" levelling areas; talent playground
+  with guide builds; profession advice; alt comparison chart (level against date, all
+  characters).
 - **M3:** sync agent, Battle.net login, planning view, theme polish.
 
 ## 12. Open items
