@@ -1,5 +1,5 @@
-import { validCompleted } from "./chain-validity";
-import { chainGraph, prerequisites, topoOrder } from "./chains";
+import { isAvailable, prerequisiteIndex, validCompleted } from "./chain-validity";
+import { chainGraph, topoOrder } from "./chains";
 import { questClass } from "./classes";
 import type { QuestRow } from "./content";
 
@@ -54,12 +54,14 @@ function zoneName(q: QuestRow): string | null {
  * null when the quest is unknown or is a class quest for another (or unknown) class. A quest with
  * no links is a chain of one. Class filtering is as in `chainProgress`.
  *
- * State per member: "done" when completed; "in-log" when in the quest log; "available" when every
- * prerequisite (as in `nextUp`: `chain.previous` links of the prerequisite relations) is completed;
- * "locked" otherwise. Availability uses plain completion (a prerequisite done by any route lets the
- * game offer the quest); the counts do not: a "done" member with no completed route back to a
- * starting quest (see `validCompleted`; alternative prerequisites count as OR) is `otherRoute` and counted in `otherRoute`, not in `done`.
- * Pure; builds the chain graph and the valid set once.
+ * State per member: "done" when completed; "in-log" when in the quest log; "available" when its
+ * prerequisites are met (`isAvailable`, as in `nextUp`: prerequisites from `prerequisiteIndex`, both
+ * link sides, judged on all quests passed in; several are ALTERNATIVES, so one completed is enough;
+ * none, or one not in `quests`, also counts); "locked" otherwise. Availability uses plain
+ * completion (a prerequisite done by any route lets the game offer the quest); the counts do not:
+ * a "done" member with no completed route back to a starting quest (see `validCompleted`) is
+ * `otherRoute` and counted in `otherRoute`, not in `done`.
+ * Pure; builds the chain graph, the prerequisite index and the valid set once.
  */
 export function chainDetail(
   quests: QuestRow[],
@@ -72,7 +74,8 @@ export function chainDetail(
   if (!g.byId.has(questId)) return null;
   const order = topoOrder(g.groups.get(g.groupOf(questId))!, g.succ);
   const root = order[0]!;
-  const valid = validCompleted(quests, completed);
+  const idx = prerequisiteIndex(quests);
+  const valid = validCompleted(quests, completed, idx);
 
   let done = 0;
   let otherRoute = 0;
@@ -87,7 +90,7 @@ export function chainDetail(
         otherRoute++;
       }
     } else if (inLog.has(q.id)) state = "in-log";
-    else state = prerequisites(q).every((p) => completed.has(p.questId)) ? "available" : "locked";
+    else state = isAvailable(idx, q.id, (p) => completed.has(p)) ? "available" : "locked";
     return {
       questId: q.id,
       name: q.name,

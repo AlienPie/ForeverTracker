@@ -57,7 +57,7 @@ describe("nextUp", () => {
     expect(chain.reason).toContain("Giver 2");
   });
 
-  test("continuation needs every prerequisite done or in log, and at least one done", () => {
+  test("continuation needs one prerequisite done (alternatives); in the log alone is not enough", () => {
     const quests = [
       q(1, 5, null),
       q(2, 5, null),
@@ -67,8 +67,10 @@ describe("nextUp", () => {
     // 2 only in the log: 4 is not yet a continuation; 3 has 1 done + 2 in log: continuation.
     const out = nextUp(input({ quests, completed: new Set([1]), inLog: new Set([2]) }));
     expect(out.map((s) => s.questId)).toEqual([3]);
-    // 1 missing entirely: 3 is not a continuation.
-    expect(nextUp(input({ quests, completed: new Set([2]) })).map((s) => s.questId)).toEqual([4]);
+    // 2 done, 1 not: 3 lists 1 and 2 as alternatives, so it continues the chain too.
+    expect(nextUp(input({ quests, completed: new Set([2]) })).map((s) => s.questId)).toEqual([3, 4]);
+    // Nothing done: neither is a continuation (and both have no area here).
+    expect(nextUp(input({ quests, inLog: new Set([1, 2]) }))).toEqual([]);
   });
 
   test("'Must be active' and 'Quest line' links are not prerequisites", () => {
@@ -202,6 +204,16 @@ describe("nextUp: chain steps only after earlier quests were completed", () => {
     ]);
   });
 
+  test("real Call of Fire: after only 1522, 1524 is a chain step (one of four alternative starters)", () => {
+    const ALT = JSON.parse(readFileSync(new URL("./fixtures/quests-alternatives.json", import.meta.url), "utf8")) as QuestRow[];
+    const out = nextUp(input({ level: 11, zone: null, quests: ALT, completed: new Set([1522]), classToken: "SHAMAN" }), 10);
+    expect(out.map((s) => [s.kind, s.questId])).toEqual([["chain", 1524]]);
+    expect(out[0]!.reason).toContain('after "Call of Fire"');
+    // Horde Wasteland route up to 1123: 1124 is a chain step.
+    const w = nextUp(input({ level: 55, zone: null, quests: ALT, completed: new Set([1018, 1123]) }), 10);
+    expect(w.map((s) => [s.kind, s.questId])).toEqual([["chain", 1124]]);
+  });
+
   test("real Call of Fire: after 1522 and 1524 (one of four alternative starters), 1525 continues the chain", () => {
     const ALT = JSON.parse(readFileSync(new URL("./fixtures/quests-alternatives.json", import.meta.url), "utf8")) as QuestRow[];
     const out = nextUp(input({ level: 12, zone: null, quests: ALT, completed: new Set([1522, 1524]), classToken: "SHAMAN" }), 10);
@@ -314,13 +326,16 @@ describe("nextUp: profession quests (interim name rule)", () => {
       input({ level: 6, zone: "Elwynn Forest", mapId: 1429, completed: new Set([95998]), quests: PROF_QUESTS, professions: FULL, professionCatalog: CATALOG }),
       10,
     );
+    // 91745 "Mining Consultant" (Elwynn, level 3, not a profession quest by name) needs 91743,
+    // which is not in this fixture: an unknown prerequisite counts as satisfied, so it is an area pick.
     expect(out.map((s) => [s.kind, s.questId])).toEqual([
       ["profession", 96626],
       ["profession", 97920],
+      ["area", 91745],
       ["profession", 97922],
     ]);
     expect(out[1]!.reason).toContain("Fishing");
-    expect(out[2]!.reason).toContain("Leatherworking");
+    expect(out[3]!.reason).toContain("Leatherworking");
   });
 
   test("full slots: a known secondary (First Aid) quest is kept", () => {

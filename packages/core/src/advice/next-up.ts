@@ -1,4 +1,4 @@
-import { validCompleted } from "./chain-validity";
+import { isAvailable, prerequisiteIndex, validCompleted } from "./chain-validity";
 import { prerequisites } from "./chains";
 import { classAllows, questClass } from "./classes";
 import type { QuestRow } from "./content";
@@ -62,17 +62,19 @@ function areaOf(q: QuestRow, zone: string | null, mapId: number | null): string 
  *
  * A quest is never suggested when completed, in the log, above `levelCap` (no cap filter when
  * null), or a class quest (`zone.n` is a class name) for another class or an unknown class.
- * Prerequisites are `chain.previous` links with relation "Complete first", "Chain link",
- * "Offered after" or "Next quest" ("Must be active", "Quest line" and odd values are ignored).
+ * Prerequisites are as in `prerequisiteIndex` (relations "Complete first", "Chain link",
+ * "Offered after" or "Next quest", read from both sides; "Must be active", "Quest line" and odd
+ * values are ignored), and several prerequisites are ALTERNATIVES (OR; real 1524 "Call of Fire"
+ * needs one of four per-race starters). A prerequisite not in `quests` counts as satisfied.
  * Each quest takes the first rule it matches:
  *
- * 1. chain: has prerequisites, every one completed or in the log, and at least one VALID
- *    completed (see `validCompleted`: reached through a completed route, alternatives as OR), so
- *    a quest done out of route (same name, another starting region) never makes its successors chain
- *    steps; they can still match the area rules.
+ * 1. chain: at least one prerequisite is VALID completed (see `validCompleted`: reached through a
+ *    completed route, alternatives as OR), so a quest done out of route (same name, another
+ *    starting region) never makes its successors chain steps; they can still match the area rules.
  *    When the quest is more than CHAIN_WINDOW (5) levels above the character it is kept but
  *    demoted: confidence "low", ranked after area and next-level.
- * 2. area: every prerequisite completed or in the log (or none), in the character's area (see
+ * 2. area: prerequisites met (`isAvailable`: none, or one completed or in the log, or one not in
+ *    `quests`), in the character's area (see
  *    `areaOf`), and `level - 3 <= quest.level <= level`.
  * 3. next-level: as area but `quest.level === level + 1` (low confidence).
  *
@@ -99,7 +101,10 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
   const professionOf = catalog.length > 0 ? professionMatcher(catalog) : null;
   const learned = professionOf ? learnedNames(input.professions) : new Set<string>();
   const used = professionOf ? slotsUsed(learned, catalog) : 0;
-  const valid = validCompleted(input.quests, completed);
+  const idx = prerequisiteIndex(input.quests);
+  const valid = validCompleted(input.quests, completed, idx);
+  const nameOf = new Map<number, string>();
+  for (const q of input.quests) nameOf.set(q.id, q.name);
 
   const picked: { rule: Rule; q: QuestRow; reason: string; profession: boolean; freeSlot: boolean }[] = [];
   for (const q of input.quests) {
@@ -113,18 +118,8 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
     const profession = verdict !== null;
     const freeSlot = verdict?.allowed === true && verdict.freeSlot;
 
-    const pre = prerequisites(q);
-    let doneCount = 0;
-    let met = true;
-    for (const p of pre) {
-      if (completed.has(p.questId)) {
-        if (valid.has(p.questId)) doneCount++;
-      } else if (!inLog.has(p.questId)) {
-        met = false;
-        break;
-      }
-    }
-    if (!met) continue;
+    if (!isAvailable(idx, q.id, (p) => completed.has(p) || inLog.has(p))) continue;
+    const pre = idx.pre.get(q.id) ?? [];
 
     const cls = questClass(q);
     const label =
@@ -132,9 +127,11 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
       (profession ? `${prof!.name} profession quest. ` : "") +
       (freeSlot ? "You have a free profession slot. " : "");
 
-    if (pre.length > 0 && doneCount > 0) {
-      const after = pre.find((p) => valid.has(p.questId));
-      const name = after?.name ?? `quest ${after?.questId}`;
+    if (pre.some((p) => valid.has(p))) {
+      // Name the valid prerequisite: its own link first (in link order), then any other one.
+      const link = prerequisites(q).find((p) => valid.has(p.questId));
+      const afterId = link?.questId ?? Math.min(...pre.filter((p) => valid.has(p)));
+      const name = link?.name ?? nameOf.get(afterId) ?? `quest ${afterId}`;
       const above = q.level - level;
       const far = above > CHAIN_WINDOW;
       const note = far ? ` Level ${q.level}, ${above} levels above you.` : "";

@@ -57,7 +57,8 @@
       {/each}
     </ol>
     <p class="sub foot">
-      Order and prerequisites come from ForeverDB. "Available now" means every earlier quest it needs is done.
+      Order and prerequisites come from ForeverDB. "Available now" means a quest it needs is done (where several are listed, as for
+      different races or factions, any one of them is enough).
     </p>
   {/if}
 </section>

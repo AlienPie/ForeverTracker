@@ -16,23 +16,67 @@ function prereqIds(v: unknown): number[] {
   return out;
 }
 
+/** Prerequisites of every quest in a list: see `prerequisiteIndex`. */
+export type PrereqIndex = {
+  /** Ids of the quests passed in. */
+  known: Set<number>;
+  /** Prerequisite ids per quest id (deduplicated; may include ids not in `known`). */
+  pre: Map<number, number[]>;
+};
+
+/**
+ * The ONE reading of "prerequisite" shared by validity (`validCompleted`), availability
+ * (`isAvailable`: `chainDetail` "available", `nextUp`). Prerequisites are links with relations
+ * "Complete first", "Chain link", "Offered after" or "Next quest" (not "Must be active" or "Quest
+ * line"), read from both sides on every quest passed in: a quest's own `chain.previous`, and other
+ * quests' `chain.next` naming it. Self-links are ignored. Ids not among `quests` are kept (they can
+ * only come from `previous`) and count as satisfied by every check. O(quests + links).
+ */
+export function prerequisiteIndex(quests: QuestRow[]): PrereqIndex {
+  const known = new Set<number>();
+  for (const q of quests) known.add(q.id);
+  const sets = new Map<number, Set<number>>();
+  const add = (from: number, to: number) => {
+    if (from === to || !known.has(to)) return;
+    let s = sets.get(to);
+    if (!s) sets.set(to, (s = new Set()));
+    s.add(from);
+  };
+  for (const q of quests) {
+    for (const p of prereqIds(q.chain?.previous)) add(p, q.id);
+    for (const n of prereqIds(q.chain?.next)) add(q.id, n);
+  }
+  const pre = new Map<number, number[]>();
+  for (const [id, s] of sets) pre.set(id, [...s]);
+  return { known, pre };
+}
+
+/**
+ * Whether a quest's prerequisites are met, treating several prerequisites as ALTERNATIVES (OR, as
+ * ForeverDB lists them: real 1524 "Call of Fire" needs one of four per-race starters): it has no
+ * prerequisite, or one of them is not in the list (cannot be checked: satisfied), or `done` holds
+ * for at least one of them. Callers decide what "done" means (completed; completed or in the log).
+ */
+export function isAvailable(idx: PrereqIndex, id: number, done: (id: number) => boolean): boolean {
+  const pre = idx.pre.get(id);
+  if (!pre || pre.length === 0) return true;
+  return pre.some((p) => !idx.known.has(p) || done(p));
+}
+
 /**
  * The completed quests that count toward a chain. Some quests exist once per starting region (real
  * "Camping 101: Cooking" in Elwynn Forest, Dun Morogh, Zephras Isle and Durotar), and a character
  * only takes one route, so a quest completed without its chain's earlier quests was done another
  * way and must not make this chain look started.
  *
- * Prerequisites are links with relations "Complete first", "Chain link", "Offered after" or "Next
- * quest" (not "Must be active" or "Quest line"), read from both sides (a quest's `chain.previous`,
- * and other quests' `chain.next`) on EVERY quest passed in (callers pass the full list, before any
- * class filtering). Several prerequisites of one quest are ALTERNATIVES (OR), as ForeverDB lists
- * them: real 1524 "Call of Fire" needs one of 1522, 1523, 2983, 2984 (Shaman starters per race),
- * 1124 "Wasteland" needs Horde 1123 or Alliance 6762.
+ * Prerequisites as in `prerequisiteIndex` (both sides, every quest passed in: callers pass the full
+ * list, before any class filtering), several prerequisites being ALTERNATIVES (OR): real 1124
+ * "Wasteland" needs Horde 1123 or Alliance 6762.
  *
  * A completed quest is valid when it has no prerequisite among `quests`, or one of its
  * prerequisites is not in `quests` (an unknown quest cannot be checked and counts as satisfied),
  * or at least one of its prerequisites is itself valid. Uncompleted siblings or successors never
- * invalidate a completed quest. Self-links are ignored. Completed ids not in `quests` are kept.
+ * invalidate a completed quest. Completed ids not in `quests` are kept.
  *
  * This is the least fixed point, computed forward from the seeds (completed quests valid on their
  * own) along successor links, each quest entering the work list at most once: O(quests + links),
@@ -41,39 +85,26 @@ function prereqIds(v: unknown): number[] {
  * quest outside the cycle through completed quests (for 0 -> 1 -> 2 -> 3 -> 1 with 0, 1, 2
  * completed: 0, 1, 2 valid; with only 1, 2, 3 completed and 0 not: none).
  *
- * `chainDetail` availability and `nextUp` "met" still use plain completion over `previous` links
- * only (every prerequisite done), while this reads both sides; on the real mirror links are listed
- * symmetrically, so the two agree.
+ * Availability (`isAvailable`) uses the same index and the same OR rule with plain completion, so
+ * a quest done by any route lets its successors be offered; only counts use validity.
+ * Pass `idx` when the caller already built it for the same `quests`.
  */
-export function validCompleted(quests: QuestRow[], completed: Set<number>): Set<number> {
-  const known = new Set<number>();
-  for (const q of quests) known.add(q.id);
-
+export function validCompleted(quests: QuestRow[], completed: Set<number>, idx = prerequisiteIndex(quests)): Set<number> {
+  const { known, pre } = idx;
   const succ = new Map<number, number[]>();
-  /** Quests with at least one known prerequisite. */
-  const gated = new Set<number>();
-  /** Quests with a prerequisite that is not in `quests` (satisfied). */
-  const unknownPre = new Set<number>();
-  const edge = (from: number, to: number) => {
-    if (from === to || !known.has(to)) return;
-    if (!known.has(from)) {
-      unknownPre.add(to);
-      return;
+  for (const [id, ps] of pre) {
+    for (const p of ps) {
+      if (!known.has(p)) continue;
+      const s = succ.get(p);
+      if (s) s.push(id);
+      else succ.set(p, [id]);
     }
-    gated.add(to);
-    const s = succ.get(from);
-    if (s) s.push(to);
-    else succ.set(from, [to]);
-  };
-  for (const q of quests) {
-    for (const p of prereqIds(q.chain?.previous)) edge(p, q.id);
-    for (const n of prereqIds(q.chain?.next)) edge(q.id, n);
   }
 
   const valid = new Set<number>();
   const work: number[] = [];
   for (const id of known) {
-    if (completed.has(id) && (!gated.has(id) || unknownPre.has(id)) && !valid.has(id)) {
+    if (completed.has(id) && isAvailable(idx, id, () => false)) {
       valid.add(id);
       work.push(id);
     }

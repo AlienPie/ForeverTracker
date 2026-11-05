@@ -61,14 +61,27 @@ describe("chainDetail", () => {
     expect(d!.members[0]).toMatchObject({ name: "Quest 601", level: 1, zone: "Elwynn Forest", giver: "Giver 601" });
   });
 
-  test("available needs every prerequisite done, not just in the log", () => {
-    // 605 needs 602 and 604. 602 done, 604 in log: 605 is still locked.
-    const d = chainDetail(BRANCH, 601, new Set([601, 602, 603]), new Set([604]))!;
-    expect(d.members.map((m) => m.state)).toEqual(["done", "done", "done", "in-log", "locked"]);
-    // Both done: 605 is available.
-    const e = chainDetail(BRANCH, 601, new Set([601, 602, 603, 604]), new Set())!;
-    expect(e.members.at(-1)!.state).toBe("available");
-    expect(e.done).toBe(4);
+  test("available needs one prerequisite done (alternatives), not just in the log", () => {
+    // 605 lists 602 and 604 (alternatives). Neither done (602 in log, 604 not done): locked.
+    const d = chainDetail(BRANCH, 601, new Set([601, 603]), new Set([602]))!;
+    expect(d.members.map((m) => m.state)).toEqual(["done", "in-log", "done", "available", "locked"]);
+    // 602 done, 604 only in the log: 605 is available.
+    const e = chainDetail(BRANCH, 601, new Set([601, 602, 603]), new Set([604]))!;
+    expect(e.members.map((m) => m.state)).toEqual(["done", "done", "done", "in-log", "available"]);
+    expect(e.done).toBe(3);
+  });
+
+  test("a quest whose alternative prerequisites are all undone stays locked", () => {
+    const alt = [q(11, 1, [], [13]), q(12, 1, [], [13]), q(13, 2, [11, 12])];
+    expect(chainDetail(alt, 13, new Set(), new Set())!.members.map((m) => [m.questId, m.state])).toEqual([
+      [11, "available"],
+      [12, "available"],
+      [13, "locked"],
+    ]);
+    expect(chainDetail(alt, 13, new Set([12]), new Set())!.members.at(-1)!.state).toBe("available");
+    // A prerequisite known only from the other quest's `next` link counts too (both sides read).
+    const oneSided = [q(21, 1, [], [22]), q(22, 2)];
+    expect(chainDetail(oneSided, 22, new Set(), new Set())!.members.map((m) => m.state)).toEqual(["available", "locked"]);
   });
 
   test("any member id gives the same chain, and the order matches chainProgress (root first)", () => {
@@ -127,7 +140,7 @@ describe("chainDetail", () => {
       [602, "done", true],
       [603, "done", true],
       [604, "available", false],
-      [605, "locked", false],
+      [605, "available", false], // 602 (one of its alternatives) is completed
     ]);
     expect(d).toMatchObject({ done: 0, otherRoute: 2, total: 5 });
     // Through the first quest: every completed member counts.
@@ -140,8 +153,8 @@ describe("chainDetail", () => {
     const d = chainDetail(CAMP, 96626, new Set([96626]), new Set())!;
     expect(d).toMatchObject({ chain: 96627, name: "The Adventurer", done: 0, otherRoute: 1, total: 6 });
     expect(d.members.map((m) => [m.questId, m.zone, m.state, m.otherRoute])).toEqual([
-      // 96627 needs 21 "Skirmish at Echo Ridge" (not in the fixture, not completed): locked.
-      [96627, "Elwynn Forest", "locked", false],
+      // 96627 needs 21 "Skirmish at Echo Ridge", not in the fixture: counts as satisfied.
+      [96627, "Elwynn Forest", "available", false],
       [95998, "Elwynn Forest", "locked", false],
       [96626, "Elwynn Forest", "done", true],
       [97920, "Elwynn Forest", "locked", false],
@@ -162,6 +175,26 @@ describe("chainDetail", () => {
     expect(byId.get(1522)).toMatchObject({ state: "done", otherRoute: false });
     // The next step needs only 1524: available.
     expect(byId.get(1525)).toMatchObject({ state: "available", otherRoute: false });
+    // Only 1522 done: 1524 (one of four alternative starters) is available.
+    const only = chainDetail(ALT, 1524, new Set([1522]), new Set(), "SHAMAN")!;
+    expect(only.members.find((m) => m.questId === 1524)!.state).toBe("available");
+    expect(only.members.find((m) => m.questId === 1525)!.state).toBe("locked");
+    // Nothing done: the starters are available, 1524 is locked.
+    const none = chainDetail(ALT, 1524, new Set(), new Set(), "SHAMAN")!;
+    expect(none.members.map((m) => [m.questId, m.state])).toEqual([
+      [1522, "available"],
+      [1523, "available"],
+      [2983, "available"],
+      [2984, "available"],
+      [1524, "locked"],
+      [1525, "locked"],
+    ]);
+    // Horde Wasteland route done up to 1123: 1124 is available (6762 not needed).
+    const horde = chainDetail(ALT, 1124, new Set([1018, 1123]), new Set())!;
+    expect(horde.members.find((m) => m.questId === 1124)!.state).toBe("available");
+    // The Alliance side is untouched: 6761 (its own prerequisites not in the list) available, 6762 locked.
+    expect(horde.members.find((m) => m.questId === 6761)!.state).toBe("available");
+    expect(horde.members.find((m) => m.questId === 6762)!.state).toBe("locked");
     // Alliance Wasteland route.
     const w = chainDetail(ALT, 1124, new Set([6761, 6762, 1124]), new Set())!;
     expect(w).toMatchObject({ done: 3, otherRoute: 0 });
