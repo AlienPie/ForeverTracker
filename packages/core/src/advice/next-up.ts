@@ -1,6 +1,7 @@
 import { prerequisites } from "./chains";
 import { classAllows, questClass } from "./classes";
 import type { QuestRow } from "./content";
+import { learnedNames, professionMatcher, professionVerdict, slotsUsed } from "./professions";
 import type { NextUpInput, Suggestion } from "./types";
 
 type Rule = "chain" | "area" | "next-level" | "chain-far";
@@ -72,20 +73,40 @@ function areaOf(q: QuestRow, zone: string | null, mapId: number | null): string 
  * 3. next-level: as area but `quest.level === level + 1` (low confidence).
  *
  * Ordered by rule rank, then quest level, then id. Class quests say "<Class> class quest" in the
- * reason. Profession suggestions are not produced in v1: there is no verified trainer or
- * recipe-quest data in the mirror, so `professions` is accepted and unused, and the "profession"
- * kind stays reserved.
+ * reason.
+ *
+ * Profession quests (INTERIM rule for M1.1, to be replaced in M2 by the curated Wowhead profession
+ * tags): only with a non-empty `professionCatalog`. ForeverDB quests have no profession field, so
+ * a quest whose name ends with `: <profession name>` ("Camping 101: Mining") is a profession quest
+ * (see `professionMatcher`). It is allowed when the character knows that profession, or its kind
+ * is `secondary` (always learnable), or its kind takes a slot (`primary` or `gathering`) and the
+ * character's learned professions fill fewer than 2 slots: a free slot, low confidence, and the
+ * reason says "You have a free profession slot". Otherwise it is dropped from every rule. An
+ * allowed profession quest still needs one of the rules above; it then gets kind "profession"
+ * and a reason naming the profession. A catalog profession of any other kind is not gated.
  */
 export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
   const { level, completed, inLog, levelCap } = input;
   const zone = str(input.zone);
   const mapId = typeof input.mapId === "number" ? input.mapId : null;
 
-  const picked: { rule: Rule; q: QuestRow; reason: string }[] = [];
+  // Interim profession rule: lookups built once per call.
+  const catalog = Array.isArray(input.professionCatalog) ? input.professionCatalog : [];
+  const professionOf = catalog.length > 0 ? professionMatcher(catalog) : null;
+  const learned = professionOf ? learnedNames(input.professions) : new Set<string>();
+  const used = professionOf ? slotsUsed(learned, catalog) : 0;
+
+  const picked: { rule: Rule; q: QuestRow; reason: string; profession: boolean; freeSlot: boolean }[] = [];
   for (const q of input.quests) {
     if (completed.has(q.id) || inLog.has(q.id)) continue;
     if (levelCap !== null && q.level > levelCap) continue;
     if (!classAllows(q, input.classToken)) continue;
+
+    const prof = professionOf ? professionOf(q.name) : null;
+    const verdict = prof ? professionVerdict(prof, learned, used) : null;
+    if (verdict && !verdict.allowed) continue;
+    const profession = verdict !== null;
+    const freeSlot = verdict?.allowed === true && verdict.freeSlot;
 
     const pre = prerequisites(q);
     let doneCount = 0;
@@ -100,7 +121,10 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
     if (!met) continue;
 
     const cls = questClass(q);
-    const label = cls ? `${cls} class quest. ` : "";
+    const label =
+      (cls ? `${cls} class quest. ` : "") +
+      (profession ? `${prof!.name} profession quest. ` : "") +
+      (freeSlot ? "You have a free profession slot. " : "");
 
     if (pre.length > 0 && doneCount > 0) {
       const after = pre.find((p) => completed.has(p.questId));
@@ -112,26 +136,34 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
         rule: far ? "chain-far" : "chain",
         q,
         reason: `${label}Continues the chain after "${name}".${note}${startsAt(q)}`,
+        profession,
+        freeSlot,
       });
       continue;
     }
     const where = areaOf(q, zone, mapId);
     if (where === null) continue;
     if (q.level >= level - 3 && q.level <= level) {
-      picked.push({ rule: "area", q, reason: `${label}Level ${q.level} quest in ${where}.${startsAt(q)}` });
+      picked.push({ rule: "area", q, reason: `${label}Level ${q.level} quest in ${where}.${startsAt(q)}`, profession, freeSlot });
     } else if (q.level === level + 1) {
-      picked.push({ rule: "next-level", q, reason: `${label}Level ${q.level} quest in ${where}, one level up.${startsAt(q)}` });
+      picked.push({
+        rule: "next-level",
+        q,
+        reason: `${label}Level ${q.level} quest in ${where}, one level up.${startsAt(q)}`,
+        profession,
+        freeSlot,
+      });
     }
   }
 
   picked.sort((a, b) => RANK[a.rule] - RANK[b.rule] || a.q.level - b.q.level || a.q.id - b.q.id);
-  return picked.slice(0, Math.max(0, limit)).map(({ rule, q, reason }) => ({
-    kind: rule === "chain-far" ? "chain" : rule,
+  return picked.slice(0, Math.max(0, limit)).map(({ rule, q, reason, profession, freeSlot }) => ({
+    kind: profession ? "profession" : rule === "chain-far" ? "chain" : rule,
     title: q.name,
     questId: q.id,
     level: q.level,
     reason,
     source: "ForeverDB",
-    confidence: rule === "chain" || rule === "area" ? "high" : "low",
+    confidence: !freeSlot && (rule === "chain" || rule === "area") ? "high" : "low",
   }));
 }

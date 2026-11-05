@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import { nextUp, type NextUpInput, type QuestLink, type QuestRow } from "../src/index";
+import { nextUp, type NextUpInput, type ProfessionInfo, type QuestLink, type QuestRow } from "../src/index";
 
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/quests.json", import.meta.url), "utf8")) as QuestRow[];
 /** Real rows: 179 Dwarven Outfitters, 747 The Hunt Begins, 1013 The Book of Ur, class runes 3093/3106/3107/3110. */
@@ -232,5 +232,119 @@ describe("nextUp: class quests and zone matching (real-data defects)", () => {
       ["chain", 2, "low"],
     ]);
     expect(out[3]!.reason).toContain("6 levels above you");
+  });
+});
+
+describe("nextUp: profession quests (interim name rule)", () => {
+  /** Real rows: Camping 101 quests in Durotar and Elwynn Forest, plus look-alikes (see quests.fixture.md). */
+  const PROF_QUESTS = JSON.parse(
+    readFileSync(new URL("./fixtures/quests-profession.json", import.meta.url), "utf8"),
+  ) as QuestRow[];
+  /** Real `professions` records: kinds primary, gathering (Herbalism, Mining, Skinning) and secondary. */
+  const CATALOG = JSON.parse(
+    readFileSync(new URL("./fixtures/professions.json", import.meta.url), "utf8"),
+  ) as ProfessionInfo[];
+
+  const known = (...names: string[]) => names.map((name, i) => ({ skillLine: 100 + i, name, rank: 1, max: 75 }));
+  /** The owner's case: both slots full (Skinning + Leatherworking), plus Cooking and First Aid. */
+  const FULL = known("Skinning", "Leatherworking", "Cooking", "First Aid");
+  // Level 6 in Durotar after "The Great Outdoors" (96604): Camping 101 for Cooking, Enchanting,
+  // Mining and Skinning continue the chain; Blacksmithing (no prerequisite) is an area pick.
+  const durotar = { level: 6, zone: "Durotar", mapId: 1411, completed: new Set([96604]), quests: PROF_QUESTS };
+  const ids = (out: { questId?: number }[]) => out.map((s) => s.questId);
+
+  test("baseline without a catalog: every Camping 101 in Durotar is suggested (the bug)", () => {
+    const out = nextUp(input({ ...durotar, professions: FULL }), 10);
+    expect(ids(out)).toEqual([96655, 97901, 97907, 97908, 97900]);
+    expect(out.every((s) => s.kind !== "profession")).toBe(true);
+  });
+
+  test("full primary slots: no Mining, Enchanting or Blacksmithing; Skinning and Cooking stay", () => {
+    const out = nextUp(input({ ...durotar, professions: FULL, professionCatalog: CATALOG }), 10);
+    expect(out.map((s) => [s.kind, s.questId, s.confidence])).toEqual([
+      ["profession", 96655, "high"],
+      ["profession", 97908, "high"],
+    ]);
+    expect(out[0]!.reason).toContain("Cooking");
+    expect(out[0]!.reason).toContain("The Great Outdoors");
+    expect(out[1]!.reason).toContain("Skinning");
+  });
+
+  test("full slots: Leatherworking and Fishing (secondary, not learned) in Elwynn Forest", () => {
+    const out = nextUp(
+      input({ level: 6, zone: "Elwynn Forest", mapId: 1429, completed: new Set([95998]), quests: PROF_QUESTS, professions: FULL, professionCatalog: CATALOG }),
+      10,
+    );
+    expect(out.map((s) => [s.kind, s.questId])).toEqual([
+      ["profession", 96626],
+      ["profession", 97920],
+      ["profession", 97922],
+    ]);
+    expect(out[1]!.reason).toContain("Fishing");
+    expect(out[2]!.reason).toContain("Leatherworking");
+  });
+
+  test("full slots: a known secondary (First Aid) quest is kept", () => {
+    const fa: QuestRow = { ...q(70, 10, "Mossvale"), name: "Camping 101: First Aid" };
+    const mining: QuestRow = { ...q(71, 10, "Mossvale"), name: "Camping 101: Mining" };
+    const out = nextUp(input({ quests: [fa, mining], professions: FULL, professionCatalog: CATALOG }));
+    expect(out.map((s) => [s.kind, s.questId])).toEqual([["profession", 70]]);
+    expect(out[0]!.reason).toContain("First Aid");
+  });
+
+  test("one primary profession: other primary and gathering quests are low confidence 'free slot'", () => {
+    const out = nextUp(input({ ...durotar, professions: known("Tailoring", "Cooking"), professionCatalog: CATALOG }), 10);
+    expect(out.map((s) => [s.kind, s.questId, s.confidence])).toEqual([
+      ["profession", 96655, "high"],
+      ["profession", 97901, "low"],
+      ["profession", 97907, "low"],
+      ["profession", 97908, "low"],
+      ["profession", 97900, "low"],
+    ]);
+    for (const s of out.slice(1)) expect(s.reason).toContain("You have a free profession slot");
+    expect(out[0]!.reason).not.toContain("free profession slot");
+  });
+
+  test("no professions: everything is offered, primaries as low confidence free slots", () => {
+    const out = nextUp(input({ ...durotar, professions: [], professionCatalog: CATALOG }), 10);
+    expect(ids(out)).toEqual([96655, 97901, 97907, 97908, 97900]);
+    expect(out.every((s) => s.kind === "profession")).toBe(true);
+    expect(out.map((s) => s.confidence)).toEqual(["high", "low", "low", "low", "low"]);
+  });
+
+  test("character profession names match case-insensitively and trimmed", () => {
+    const out = nextUp(
+      input({ ...durotar, professions: known(" skinning ", "LEATHERWORKING"), professionCatalog: CATALOG }),
+      10,
+    );
+    expect(ids(out)).toEqual([96655, 97908]);
+    expect(out[1]!.confidence).toBe("high");
+  });
+
+  test("unknown names, unknown kinds or an empty catalog leave behaviour unchanged", () => {
+    const base = nextUp(input({ ...durotar, professions: FULL }), 10);
+    expect(nextUp(input({ ...durotar, professions: FULL, professionCatalog: [] }), 10)).toEqual(base);
+    const odd: ProfessionInfo[] = [
+      { slug: "basketry", name: "Basketry", kind: "primary" },
+      { slug: "mining", name: "Mining", kind: "hobby" },
+    ];
+    expect(nextUp(input({ ...durotar, professions: FULL, professionCatalog: odd }), 10)).toEqual(base);
+    // Character professions unknown to the catalog take no slot.
+    const strange = nextUp(input({ ...durotar, professions: known("Necromancy", "Basketry"), professionCatalog: CATALOG }), 10);
+    expect(ids(strange)).toEqual(ids(base));
+  });
+
+  test("completed and in-log profession quests never reappear", () => {
+    const out = nextUp(
+      input({ ...durotar, completed: new Set([96604, 96655]), inLog: new Set([97908]), professions: FULL, professionCatalog: CATALOG }),
+      10,
+    );
+    expect(out).toEqual([]);
+  });
+
+  test("odd catalog and profession entries do not throw", () => {
+    const catalog = [null, { name: 4 }, { slug: "mining", name: "Mining", kind: "gathering" }] as unknown as ProfessionInfo[];
+    const professions = [null, { name: null }, { name: "Mining" }] as unknown as NextUpInput["professions"];
+    expect(() => nextUp(input({ ...durotar, professions, professionCatalog: catalog }), 10)).not.toThrow();
   });
 });

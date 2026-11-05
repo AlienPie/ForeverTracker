@@ -32,3 +32,36 @@ Rune (Warrior), 3107 Consecrated Rune (Paladin), 3110 Hallowed Rune (Priest), al
 Across the full mirror every real place has a numeric `zone.m`; class names (Druid, Hunter, Mage,
 Paladin, Priest, Rogue, Shaman, Warlock, Warrior) and categories (Seasonal, Blacksmithing,
 Lunar Festival, ...) have `m: null`. 472 quests have a starter `uiMapId` different from `zone.m`.
+
+## professions.json and quests-profession.json (interim profession-quest rule, M1.1)
+
+Inspected read-only (`sqlite3 -readonly`) on 2026-11-05, same mirror. Public game data only.
+
+`professions` resource: 32 records, 12 base records (ids without `@`) plus 20 per-page records
+(ids like `alchemy@100`, `blacksmithing@500`) whose data is identical to the base record, slug
+included (no slug contains `@`). `ContentSource.list` returns data only, so `loadProfessions`
+drops the duplicates by slug. `professions.json` holds the 12 base records trimmed to
+`slug, name, kind`. Verified kinds (three, not two):
+
+- `primary`: Alchemy, Blacksmithing, Enchanting, Engineering, Leatherworking, Tailoring
+- `gathering`: Herbalism, Mining, Skinning (NOT `primary`; in the game they still take one of
+  the two profession slots, so the rule counts `primary` and `gathering` as slot kinds)
+- `secondary`: Cooking, First Aid, Fishing
+
+Quests whose name ends with `: <profession name>` (case-insensitive): 23, all `Camping 101: <X>`
+(level 6, category "Camping"): Alchemy 97963; Blacksmithing 97900; Cooking 96626, 96629, 96646,
+96655, 96661; Enchanting 97901; Engineering 97902; First Aid 97931, 97955; Fishing 97920;
+Herbalism 97933, 97957, 97968; Leatherworking 97922, 97969; Mining 97907, 97923, 97935, 97970;
+Skinning 97908, 97924. No Tailoring one. Several have no `previous` link (97900, 97902, 97922,
+97931) and several have `zone: null` and no starter (97902, 97931). 107 quests have a colon in
+the name; none other ends with a profession name. 25 quests contain a profession word elsewhere
+("Goblin Engineering", "Dragonscale Leatherworking", "Salve via Mining", "Mining Consultant",
+"Stolen Enchanting Supplies", "The Family and the Fishing Pole"): these are not matches.
+
+`quests-profession.json` (14 rows, trimmed like quests.json): 96604 The Great Outdoors (Durotar,
+prerequisite of the Durotar Camping 101 quests), 96626 Cooking (Elwynn, after 95998), 96655
+Cooking (Durotar), 97900 Blacksmithing (Durotar, no prerequisite), 97901 Enchanting, 97907 Mining,
+97908 Skinning (Durotar, after 96604), 97902 Engineering and 97931 First Aid (zone null), 97920
+Fishing (Elwynn, after 95998), 97922 Leatherworking (Elwynn, no prerequisite); look-alikes 710
+Study of the Elements: Rock (colon, not a profession), 5883 Salve via Mining, 91745 Mining
+Consultant.

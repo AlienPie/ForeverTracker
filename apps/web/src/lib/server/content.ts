@@ -1,5 +1,5 @@
 import { createContentSource, type ContentMode, type ContentSource, type ForeverDbClient } from "@ft/content";
-import { getLevelCap, loadQuests, type QuestRow } from "@ft/core";
+import { getLevelCap, loadProfessions, loadQuests, type ProfessionInfo, type QuestRow } from "@ft/core";
 import type { Db } from "@ft/db";
 import { getDb } from "./db";
 import { env } from "./env";
@@ -9,6 +9,11 @@ export type QuestCatalog = {
   levelCap: number | null;
   /** uiMapId to zone name (see `loadMapNames`); empty when content is not ready. */
   mapNames: Record<number, string>;
+  /**
+   * Mirrored `professions` catalog for the interim profession-quest rule in `nextUp`. Optional
+   * (additive): absent on the empty catalog, and an absent or empty list leaves `nextUp` unchanged.
+   */
+  professions?: ProfessionInfo[];
 };
 
 export const CATALOG_TTL_MS = 60_000;
@@ -95,7 +100,12 @@ export function createQuestCatalog(opts: {
     if (!source) return EMPTY;
     const quests = await loadQuests(source);
     if (quests.length === 0) return EMPTY;
-    return { quests, levelCap: await getLevelCap(source), mapNames: await loadMapNames(source, quests) };
+    return {
+      quests,
+      levelCap: await getLevelCap(source),
+      mapNames: await loadMapNames(source, quests),
+      professions: await loadProfessions(source),
+    };
   }
 
   return {

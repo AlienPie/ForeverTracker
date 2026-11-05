@@ -1,0 +1,529 @@
+[
+  {
+    "id": 710,
+    "name": "Study of the Elements: Rock",
+    "level": 37,
+    "zone": {
+      "n": "Badlands",
+      "slug": "badlands",
+      "m": 1418
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 711,
+          "name": "Study of the Elements: Rock",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 2921,
+      "name": "Lotwil Veriatus",
+      "location": {
+        "uiMapId": 1418,
+        "zone": "Badlands",
+        "x": 25.9,
+        "y": 44.9
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 2921,
+      "name": "Lotwil Veriatus",
+      "location": {
+        "uiMapId": 1418,
+        "zone": "Badlands",
+        "x": 25.9,
+        "y": 44.9
+      }
+    }
+  },
+  {
+    "id": 5883,
+    "name": "Salve via Mining",
+    "level": 55,
+    "zone": {
+      "n": "Felwood",
+      "slug": "felwood",
+      "m": 1448
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 4101,
+          "name": "Cleansing Felwood",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 9528,
+      "name": "Arathandris Silversky",
+      "location": {
+        "uiMapId": 1448,
+        "zone": "Felwood",
+        "x": 54.1,
+        "y": 86.8
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 9528,
+      "name": "Arathandris Silversky",
+      "location": {
+        "uiMapId": 1448,
+        "zone": "Felwood",
+        "x": 54.1,
+        "y": 86.8
+      }
+    }
+  },
+  {
+    "id": 91745,
+    "name": "Mining Consultant",
+    "level": 3,
+    "zone": {
+      "n": "Elwynn Forest",
+      "slug": "elwynn-forest",
+      "m": 1429
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 91743,
+          "name": "Rascally Rodents",
+          "relation": "Offered after"
+        }
+      ],
+      "next": [
+        {
+          "questId": 91752,
+          "name": "The Big Picture",
+          "relation": "Next quest"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 951,
+      "name": "Brother Paxton",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 49.6,
+        "y": 40.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 247226,
+      "name": "Kelsey Fargo",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 47.2,
+        "y": 32.3
+      }
+    }
+  },
+  {
+    "id": 96604,
+    "name": "The Great Outdoors",
+    "level": 6,
+    "zone": {
+      "n": "Durotar",
+      "slug": "durotar",
+      "m": 1411
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 96652,
+          "name": "The Adventurer",
+          "relation": "Offered after"
+        }
+      ],
+      "next": [
+        {
+          "questId": 96655,
+          "name": "Camping 101: Cooking",
+          "relation": "Offered after"
+        },
+        {
+          "questId": 97901,
+          "name": "Camping 101: Enchanting",
+          "relation": "Offered after"
+        },
+        {
+          "questId": 97907,
+          "name": "Camping 101: Mining",
+          "relation": "Offered after"
+        },
+        {
+          "questId": 97908,
+          "name": "Camping 101: Skinning",
+          "relation": "Offered after"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 265809,
+      "name": "Brakk",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 52,
+        "y": 47.3
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 265809,
+      "name": "Brakk",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 52,
+        "y": 47.3
+      }
+    }
+  },
+  {
+    "id": 96626,
+    "name": "Camping 101: Cooking",
+    "level": 6,
+    "zone": {
+      "n": "Elwynn Forest",
+      "slug": "elwynn-forest",
+      "m": 1429
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 95998,
+          "name": "The Great Outdoors",
+          "relation": "Offered after"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 263399,
+      "name": "Sam Sarsaparilla",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 44.9,
+        "y": 63.3
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 1430,
+      "name": "Tomas",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 44.3,
+        "y": 66
+      }
+    }
+  },
+  {
+    "id": 96655,
+    "name": "Camping 101: Cooking",
+    "level": 6,
+    "zone": {
+      "n": "Durotar",
+      "slug": "durotar",
+      "m": 1411
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 96604,
+          "name": "The Great Outdoors",
+          "relation": "Offered after"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 265809,
+      "name": "Brakk",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 52,
+        "y": 47.3
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 3191,
+      "name": "Cook Torka",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 51.2,
+        "y": 42.5
+      }
+    }
+  },
+  {
+    "id": 97900,
+    "name": "Camping 101: Blacksmithing",
+    "level": 6,
+    "zone": {
+      "n": "Durotar",
+      "slug": "durotar",
+      "m": 1411
+    },
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 265809,
+      "name": "Brakk",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 52.1,
+        "y": 47.3
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 3174,
+      "name": "Dwukk",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 52.1,
+        "y": 40.7
+      }
+    }
+  },
+  {
+    "id": 97901,
+    "name": "Camping 101: Enchanting",
+    "level": 6,
+    "zone": {
+      "n": "Durotar",
+      "slug": "durotar",
+      "m": 1411
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 96604,
+          "name": "The Great Outdoors",
+          "relation": "Offered after"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 265809,
+      "name": "Brakk",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 52.1,
+        "y": 47.2
+      }
+    },
+    "ends": null
+  },
+  {
+    "id": 97902,
+    "name": "Camping 101: Engineering",
+    "level": 6,
+    "zone": null,
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": null,
+    "ends": null
+  },
+  {
+    "id": 97907,
+    "name": "Camping 101: Mining",
+    "level": 6,
+    "zone": {
+      "n": "Durotar",
+      "slug": "durotar",
+      "m": 1411
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 96604,
+          "name": "The Great Outdoors",
+          "relation": "Offered after"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 265809,
+      "name": "Brakk",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 52,
+        "y": 47.4
+      }
+    },
+    "ends": {
+      "type": null,
+      "id": null,
+      "name": null,
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 51.8,
+        "y": 40.9
+      }
+    }
+  },
+  {
+    "id": 97908,
+    "name": "Camping 101: Skinning",
+    "level": 6,
+    "zone": {
+      "n": "Durotar",
+      "slug": "durotar",
+      "m": 1411
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 96604,
+          "name": "The Great Outdoors",
+          "relation": "Offered after"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 265809,
+      "name": "Brakk",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 52.1,
+        "y": 47.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 7088,
+      "name": "Thuwd",
+      "location": {
+        "uiMapId": 1454,
+        "zone": "Orgrimmar",
+        "x": 63.1,
+        "y": 45.2
+      }
+    }
+  },
+  {
+    "id": 97920,
+    "name": "Camping 101: Fishing",
+    "level": 6,
+    "zone": {
+      "n": "Elwynn Forest",
+      "slug": "elwynn-forest",
+      "m": 1429
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 95998,
+          "name": "The Great Outdoors",
+          "relation": "Offered after"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 263399,
+      "name": "Sam Sarsaparilla",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 44.8,
+        "y": 63.3
+      }
+    },
+    "ends": null
+  },
+  {
+    "id": 97922,
+    "name": "Camping 101: Leatherworking",
+    "level": 6,
+    "zone": {
+      "n": "Elwynn Forest",
+      "slug": "elwynn-forest",
+      "m": 1429
+    },
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 263399,
+      "name": "Sam Sarsaparilla",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 45,
+        "y": 63.3
+      }
+    },
+    "ends": null
+  },
+  {
+    "id": 97931,
+    "name": "Camping 101: First Aid",
+    "level": 6,
+    "zone": null,
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": null,
+    "ends": null
+  }
+]

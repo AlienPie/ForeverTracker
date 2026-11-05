@@ -1,0 +1,62 @@
+[
+  {
+    "slug": "alchemy",
+    "name": "Alchemy",
+    "kind": "primary"
+  },
+  {
+    "slug": "blacksmithing",
+    "name": "Blacksmithing",
+    "kind": "primary"
+  },
+  {
+    "slug": "cooking",
+    "name": "Cooking",
+    "kind": "secondary"
+  },
+  {
+    "slug": "enchanting",
+    "name": "Enchanting",
+    "kind": "primary"
+  },
+  {
+    "slug": "engineering",
+    "name": "Engineering",
+    "kind": "primary"
+  },
+  {
+    "slug": "first-aid",
+    "name": "First Aid",
+    "kind": "secondary"
+  },
+  {
+    "slug": "fishing",
+    "name": "Fishing",
+    "kind": "secondary"
+  },
+  {
+    "slug": "herbalism",
+    "name": "Herbalism",
+    "kind": "gathering"
+  },
+  {
+    "slug": "leatherworking",
+    "name": "Leatherworking",
+    "kind": "primary"
+  },
+  {
+    "slug": "mining",
+    "name": "Mining",
+    "kind": "gathering"
+  },
+  {
+    "slug": "skinning",
+    "name": "Skinning",
+    "kind": "gathering"
+  },
+  {
+    "slug": "tailoring",
+    "name": "Tailoring",
+    "kind": "primary"
+  }
+]

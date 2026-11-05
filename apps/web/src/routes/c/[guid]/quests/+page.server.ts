@@ -46,6 +46,7 @@ export const load: ServerLoad = async ({ params }): Promise<QuestsPageData> => {
             quests: catalog.quests,
             levelCap: catalog.levelCap,
             professions: view.professions,
+            professionCatalog: catalog.professions,
           },
           5,
         )

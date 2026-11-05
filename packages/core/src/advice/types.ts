@@ -1,5 +1,5 @@
 import type { CharacterCard } from "../read/character";
-import type { QuestRow } from "./content";
+import type { ProfessionInfo, QuestRow } from "./content";
 
 /** One "next up" recommendation; `reason` says what and where using only mirrored data. */
 export type Suggestion = {
@@ -31,7 +31,16 @@ export type NextUpInput = {
   inLog: Set<number>;
   quests: QuestRow[];
   levelCap: number | null;
+  /**
+   * The character's learned professions from the snapshot (names in the game's locale, matched
+   * case-insensitively, trimmed). Only used with `professionCatalog`.
+   */
   professions: CharacterCard["professions"];
+  /**
+   * The mirrored `professions` catalog (`loadProfessions`). When given and non-empty, the
+   * INTERIM profession-quest rule applies (see `nextUp`); when omitted, behaviour is unchanged.
+   */
+  professionCatalog?: ProfessionInfo[];
 };
 
 export type ChainProgress = {

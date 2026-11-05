@@ -12,7 +12,9 @@ export { getRoster, type Roster } from "./read/roster";
 export { formatMoney, formatPlayed, staleness } from "./read/format";
 export {
   getLevelCap,
+  loadProfessions,
   loadQuests,
+  type ProfessionInfo,
   type QuestEndpoint,
   type QuestLink,
   type QuestRow,
@@ -20,3 +22,4 @@ export {
 export type { ChainProgress, NextUpInput, Suggestion } from "./advice/types";
 export { nextUp } from "./advice/next-up";
 export { chainProgress } from "./advice/chains";
+export { professionOfQuest } from "./advice/professions";

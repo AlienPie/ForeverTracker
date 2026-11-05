@@ -188,6 +188,41 @@ describe("quests tab", () => {
     expect(Object.values(roster.nextByGuid).some((n) => n?.title === "Consecrated Rune")).toBe(false);
   });
 
+  test("profession quests: a full-slot character is not offered Mining, but is offered Skinning (interim rule)", async () => {
+    state.db = seeded(true);
+    const db = state.db as Db;
+    const CRAFTER = "Player-7777-0000D004";
+    ingestSavedVariables(
+      db,
+      `ForeverTrackerDB = { schema = 1, characters = { ["${CRAFTER}"] = { snapshot = { takenAt = ${NOW},
+        identity = { name = "Brisa", class = "HUNTER", race = "Dwarf", level = 10 },
+        state = { zone = "Dun Morogh", mapId = 1426 },
+        progress = { professions = {
+          { skillLine = 393, name = "Skinning", rank = 30, max = 75 },
+          { skillLine = 165, name = "Leatherworking", rank = 25, max = 75 },
+          { skillLine = 185, name = "Cooking", rank = 10, max = 75 },
+          { skillLine = 129, name = "First Aid", rank = 5, max = 75 } },
+          questsCompleted = {}, questLog = {} } } } } }`,
+      () => NOW,
+    );
+    // Shapes as in the real `professions` resource (base record plus a per-page `@` record).
+    putContent(db, "professions", "mining", { slug: "mining", name: "Mining", kind: "gathering" });
+    putContent(db, "professions", "mining@100", { slug: "mining", name: "Mining", kind: "gathering" });
+    putContent(db, "professions", "skinning", { slug: "skinning", name: "Skinning", kind: "gathering" });
+    putContent(db, "professions", "leatherworking", { slug: "leatherworking", name: "Leatherworking", kind: "primary" });
+    putContent(db, "quests", "9401", quest(9401, "Camping 101: Mining", 9, ["Dun Morogh", 1426]));
+    putContent(db, "quests", "9402", quest(9402, "Camping 101: Skinning", 10, ["Dun Morogh", 1426]));
+
+    const data = (await questsLoad(ev(CRAFTER))) as QuestsData;
+    const titles = data.suggestions.map((s) => s.title);
+    expect(titles).not.toContain("Camping 101: Mining");
+    expect(data.suggestions.find((s) => s.title === "Camping 101: Skinning")).toMatchObject({ kind: "profession" });
+    expect(titles).toContain("Wolf Trouble");
+
+    const roster = (await rosterLoad({} as never)) as { nextByGuid: Record<string, { title: string } | null> };
+    expect(roster.nextByGuid[CRAFTER]?.title).not.toBe("Camping 101: Mining");
+  });
+
   test("unknown level: content ready but nothing suggested", async () => {
     state.db = seeded(true);
     // A character whose snapshots never carried a level.
