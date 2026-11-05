@@ -130,9 +130,10 @@ stored for the character.
   exist (non-English client or collapsed headers) the subsection is
   `unavailable` rather than an empty list. The addon never expands or collapses
   skill headers.
-- `questsCompleted`: a list of quest IDs, from the probe list, that the client
-  reports as completed. The probe list is set with `FT.setQuestIdList(ids)` and
-  is empty until the server supplies one, so the list is empty by default.
+- `questsCompleted`: an array of quest IDs that the client reports as
+  completed (`C_QuestLog.IsQuestFlaggedCompleted`). It is populated from the
+  bundled `Data/QuestIds.lua` list (`FT.setQuestIdList(ids)`), so it may lag
+  newly added quests until that list is regenerated with `pnpm addon:quest-ids`.
 - `questLog`: a list of `{ id }` for the quests currently in the log (headers
   skipped).
 

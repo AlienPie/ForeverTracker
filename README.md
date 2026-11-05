@@ -92,7 +92,12 @@ pnpm install
 pnpm test            # TypeScript packages and apps/web
 pnpm typecheck
 cd addon && ./test.sh   # addon specs under LuaJIT
+pnpm addon:quest-ids # regenerate addon/ForeverTracker/Data/QuestIds.lua from the content mirror
 pnpm --filter web build && pnpm --filter web start
 ```
 
 Environment variables: only the container's `--env-file` and variables exported in your shell are read. Nothing in development loads `.env` automatically, so export what you need (for example `export FOREVERDB_API_KEY=...`) before running `pnpm content:sync` or `pnpm --filter web start`. When `DATA_DIR` is unset or relative, the web app, `pnpm token:create` and `pnpm content:sync` all use `<workspace root>/data-local/forevertracker.sqlite`.
+
+## Credits
+
+Quest IDs bundled in the addon come from ForeverDB.net (https://foreverdb.net).

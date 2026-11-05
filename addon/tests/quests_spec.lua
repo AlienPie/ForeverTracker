@@ -7,8 +7,9 @@ describe("quests collectors", function()
     assert.are.same({ 100, 300 }, FT.takeSnapshot().progress.questsCompleted)
   end)
 
-  it("questsCompleted is empty by default", function()
-    assert.are.same({}, stubs.load().takeSnapshot().progress.questsCompleted)
+  it("questsCompleted uses the bundled list by default (stub flags 100 and 300, only 100 is a shipped quest)", function()
+    local done = stubs.load().takeSnapshot().progress.questsCompleted
+    assert.are.same({ 100 }, done)
   end)
 
   it("questsCompleted with 6000 IDs completes in under 1 second under stubs", function()
@@ -48,5 +49,46 @@ describe("quests collectors", function()
   it("questLog is unavailable without the API", function()
     local FT = stubs.load({ C_QuestLog = stubs.NIL })
     assert.is_true(FT.takeSnapshot().progress.questLog.unavailable)
+  end)
+end)
+
+describe("bundled quest ID list", function()
+  local function shipped()
+    local captured
+    local FT = stubs.load()
+    local orig = FT.setQuestIdList
+    FT.setQuestIdList = function(ids) captured = ids return orig(ids) end
+    assert(loadfile("ForeverTracker/Data/QuestIds.lua"))()
+    return captured, FT
+  end
+
+  it("is a large, sorted, unique list of positive integers", function()
+    local ids = shipped()
+    assert.is_true(#ids > 1000)
+    for i, id in ipairs(ids) do
+      assert.is_true(type(id) == "number" and id > 0 and id % 1 == 0)
+      if i > 1 then assert.is_true(id > ids[i - 1]) end
+    end
+  end)
+
+  it("is loaded by default so completed quests are reported", function()
+    local ids = shipped()
+    local a, b = ids[10], ids[200]
+    local FT = stubs.load({ C_QuestLog = {
+      IsQuestFlaggedCompleted = function(id) return id == a or id == b end,
+    } })
+    assert.are.same({ a, b }, FT.takeSnapshot().progress.questsCompleted)
+  end)
+
+  it("keeps the other IDs when one probe errors", function()
+    local ids = shipped()
+    local a, bad, b = ids[10], ids[11], ids[12]
+    local FT = stubs.load({ C_QuestLog = {
+      IsQuestFlaggedCompleted = function(id)
+        if id == bad then error("boom") end
+        return id == a or id == b
+      end,
+    } })
+    assert.are.same({ a, b }, FT.takeSnapshot().progress.questsCompleted)
   end)
 end)

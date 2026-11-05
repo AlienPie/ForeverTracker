@@ -22,6 +22,7 @@ local ADDON_FILES = {
   "ForeverTracker/Collectors/Talents.lua",
   "ForeverTracker/Collectors/Professions.lua",
   "ForeverTracker/Collectors/Quests.lua",
+  "ForeverTracker/Data/QuestIds.lua",
   "ForeverTracker/Collectors/Exploration.lua",
   "ForeverTracker/Events.lua",
   "ForeverTracker/Slash.lua",

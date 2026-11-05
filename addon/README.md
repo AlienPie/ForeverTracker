@@ -14,8 +14,10 @@ Copy (or symlink) `addon/ForeverTracker/` to
 ## Quest probing and /played
 
 `FT.setQuestIdList(ids)` sets the quest IDs probed for `progress.questsCompleted`
-(`C_QuestLog.IsQuestFlaggedCompleted` per ID). It defaults to an empty list
-until a server-supplied list exists. `FT.requestPlayed()` calls
+(`C_QuestLog.IsQuestFlaggedCompleted` per ID). Completed quests are tracked via
+the bundled `Data/QuestIds.lua`, which calls it with every known quest ID.
+Regenerate it after a `pnpm content:sync` with `pnpm addon:quest-ids`. The quest
+data is credited to ForeverDB.net (https://foreverdb.net). `FT.requestPlayed()` calls
 `RequestTimePlayed()`; the `TIME_PLAYED_MSG` reply is cached for the next
 snapshot's `time` section. Each reply is also saved per character
 (`characters[guid].played = { played, playedLevel, at }`), so `time` survives
