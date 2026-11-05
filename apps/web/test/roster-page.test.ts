@@ -215,7 +215,7 @@ describe("quest catalog memo", () => {
     const source: ContentSource = {
       get: inner.get,
       list: (r, o) => {
-        calls.list++;
+        if (r === "quests") calls.list++;
         return inner.list(r, o);
       },
     };
@@ -267,13 +267,13 @@ describe("quest catalog memo", () => {
     const db = openDb(":memory:");
     putContent(db, "meta", "current", { build: "1.0", levelCap: 60 });
     const memo = createQuestCatalog({ source: () => catalogSource("mirror", db), now: () => 0 });
-    expect(await memo.get()).toEqual({ quests: [], levelCap: null });
+    expect(await memo.get()).toEqual({ quests: [], levelCap: null, mapNames: {} });
   });
 
   test("on-demand mode never builds a source (no network at page load)", async () => {
     expect(catalogSource("on-demand", seeded(true))).toBeNull();
     const memo = createQuestCatalog({ source: () => null, now: () => 0 });
-    expect(await memo.get()).toEqual({ quests: [], levelCap: null });
+    expect(await memo.get()).toEqual({ quests: [], levelCap: null, mapNames: {} });
   });
 
   test("the mirror source is built without a network client", async () => {

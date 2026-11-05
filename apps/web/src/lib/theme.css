@@ -15,7 +15,7 @@ body{margin:0;color:var(--text);font:16px/1.5 var(--sans);
 a{color:var(--gilt);text-underline-offset:3px}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--gilt);outline-offset:3px}
 .wrap{max-width:1120px;margin:0 auto;padding:0 16px}
-.page{display:flex;flex-direction:column;min-height:100vh} .page main{flex:1}
+.page{display:flex;flex-direction:column;min-height:100vh} .page main{flex:1;width:100%}
 .skip{position:absolute;left:16px;top:-100px;background:var(--hearth);padding:8px 12px;z-index:10}
 .skip:focus{top:8px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -87,6 +87,27 @@ footer.site{border-top:1px solid var(--edge);padding:18px 0;color:var(--text-dim
 .pips{display:flex;gap:4px;margin-top:8px}.pips i{flex:1;height:8px;border-radius:2px;background:#fff1;border:1px solid var(--edge)}
 .pips i.done{background:var(--gilt-dim);border-color:var(--gilt-dim)}.pips i.now{background:var(--gilt);border-color:var(--gilt)}
 .note{font-size:13px;color:var(--text-dim);margin-top:14px}
+/* character page: lists, timeline, places, skills (extends the mockup's panel pieces) */
+.hero-main{min-width:0}.hero h1{overflow-wrap:anywhere}
+.hero .surname{font-size:26px;color:var(--text-dim);font-style:italic}
+.hero .stale{color:#d9734f} /* ember lifted to 5.8:1 on the cellar background */
+.tabs a:hover{color:var(--text)}
+.quests,.chains,.timeline,.places,.skills{list-style:none;margin:0;padding:0}
+.panel .sub.foot{margin:12px 0 0}
+.panel .banner{margin:4px 0 0}
+.timeline li{display:grid;grid-template-columns:9.5em 1fr;gap:2px 16px;padding:9px 0;border-top:1px solid #0003;font-size:15px}
+.timeline li:first-child{border-top:0}
+.timeline time{font:italic 15px var(--serif);color:var(--ink-soft)}
+.timeline .ev-level_up span{font-weight:600}
+.places li{padding:10px 0;border-top:1px solid var(--edge)}.places li:first-child{border-top:0}
+.places .top,.skills .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.places .subz{font-size:14px;color:var(--text-dim);margin-top:2px}
+.skills li{padding:10px 0;border-top:1px solid #0003}.skills li:first-child{border-top:0}
+.skills .rank{font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+.skills .xp{margin:8px 0 0}
+.panel .big{font-size:18px;margin:4px 0 8px}.panel .big b{font:400 32px var(--serif);margin-right:6px}
+@media(max-width:560px){.timeline li{grid-template-columns:1fr}.hero .surname{display:block;font-size:22px}
+  .tabs{gap:0}.tabs a{padding:10px 10px;font-size:15px}.tabs a[aria-current]{font-size:17px}}
 .banner{background:var(--hearth);border:1px solid var(--edge);border-left:3px solid var(--gilt);padding:10px 14px;margin:16px 0 0;font-size:14px;color:var(--text-dim)}
 .banner code{color:var(--text);font-size:13px}
 /* sign-in */

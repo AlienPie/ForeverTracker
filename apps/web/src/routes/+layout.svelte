@@ -14,7 +14,9 @@
     { href: "/settings", label: "Settings" },
   ];
   const current = (href: string) =>
-    href === "/" ? page.url.pathname === "/" : page.url.pathname.startsWith(href) ? true : undefined;
+    href === "/"
+      ? page.url.pathname === "/" || page.url.pathname.startsWith("/c/") // character pages live under the roster
+      : page.url.pathname.startsWith(href) ? true : undefined;
 </script>
 
 <div class="page">

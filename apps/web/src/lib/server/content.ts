@@ -4,10 +4,56 @@ import type { Db } from "@ft/db";
 import { getDb } from "./db";
 import { env } from "./env";
 
-export type QuestCatalog = { quests: QuestRow[]; levelCap: number | null };
+export type QuestCatalog = {
+  quests: QuestRow[];
+  levelCap: number | null;
+  /** uiMapId to zone name (see `loadMapNames`); empty when content is not ready. */
+  mapNames: Record<number, string>;
+};
 
 export const CATALOG_TTL_MS = 60_000;
-const EMPTY: QuestCatalog = Object.freeze({ quests: [], levelCap: null }) as QuestCatalog;
+export const EMPTY_CATALOG: QuestCatalog = Object.freeze({ quests: [], levelCap: null, mapNames: {} }) as QuestCatalog;
+const EMPTY = EMPTY_CATALOG;
+const PAGE = 500;
+
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const placeName = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v : null);
+const mapId = (v: unknown): number | null => (typeof v === "number" && Number.isInteger(v) && v > 0 ? v : null);
+
+/**
+ * uiMapId to zone name, from two sources verified against the owner's mirror
+ * (2026-11-05): `zones` records are `{ id, name, type, parentId }` where `id`
+ * is the uiMapId (every id shared with the quests carries the same name as the
+ * quests' `zone.m`/`zone.n` pairs); then, for ids the zones list lacks, the
+ * quests' own `zone.m` + `zone.n` pairs and endpoint `location.uiMapId` +
+ * `location.zone`. A quest `zone.n` without a numeric `m` is a category
+ * ("Warrior", "Cooking"), never a place, so it is not used.
+ */
+export async function loadMapNames(source: ContentSource, quests: QuestRow[]): Promise<Record<number, string>> {
+  const names: Record<number, string> = {};
+  for (let offset = 0; ; offset += PAGE) {
+    const page = await source.list("zones", { limit: PAGE, offset });
+    for (const z of page) {
+      const id = isObj(z) ? mapId(z.id) : null;
+      const name = isObj(z) ? placeName(z.name) : null;
+      if (id !== null && name !== null) names[id] = name;
+    }
+    if (page.length < PAGE) break;
+  }
+  const add = (id: unknown, name: unknown) => {
+    const m = mapId(id);
+    const n = placeName(name);
+    if (m !== null && n !== null && !(m in names)) names[m] = n;
+  };
+  for (const q of quests) {
+    if (isObj(q.zone)) add(q.zone.m, q.zone.n);
+    for (const e of [q.starts, q.ends]) {
+      const loc = isObj(e) && isObj(e.location) ? e.location : null;
+      if (loc) add(loc.uiMapId, loc.zone);
+    }
+  }
+  return names;
+}
 
 /** Mirror mode never touches the network, so its source gets a client that refuses to be used. */
 const NO_CLIENT: ForeverDbClient = {
@@ -49,7 +95,7 @@ export function createQuestCatalog(opts: {
     if (!source) return EMPTY;
     const quests = await loadQuests(source);
     if (quests.length === 0) return EMPTY;
-    return { quests, levelCap: await getLevelCap(source) };
+    return { quests, levelCap: await getLevelCap(source), mapNames: await loadMapNames(source, quests) };
   }
 
   return {

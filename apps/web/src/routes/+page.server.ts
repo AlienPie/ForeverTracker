@@ -1,7 +1,7 @@
 import type { ServerLoad } from "@sveltejs/kit";
 import type { ContentMode } from "@ft/content";
 import { getCharacter, getRoster, nextUp, type Roster, type Suggestion } from "@ft/core";
-import { getQuestCatalog } from "../lib/server/content";
+import { getQuestCatalogSafe } from "../lib/server/safe-catalog";
 import { getDb } from "../lib/server/db";
 import { env } from "../lib/server/env";
 
@@ -21,7 +21,7 @@ export const load: ServerLoad = async (): Promise<RosterPageData> => {
   const db = getDb();
   const now = Math.floor(Date.now() / 1000);
   const roster = getRoster(db, now);
-  const catalog = await getQuestCatalog();
+  const catalog = await getQuestCatalogSafe();
   const contentReady = catalog.quests.length > 0;
 
   const nextByGuid: Record<string, Suggestion | null> = {};
