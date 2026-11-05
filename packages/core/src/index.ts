@@ -29,3 +29,4 @@ export {
   type ChainMemberState,
 } from "./advice/chain-detail";
 export { professionOfQuest } from "./advice/professions";
+export { listQuestLog, type QuestLogPage, type QuestLogRow } from "./advice/quest-log";

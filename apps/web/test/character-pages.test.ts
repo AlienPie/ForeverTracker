@@ -556,3 +556,61 @@ describe("safe catalog", () => {
     quiet.mockRestore();
   });
 });
+
+import { load as logLoad } from "../src/routes/c/[guid]/quests/log/+page.server";
+
+type LogData = {
+  contentReady: boolean;
+  contentMode: string;
+  list: "progress" | "completed";
+  q: string;
+  counts: { progress: number; completed: number };
+  rows: { questId: number; name: string; level: number | null; zone: string | null }[];
+  total: number;
+  page: number;
+  pages: number;
+};
+const logEv = (guid: string, query = "") =>
+  ({ params: { guid }, url: new URL(`http://localhost/c/${guid}/quests/log${query}`) }) as never;
+
+describe("quest log page", () => {
+  test("unknown guid is a 404", async () => {
+    state.db = seeded(true);
+    await expect(Promise.resolve().then(() => logLoad(logEv(UNKNOWN)))).rejects.toMatchObject({ status: 404 });
+  });
+
+  test("both lists with counts; default list is in progress", async () => {
+    state.db = seeded(true);
+    const p = (await logLoad(logEv(HERO))) as LogData;
+    expect(p).toMatchObject({ contentReady: true, list: "progress", counts: { progress: 1, completed: 1 }, total: 1 });
+    expect(p.rows).toEqual([{ questId: 9201, name: "Fourth Step", level: 13, zone: "Dun Morogh" }]);
+    const c = (await logLoad(logEv(HERO, "?list=completed"))) as LogData;
+    expect(c.list).toBe("completed");
+    expect(c.rows).toEqual([{ questId: 9101, name: "First Step", level: 10, zone: "Dun Morogh" }]);
+  });
+
+  test("search filters; bad list/page/q are normalised", async () => {
+    state.db = seeded(true);
+    expect(((await logLoad(logEv(HERO, "?list=completed&q=FIRST"))) as LogData).total).toBe(1);
+    expect(((await logLoad(logEv(HERO, "?list=completed&q=zzz"))) as LogData).total).toBe(0);
+    const bad = (await logLoad(logEv(HERO, "?list=__proto__&page=-3&q=.*"))) as LogData;
+    expect(bad).toMatchObject({ list: "progress", page: 1, total: 0, q: ".*" });
+    for (const pg of ["abc", "0", "1.5", "99999999999999999999", "1e3"]) {
+      expect(((await logLoad(logEv(HERO, `?page=${pg}`))) as LogData).page, pg).toBe(1);
+    }
+    expect(((await logLoad(logEv(HERO, "?page=50"))) as LogData).page).toBe(1);
+  });
+
+  test("a long q is trimmed and cut to 100 characters", async () => {
+    state.db = seeded(true);
+    const p = (await logLoad(logEv(HERO, `?q=${encodeURIComponent("  " + "a".repeat(500))}`))) as LogData;
+    expect(p.q).toBe("a".repeat(100));
+  });
+
+  test("empty catalog: still lists ids as 'Quest <id>' with content not ready", async () => {
+    state.db = seeded(false);
+    const p = (await logLoad(logEv(HERO, "?list=completed"))) as LogData;
+    expect(p).toMatchObject({ contentReady: false, contentMode: "mirror", total: 1 });
+    expect(p.rows).toEqual([{ questId: 9101, name: "Quest 9101", level: null, zone: null }]);
+  });
+});

@@ -13,6 +13,7 @@
     profession: "profession",
   };
   const chainHref = (questId: number) => `/c/${encodeURIComponent(page.params.guid ?? "")}/quests/chain/${questId}`;
+  const logHref = (list: string) => `/c/${encodeURIComponent(page.params.guid ?? "")}/quests/log?list=${list}`;
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 </script>
 
@@ -80,6 +81,10 @@
       <p class="sub">
         {plural(data.inProgress, "quest", "quests")} in progress, {data.completed} completed.
       </p>
+      <ul class="loglinks">
+        <li><a href={logHref("progress")}>In progress ({data.inProgress})</a></li>
+        <li><a href={logHref("completed")}>Completed ({data.completed})</a></li>
+      </ul>
     </section>
   </aside>
 </div>
