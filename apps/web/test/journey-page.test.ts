@@ -222,6 +222,23 @@ describe("journey page load", () => {
     expect(page).not.toContain("Your route");
   });
 
+  test("only implausible times: no sessions, so the empty state", async () => {
+    state.db = openDb(":memory:");
+    ingestSavedVariables(
+      state.db as Db,
+      `ForeverTrackerDB = { schema = 1, characters = { ["${ODD}"] = {
+        snapshot = { takenAt = ${NOW}, identity = { name = "Tamberlo", class = "MAGE", race = "Gnome", level = 8 } },
+        events = { { t = 1e20, kind = "quest_turned_in", data = {} }, { t = -1e20, kind = "quest_turned_in", data = {} } },
+      } } }`,
+      () => NOW,
+    );
+    const data = await run(ODD);
+    expect(data.sessions).toEqual([]);
+    expect(data.empty).toBe(true);
+    expect(data.eventsNote).toBeNull();
+    expect(html(data)).toContain("No play recorded yet.");
+  });
+
   test("events but no level-ups or places: panel empty states", async () => {
     state.db = seeded();
     const data = await run(QUIET);
@@ -266,6 +283,7 @@ describe("journey page load", () => {
     state.db = seeded();
     const data = await run(ODD);
     expect(data.sessions).toHaveLength(1);
+    expect(data.eventsNote).toBeNull(); // implausible rows are not a capped read
     expect(data.sessions[0]!.events.map((e) => e.text)).toEqual(["Reached level 7"]);
     expect(data.route.stops).toEqual([]);
     expect(data.pace.bars.map((b) => b.level)).toEqual([7]);

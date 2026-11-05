@@ -1,5 +1,5 @@
 import { error, type ServerLoad } from "@sveltejs/kit";
-import { buildSessions, getJourneyData, levelPace, routeFromVisited } from "@ft/core";
+import { buildSessions, DEFAULT_JOURNEY_EVENTS, getJourneyData, levelPace, routeFromVisited } from "@ft/core";
 import { eventSentence, formatEventTime, mapName } from "../../../../lib/journey";
 import {
   clockTime,
@@ -25,7 +25,7 @@ import { getDb } from "../../../../lib/server/db";
 import { getQuestCatalogSafe } from "../../../../lib/server/safe-catalog";
 
 export type JourneyPageData = {
-  /** no usable events at all: the page shows one message and no panels */
+  /** no sessions at all (no events, or none with a plausible time): the page shows one message and no panels */
   empty: boolean;
   sessions: SessionView[];
   totalSessions: number;
@@ -82,7 +82,7 @@ export const load: ServerLoad = async ({ params, url }): Promise<JourneyPageData
   const route = routeFromVisited(view.visitedMaps, journey.levelUps, (id) => catalog.mapNames[id] ?? null);
 
   return {
-    empty: journey.events.length === 0,
+    empty: sessions.length === 0,
     sessions: sessionViews,
     totalSessions: sessions.length,
     shownSessions: sessionViews.length,
@@ -91,7 +91,7 @@ export const load: ServerLoad = async ({ params, url }): Promise<JourneyPageData
     route: routeView(route),
     eventsShown: journey.events.length,
     eventsTotal: journey.total,
-    eventsNote: eventsNote(journey.events.length, journey.total),
+    eventsNote: eventsNote(journey.events.length, journey.total, DEFAULT_JOURNEY_EVENTS),
     now,
   };
 };
