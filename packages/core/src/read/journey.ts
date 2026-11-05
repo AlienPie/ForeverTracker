@@ -9,6 +9,14 @@ export type JourneyData = {
   levelUps: { t: number; level: number }[];
   /** How many event rows are stored for the character (malformed ones included). */
   total: number;
+  /**
+   * The read hit its cap and older rows exist: `events` (and anything built from
+   * them) covers only the window from `oldestT` on. Counted on raw rows, so
+   * skipped malformed rows do not hide it.
+   */
+  capped: boolean;
+  /** `t` of the oldest row read (malformed or not), null when none was read or its time is not finite. */
+  oldestT: number | null;
 };
 
 /** How many events `getJourneyData` loads unless told otherwise. */
@@ -29,7 +37,8 @@ function parse(text: unknown): unknown {
  * The Journey page's data, or null for an unknown guid: the newest
  * `opts.events` events (default {@link DEFAULT_JOURNEY_EVENTS}), every level-up
  * (a small set, so pace and route see levels older than the cap) and the stored
- * total. Rows whose data does not parse, or whose time is not a finite number,
+ * total, plus whether the read was capped and the oldest time it reached.
+ * Rows whose data does not parse, or whose time is not a finite number,
  * are skipped; level-ups also need a plausible time and a positive integer level.
  */
 export function getJourneyData(db: Db, guid: string, opts: { events?: number } = {}): JourneyData | null {
@@ -69,5 +78,10 @@ export function getJourneyData(db: Db, guid: string, opts: { events?: number } =
       ? rows.length
       : (db.select({ n: count() }).from(characterEvent).where(eq(characterEvent.guid, guid)).get()?.n ?? rows.length);
 
-  return { events, levelUps, total };
+  const last = rows[rows.length - 1];
+  const oldestT = last && typeof last.t === "number" && Number.isFinite(last.t) ? last.t : null;
+  // At exactly `limit` rows stored nothing was left out, so that is not capped.
+  const capped = rows.length === limit && total > rows.length;
+
+  return { events, levelUps, total, capped, oldestT };
 }

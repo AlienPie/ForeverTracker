@@ -1,5 +1,5 @@
 import { error, type ServerLoad } from "@sveltejs/kit";
-import { buildSessions, DEFAULT_JOURNEY_EVENTS, getJourneyData, levelPace, routeFromVisited } from "@ft/core";
+import { buildSessions, getJourneyData, levelPace, routeFromVisited } from "@ft/core";
 import { eventSentence, formatEventTime, mapName } from "../../../../lib/journey";
 import {
   clockTime,
@@ -79,6 +79,10 @@ export const load: ServerLoad = async ({ params, url }): Promise<JourneyPageData
     };
   });
 
+  // Sessions cover only the capped window, so pace uses only the level-ups inside it: a level
+  // that started before the window has no known start there and is left out (not drawn as ~0).
+  const oldest = journey.oldestT;
+  const paceUps = journey.capped && oldest !== null ? journey.levelUps.filter((u) => u.t >= oldest) : journey.levelUps;
   const route = routeFromVisited(view.visitedMaps, journey.levelUps, (id) => catalog.mapNames[id] ?? null);
 
   return {
@@ -87,11 +91,11 @@ export const load: ServerLoad = async ({ params, url }): Promise<JourneyPageData
     totalSessions: sessions.length,
     shownSessions: sessionViews.length,
     sessionsNote: sessionsNote(sessionViews.length, sessions.length, all, url.pathname),
-    pace: paceView(journey.levelUps.length > 0 ? levelPace(journey.levelUps, sessions, now) : []),
+    pace: paceView(paceUps.length > 0 ? levelPace(paceUps, sessions, now) : []),
     route: routeView(route),
     eventsShown: journey.events.length,
     eventsTotal: journey.total,
-    eventsNote: eventsNote(journey.events.length, journey.total, DEFAULT_JOURNEY_EVENTS),
+    eventsNote: eventsNote(journey.events.length, journey.total, journey.capped),
     now,
   };
 };

@@ -78,7 +78,7 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 
 ## State at the end of M1.1
 
-**What exists now** (branch `m1-1-tweaks`, on top of M1). Roster cards and the character header show the surname (shared `CharacterName` component, bug-list item 6, `09e0353`..`e694a59`). "Next up" skips profession quests for professions the character cannot use (item 1, `f9c56ab`..`2ca683c`). Quest chains list only chains the character is on and each opens to a chain page, `/c/<guid>/quests/chain/<questId>` (item 2, `66ef9c5`..`2e583bf`). The quest log lists completed and in-progress quests with paging and search, `/c/<guid>/quests/log?list=completed|progress&page=&q=` (item 3, `3ce592a`). Journey is rebuilt as play sessions (newest first, expandable cards), a "Time per level" pace strip and a "Your route" strip, with times in UTC (item 4, `a6bd498`..`6495c61`). Items 5 (alt comparison chart) and 7 ("where to next") stay in M2. Task 7 adds the extended smoke test and these docs, plus two small Journey fixes (the empty state when no session survives, the "Showing N of total" note only when the read hit its cap).
+**What exists now** (branch `m1-1-tweaks`, on top of M1). Roster cards and the character header show the surname (shared `CharacterName` component, bug-list item 6, `09e0353`..`e694a59`). "Next up" skips profession quests for professions the character cannot use (item 1, `f9c56ab`..`2ca683c`). Quest chains list only chains the character is on and each opens to a chain page, `/c/<guid>/quests/chain/<questId>` (item 2, `66ef9c5`..`2e583bf`). The quest log lists completed and in-progress quests with paging and search, `/c/<guid>/quests/log?list=completed|progress&page=&q=` (item 3, `3ce592a`). Journey is rebuilt as play sessions (newest first, expandable cards), a "Time per level" pace strip and a "Your route" strip; times show in UTC first and switch to the browser's time zone once the page has loaded (item 4, `a6bd498`..`6495c61`). Items 5 (alt comparison chart) and 7 ("where to next") stay in M2. Task 7 adds the extended smoke test and these docs, plus two small Journey fixes (the empty state when no session survives, the "Showing N of total" note only when the read hit its cap).
 
 **Verified in the last task (2026-11-05).**
 - `pnpm test` (31 files, 431 tests), `pnpm typecheck` and `(cd addon && ./test.sh)` (126 successes) pass.
@@ -95,9 +95,12 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 - The profession-quest rule is INTERIM: it matches quests by profession name; it is replaced by Wowhead tags in M2.
 - Only first visits to a place are recorded, so the route shows order and level ranges, not time per zone.
 - A level can show less than a minute when a session ends exactly at a level-up.
+- Sessions are built only from the sparse recorded events (level, quest, zone, profession), so 30 minutes or more of play without any of them (for example grinding) counts as a break and is not counted in "Time per level".
+- When a character has more than 3000 events, Journey reads the newest 3000: the oldest sessions shown may be incomplete and "Time per level" leaves out levels that started before that window (the page says so).
 
 **Owner actions.**
 1. Rebuild and recreate the container: `podman compose up -d --build --force-recreate`.
+   Note: `podman build -t forevertracker:dev .` retags the image the compose stack uses, so a running container keeps its old image until it is recreated.
 2. Run the content sync once if not done: `podman compose exec forevertracker node /app/content-sync.mjs` (needs `FOREVERDB_API_KEY` in `.env`).
 
 **Next: M2** (spec section 11). Class/race/profession chains (maintainer quest-tagging tool, Wowhead tags), the talent playground with guide builds, profession advice, "where to next" and the alt comparison chart. After that, M3: the sync agent, Battle.net login, a planning view and theme polish.

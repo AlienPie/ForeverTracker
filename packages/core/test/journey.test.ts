@@ -494,7 +494,7 @@ describe("getJourneyData", () => {
   });
 
   test("a character with no events", () => {
-    expect(getJourneyData(seeded(), G)).toEqual({ events: [], levelUps: [], total: 0 });
+    expect(getJourneyData(seeded(), G)).toEqual({ events: [], levelUps: [], total: 0, capped: false, oldestT: null });
   });
 
   test("caps events newest first, returns all level-ups beyond the cap, and the total", () => {
@@ -534,6 +534,31 @@ describe("getJourneyData", () => {
     expect(j.events).toHaveLength(3000);
     expect(j.events.at(-1)!.t).toBe(T0 + 100);
     expect(j.total).toBe(3100);
+    expect(j.capped).toBe(true);
+    expect(j.oldestT).toBe(T0 + 100);
+  });
+
+  test("capped and oldestT: under the cap, exactly at it, and with malformed rows in the window", () => {
+    const db = seeded();
+    db.insert(characterEvent)
+      .values(Array.from({ length: 10 }, (_, i) => ({ guid: G, t: T0 + i, kind: "quest_turned_in", data: `{"questId":${i + 1}}` })))
+      .run();
+    // Under the cap: everything read.
+    expect(getJourneyData(db, G, { events: 20 })).toMatchObject({ capped: false, oldestT: T0, total: 10 });
+    // Exactly at the cap: nothing was left out.
+    expect(getJourneyData(db, G, { events: 10 })).toMatchObject({ capped: false, oldestT: T0, total: 10 });
+    // Over it: capped, and the window starts at the oldest row read.
+    expect(getJourneyData(db, G, { events: 4 })).toMatchObject({ capped: true, oldestT: T0 + 6, total: 10 });
+
+    // A malformed row inside the window is skipped from events but still counts as read.
+    db.insert(characterEvent).values({ guid: G, t: T0 + 20, kind: "quest_turned_in", data: "{not json" }).run();
+    const j = getJourneyData(db, G, { events: 4 })!;
+    expect(j.events).toHaveLength(3);
+    expect(j).toMatchObject({ capped: true, oldestT: T0 + 7, total: 11 });
+    // The oldest row read may itself be malformed.
+    db.insert(characterEvent).values({ guid: G, t: T0 - 5, kind: "level_up", data: "][" }).run();
+    expect(getJourneyData(db, G, { events: 12 })).toMatchObject({ capped: false, oldestT: T0 - 5, total: 12 });
+    expect(getJourneyData(db, G, { events: 11 })).toMatchObject({ capped: true, oldestT: T0, total: 12 });
   });
 
   test("malformed rows are skipped rather than thrown on", () => {

@@ -271,10 +271,13 @@ describe("notes", () => {
   });
 
   test("events note only when the cap is hit", () => {
-    expect(eventsNote(40, 40, 3000)).toBeNull();
+    expect(eventsNote(40, 40, false)).toBeNull();
     // Malformed rows skipped, cap not reached: no note.
-    expect(eventsNote(2990, 3000, 3000)).toBeNull();
-    expect(eventsNote(3000, 3456, 3000)).toBe("Showing 3,000 of 3,456 events. The oldest sessions shown may be incomplete.");
+    expect(eventsNote(2990, 3000, false)).toBeNull();
+    const note = "Showing 3,000 of 3,456 events. The oldest sessions shown may be incomplete. Time per level covers only these events.";
+    expect(eventsNote(3000, 3456, true)).toBe(note);
+    // Capped with malformed rows skipped from the window: still said, with the usable count.
+    expect(eventsNote(2999, 3456, true)).toBe(note.replace("3,000", "2,999"));
   });
 });
 

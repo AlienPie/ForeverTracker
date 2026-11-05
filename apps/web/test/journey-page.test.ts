@@ -81,11 +81,11 @@ const FIXTURE = `ForeverTrackerDB = { schema = 1, characters = {
 function putContent(db: Db, resource: string, id: string, data: unknown) {
   db.insert(contentRecord).values({ resource, id, build: "1.0", data: JSON.stringify(data), fetchedAt: NOW }).run();
 }
-const quest = (id: number, name: string) => ({
+const quest = (id: number, name: string, zone: [string, number] = ["Dun Morogh", 1426]) => ({
   id,
   name,
   level: 2,
-  zone: { n: "Dun Morogh", slug: "dun-morogh", m: 1426 },
+  zone: { n: zone[0], slug: zone[0].toLowerCase().replace(/ /g, "-"), m: zone[1] },
   chain: { previous: [], next: [], questLine: null },
   starts: null,
   ends: null,
@@ -97,10 +97,13 @@ function seeded(withContent = true): Db {
   if (withContent) {
     putContent(db, "meta", "current", { build: "1.0", levelCap: 60 });
     putContent(db, "zones", "1426", { id: 1426, name: "Dun Morogh", type: 3, parentId: 1415 });
-    putContent(db, "zones", "1432", { id: 1432, name: "Loch Modan", type: 3, parentId: 1415 });
     putContent(db, "quests", "9101", quest(9101, "Frosty Errand"));
     putContent(db, "quests", "9102", quest(9102, "Ram Wrangling"));
     putContent(db, "quests", "9103", quest(9103, "Lost Pickaxe"));
+    // No zones record for 1432: its name comes from this quest's zone (the quest-derived fallback).
+    putContent(db, "quests", "9104", quest(9104, "Lochside Errand", ["Loch Modan", 1432]));
+    // 1426 has a zones record and a quest naming it differently: the zones record wins.
+    putContent(db, "quests", "9105", quest(9105, "Old Road", ["Coldridge Wilds", 1426]));
   }
   return db;
 }
@@ -128,6 +131,7 @@ describe("journey page load", () => {
     state.db = seeded();
     const data = await run(HERO);
     expect(data.empty).toBe(false);
+    expect(data.eventsNote).toBeNull(); // under the cap
     expect(data.totalSessions).toBe(7);
     expect(data.shownSessions).toBe(5);
     expect(data.sessions).toHaveLength(5);
@@ -183,6 +187,7 @@ describe("journey page load", () => {
   test("route: stops in order with catalog names, Map <id> fallback, markers and the earlier cluster", async () => {
     state.db = seeded();
     const data = await run(HERO);
+    // Dun Morogh from the zones table (over the quest-derived "Coldridge Wilds"); Loch Modan only from a quest's zone.
     expect(data.route.stops.map((s) => [s.name, s.when, s.current])).toEqual([
       ["Dun Morogh", "levels 2 to 4", false],
       ["Loch Modan", "levels 4 to 6", false],
@@ -271,12 +276,41 @@ describe("journey page load", () => {
     const data = await run(BARE);
     expect(data.eventsShown).toBe(3000);
     expect(data.eventsTotal).toBe(3100);
-    expect(data.eventsNote).toBe("Showing 3,000 of 3,100 events. The oldest sessions shown may be incomplete.");
+    expect(data.eventsNote).toBe(
+      "Showing 3,000 of 3,100 events. The oldest sessions shown may be incomplete. Time per level covers only these events.",
+    );
     expect(data.sessions).toHaveLength(1);
     expect(data.sessions[0]!.events.length).toBeLessThanOrEqual(100);
     expect(data.sessions[0]!.moreEvents).toBe(3000 - data.sessions[0]!.events.length);
     expect(data.sessions[0]!.summary).toBe("3,000 quests handed in.");
     expect(html(data)).toContain("Showing 3,000 of 3,100 events.");
+  });
+
+  test("capped read: pace covers only the window, levels started before it are left out, the note survives a malformed row", async () => {
+    state.db = seeded();
+    const rows = [
+      // Level-ups older than the 3000-row window.
+      { guid: BARE, t: NOW - 9000, kind: "level_up", data: JSON.stringify({ level: 2 }) },
+      { guid: BARE, t: NOW - 8000, kind: "level_up", data: JSON.stringify({ level: 3 }) },
+      ...Array.from({ length: 3100 }, (_, i) => ({ guid: BARE, t: NOW - 4000 + i, kind: "quest_turned_in", data: JSON.stringify({ questId: 9101 }) })),
+      // Inside the window: two level-ups and one malformed row.
+      { guid: BARE, t: NOW - 2000, kind: "level_up", data: JSON.stringify({ level: 4 }) },
+      { guid: BARE, t: NOW - 1500, kind: "level_up", data: JSON.stringify({ level: 5 }) },
+      { guid: BARE, t: NOW - 1200, kind: "quest_turned_in", data: "{not json" },
+    ];
+    (state.db as Db).insert(characterEvent).values(rows).run();
+    const data = await run(BARE);
+    expect(data.eventsTotal).toBe(3105);
+    expect(data.eventsShown).toBe(2999);
+    // Level 3 started before the window (its start is unknown inside it): not drawn, nor level 2.
+    expect(data.pace.bars.map((b) => [b.level, b.seconds, b.now])).toEqual([
+      [4, 500, false],
+      [5, 599, true],
+    ]);
+    expect(data.pace.slowest).toBeNull();
+    expect(data.eventsNote).toBe(
+      "Showing 2,999 of 3,105 events. The oldest sessions shown may be incomplete. Time per level covers only these events.",
+    );
   });
 
   test("implausible times do not throw", async () => {

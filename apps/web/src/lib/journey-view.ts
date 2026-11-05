@@ -311,11 +311,15 @@ export function sessionsNote(shown: number, total: number, all: boolean, path: s
   };
 }
 
-/** Said when the event read hit its cap (`shown >= cap`), else null: skipped malformed rows alone say nothing. */
-export function eventsNote(shown: number, total: number, cap: number): string | null {
-  if (!(total > shown) || shown < cap) return null;
+/**
+ * Said when the event read was capped (`JourneyData.capped`, counted on raw rows),
+ * else null: skipped malformed rows alone say nothing, and they never hide it.
+ * `shown` is the usable events the page was built from.
+ */
+export function eventsNote(shown: number, total: number, capped: boolean): string | null {
+  if (!capped) return null;
   const n = (v: number) => v.toLocaleString("en-GB");
-  return `Showing ${n(shown)} of ${n(total)} events. The oldest sessions shown may be incomplete.`;
+  return `Showing ${n(shown)} of ${n(total)} events. The oldest sessions shown may be incomplete. Time per level covers only these events.`;
 }
 
 // ---------------------------------------------------------------- route strip
