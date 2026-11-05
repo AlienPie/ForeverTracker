@@ -10,7 +10,7 @@ export {
 } from "./read/character";
 export { getRoster, type Roster } from "./read/roster";
 export { DEFAULT_JOURNEY_EVENTS, getJourneyData, type JourneyData } from "./read/journey";
-export { buildSessions, DEFAULT_SESSION_GAP, type JourneyEvent, type Session } from "./journey/sessions";
+export { buildSessions, DEFAULT_SESSION_GAP, type StoredEvent, type Session } from "./journey/sessions";
 export { levelPace, type LevelPace, type LevelUp } from "./journey/pace";
 export {
   DEFAULT_ROUTE_STOPS,

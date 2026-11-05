@@ -1,10 +1,10 @@
 import { character, characterEvent, type Db } from "@ft/db";
 import { and, asc, count, desc, eq } from "drizzle-orm";
-import { levelOf, plausibleTime, type JourneyEvent } from "../journey/sessions";
+import { levelOf, plausibleTime, type StoredEvent } from "../journey/sessions";
 
 export type JourneyData = {
   /** The newest events (capped), newest first. */
-  events: JourneyEvent[];
+  events: StoredEvent[];
   /** Every `level_up` event with a usable level, oldest first. */
   levelUps: { t: number; level: number }[];
   /** How many event rows are stored for the character (malformed ones included). */
@@ -38,7 +38,7 @@ export function getJourneyData(db: Db, guid: string, opts: { events?: number } =
   const n = opts.events;
   const limit = typeof n === "number" && Number.isInteger(n) && n > 0 ? n : DEFAULT_JOURNEY_EVENTS;
 
-  const events: JourneyEvent[] = [];
+  const events: StoredEvent[] = [];
   const rows = db
     .select()
     .from(characterEvent)

@@ -1,7 +1,7 @@
 /** Play sessions built from the character's events. Pure, and never throws on odd data. */
 
 /** One stored event (docs/addon-contract.md, "Event kinds"); `data` is the parsed JSON. */
-export type JourneyEvent = { t: number; kind: string; data: unknown };
+export type StoredEvent = { t: number; kind: string; data: unknown };
 
 export type Session = {
   /** unix seconds of the first and last event */
@@ -9,9 +9,9 @@ export type Session = {
   end: number;
   /** `end - start`, at least 60 (a lone event still counts as a minute of play) */
   seconds: number;
-  /** level before the session's first `level_up` (its level - 1); null without level-ups */
+  /** level before the session's lowest `level_up` (its level - 1); null without level-ups */
   levelFrom: number | null;
-  /** level reached by the session's last `level_up`; null without level-ups */
+  /** highest level reached by the session's `level_up` events; null without level-ups */
   levelTo: number | null;
   /** number of `quest_turned_in` events */
   quests: number;
@@ -20,7 +20,7 @@ export type Session = {
   /** profession names from `profession_changed.data.names` ("|" separated), deduped, first seen first */
   professions: string[];
   /** every event of the session, newest first (unknown kinds included) */
-  events: JourneyEvent[];
+  events: StoredEvent[];
 };
 
 export const DEFAULT_SESSION_GAP = 1800;
@@ -45,7 +45,7 @@ export function levelOf(data: unknown): number | null {
   return typeof v === "number" && Number.isInteger(v) && v > 0 ? v : null;
 }
 
-function summarise(ascending: JourneyEvent[]): Session {
+function summarise(ascending: StoredEvent[]): Session {
   const start = ascending[0]!.t;
   const end = ascending[ascending.length - 1]!.t;
   let levelFrom: number | null = null;
@@ -60,8 +60,9 @@ function summarise(ascending: JourneyEvent[]): Session {
       case "level_up": {
         const level = levelOf(d);
         if (level === null) break;
-        if (levelFrom === null) levelFrom = level - 1;
-        levelTo = level;
+        // min/max rather than first/last: same-second level-ups have no reliable order.
+        levelFrom = levelFrom === null ? level - 1 : Math.min(levelFrom, level - 1);
+        levelTo = levelTo === null ? level : Math.max(levelTo, level);
         break;
       }
       case "quest_turned_in":
@@ -107,7 +108,7 @@ function summarise(ascending: JourneyEvent[]): Session {
  * new session, so with the default a 29:59 gap continues and 30:00 splits.
  * Events with an implausible time are ignored. Newest session first.
  */
-export function buildSessions(events: JourneyEvent[], opts: { gapSeconds?: number } = {}): Session[] {
+export function buildSessions(events: StoredEvent[], opts: { gapSeconds?: number } = {}): Session[] {
   const g = opts.gapSeconds;
   const gap = typeof g === "number" && Number.isFinite(g) && g > 0 ? g : DEFAULT_SESSION_GAP;
   // Stable sort keeps same-second events in input order.
@@ -116,7 +117,7 @@ export function buildSessions(events: JourneyEvent[], opts: { gapSeconds?: numbe
     .sort((a, b) => a.t - b.t);
 
   const out: Session[] = [];
-  let group: JourneyEvent[] = [];
+  let group: StoredEvent[] = [];
   for (const e of sorted) {
     if (group.length > 0 && e.t - group[group.length - 1]!.t >= gap) {
       out.push(summarise(group));

@@ -4,6 +4,9 @@ import { plausibleTime, type Session } from "./sessions";
 export type LevelUp = { t: number; level: number };
 export type LevelPace = { level: number; seconds: number; complete: boolean };
 
+/** A session counts for at least this long (matches `Session.seconds`). */
+const MIN_SPAN = 60;
+
 /**
  * Level-ups that can be trusted: plausible time, positive integer level,
  * one per level (the earliest time wins), sorted ascending by level.
@@ -23,8 +26,10 @@ export function cleanLevelUps(levelUps: LevelUp[]): LevelUp[] {
 /**
  * Seconds of active play at each level: the overlap of
  * `[start of the level, start of the next level)` with the sessions'
- * `[start, end]` spans, so time between sessions (an overnight pause) is not
- * counted. A level's start is the time of the level-up that reached it.
+ * `[start, max(end, start + 60)]` spans, so time between sessions (an overnight
+ * pause) is not counted. A level's start is the time of the level-up that reached it.
+ * A level dinged at the end of a session of a minute or more and left at the very
+ * start of the next one still shows 0: no play was recorded at that level.
  *
  * - Levels without a known start (below the first recorded level-up) are omitted.
  * - A completed level whose next level-up is missing (level 11 when 12 was never
@@ -39,7 +44,10 @@ export function levelPace(levelUps: LevelUp[], sessions: Session[], now: number)
   const ups = cleanLevelUps(levelUps);
   const spans = (Array.isArray(sessions) ? sessions : [])
     .filter((s) => typeof s === "object" && s !== null && plausibleTime(s.start) && plausibleTime(s.end) && s.end >= s.start)
-    .map((s) => [s.start, s.end] as const);
+    // At least a minute per session, as in `Session.seconds`, so a level-up that
+    // ends a one-event or very short session is not drawn as 0. Sessions are at
+    // least the gap apart, so the padded spans do not overlap each other.
+    .map((s) => [s.start, Math.max(s.end, s.start + MIN_SPAN)] as const);
 
   let latest = spans.reduce((m, [, end]) => Math.max(m, end), 0);
   if (plausibleTime(now)) latest = Math.min(latest, now);

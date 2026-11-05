@@ -5,7 +5,7 @@ import {
   getJourneyData,
   levelPace,
   routeFromVisited,
-  type JourneyEvent,
+  type StoredEvent,
   type Session,
 } from "../src/index";
 
@@ -13,7 +13,7 @@ const T0 = 1_800_000_000;
 const MIN = 60;
 const HOUR = 3600;
 
-const ev = (t: number, kind: string, data: unknown = {}): JourneyEvent => ({ t, kind, data });
+const ev = (t: number, kind: string, data: unknown = {}): StoredEvent => ({ t, kind, data });
 const lvl = (t: number, level: number) => ev(t, "level_up", { level });
 
 describe("buildSessions", () => {
@@ -119,6 +119,16 @@ describe("buildSessions", () => {
     expect(x.end - x.start).toBe(600);
   });
 
+  test("same-second level-ups give the full range in either input order", () => {
+    for (const order of [
+      [lvl(T0, 9), lvl(T0, 10)],
+      [lvl(T0, 10), lvl(T0, 9)],
+    ]) {
+      const s = buildSessions(order);
+      expect(s[0]).toMatchObject({ levelFrom: 8, levelTo: 10 });
+    }
+  });
+
   test("sessions without level-ups have null levels; summaries are per session", () => {
     const s = buildSessions([lvl(T0, 2), ev(T0 + 2 * HOUR, "quest_turned_in", { questId: 1 })]);
     expect(s).toHaveLength(2);
@@ -179,6 +189,47 @@ describe("levelPace", () => {
     expect(pace).toEqual([
       { level: 10, seconds: HOUR + 30 * MIN, complete: true },
       { level: 11, seconds: 30 * MIN, complete: false },
+    ]);
+  });
+
+  test("a level dinged as the last event of a one-event session counts that session's minute", () => {
+    // Session A is the ding to 8 alone; session B opens with the ding to 9 (log in, hand in, level).
+    const a = T0;
+    const b = T0 + 5 * HOUR;
+    const sessions = buildSessions([lvl(a, 8), lvl(b, 9), ev(b + 20 * MIN, "x")]);
+    expect(sessions).toHaveLength(2);
+    const pace = levelPace(
+      [
+        { t: a, level: 8 },
+        { t: b, level: 9 },
+      ],
+      sessions,
+      b + HOUR,
+    );
+    // Level 8: span A is [a, a + 60] for pace, so the overlap is the full 60 s minimum.
+    expect(pace).toEqual([
+      { level: 8, seconds: 60, complete: true },
+      { level: 9, seconds: 20 * MIN, complete: false },
+    ]);
+  });
+
+  test("a short session's minimum is clipped at the next level-up", () => {
+    // Session A spans 20 s and the level-up to 6 is its last event: pace counts [a+20, a+60] = 40 s.
+    const a = T0;
+    const sessions = spans([a, a + 20], [a + 2 * HOUR, a + 3 * HOUR]);
+    const pace = levelPace(
+      [
+        { t: a, level: 5 },
+        { t: a + 20, level: 6 },
+        { t: a + 2 * HOUR, level: 7 },
+      ],
+      sessions,
+      a + 4 * HOUR,
+    );
+    expect(pace).toEqual([
+      { level: 5, seconds: 20, complete: true },
+      { level: 6, seconds: 40, complete: true },
+      { level: 7, seconds: HOUR, complete: false },
     ]);
   });
 
@@ -404,7 +455,7 @@ describe("routeFromVisited", () => {
 
 describe("performance", () => {
   test("3000 events and 500 places stay fast", () => {
-    const events: JourneyEvent[] = [];
+    const events: StoredEvent[] = [];
     const ups: { t: number; level: number }[] = [];
     for (let i = 0; i < 3000; i++) {
       const t = T0 + i * 5 * MIN + (i % 40 === 0 ? 10 * HOUR * (i / 40) : 0);

@@ -103,6 +103,8 @@ export function routeFromVisited(
     const s = all[i]!;
     const next = all[i + 1];
     const current = next === undefined;
+    // Revisits: a later subzone of this map first seen after the next stop was
+    // reached makes `s.last` exceed `next.first`; the range then runs to that revisit.
     const lastSeen = next ? Math.max(s.last, next.first - 1) : s.last;
     stops.push({
       mapId: s.mapId,
