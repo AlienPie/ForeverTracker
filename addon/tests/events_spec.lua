@@ -262,9 +262,18 @@ end)
 
 describe("SKILL_LINES_CHANGED", function()
   local function fire(FT, n) for _ = 1, n do FT.handlers.SKILL_LINES_CHANGED() end end
-  local SIG = "Alchemy:150|Cooking:75"
+  local SIG = "Alchemy|Cooking"
+  local function stubProfs(rows)
+    _G.GetProfessions = function()
+      local idx = {}
+      for i = 1, #rows do idx[i] = i end
+      return unpack(idx, 1, #rows)
+    end
+    _G.GetProfessionInfo = function(i) local r = rows[i]; if r then return unpack(r, 1, 10) end end
+  end
+  local function row(name, rank) return { name, "icon", rank, 300, 1, 0, 100, 0, 0, 0 } end
 
-  it("debounces to one scheduled save and logs nothing when the signature is unchanged", function()
+  it("debounces to one scheduled save and logs nothing when the set is unchanged", function()
     local FT = stubs.load()
     stubs.setDB({ characters = { [GUID] = { profSig = SIG } } })
     fire(FT, 30)
@@ -274,41 +283,78 @@ describe("SKILL_LINES_CHANGED", function()
     assert.is_nil(char().events)
     stubs.timers[1].fn()
     assert.is_table(char().snapshot)
-    fire(FT, 2) -- a new burst may schedule again after the save ran
+    fire(FT, 2)
     assert.are.equal(2, #stubs.timers)
   end)
 
-  it("logs exactly one event with the count on a real change and updates profSig", function()
+  it("a rank-only change logs nothing and keeps the signature", function()
     local FT = stubs.load()
     stubs.setDB({ characters = { [GUID] = { profSig = SIG } } })
+    stubProfs({ row("Alchemy", 151), row("Cooking", 76) })
     fire(FT, 3)
-    assert.are.equal(0, #(char().events or {}))
-    local rows = { { "Alchemy", "icon", 150, 225, 2, 0, 171, 0, 0, 0 },
-                   { "Cooking", "icon", 75, 150, 1, 0, 185, 0, 0, 0 },
-                   { "Mining", "icon", 1, 75, 1, 0, 186, 0, 0, 0 } }
-    _G.GetProfessions = function() return 1, 2, 3 end
-    _G.GetProfessionInfo = function(i) local r = rows[i]; if r then return unpack(r, 1, 10) end end
+    assert.is_nil(char().events)
+    assert.are.equal(SIG, char().profSig)
+    assert.are.equal(1, #stubs.timers) -- the debounced save is still scheduled
+  end)
+
+  it("learning a second profession logs one event with count and names", function()
+    local FT = stubs.load()
+    stubs.setDB({ characters = { [GUID] = { profSig = "Alchemy" } } })
     fire(FT, 5)
     assert.are.equal(1, #char().events)
     assert.are.equal("profession_changed", char().events[1].kind)
-    assert.are.same({ count = 3 }, char().events[1].data)
-    assert.are.equal("Alchemy:150|Cooking:75|Mining:1", char().profSig)
+    assert.are.same({ count = 2, names = "Alchemy|Cooking" }, char().events[1].data)
+    assert.are.equal(SIG, char().profSig)
   end)
 
-  it("first observation with no persisted signature and no professions logs nothing", function()
+  it("dropping one of two professions logs one event", function()
+    local FT = stubs.load()
+    stubs.setDB({ characters = { [GUID] = { profSig = SIG } } })
+    stubProfs({ row("Cooking", 75) })
+    fire(FT, 3)
+    assert.are.equal(1, #char().events)
+    assert.are.same({ count = 1, names = "Cooking" }, char().events[1].data)
+    assert.are.equal("Cooking", char().profSig)
+  end)
+
+  it("an unavailable collector result logs nothing and keeps the signature", function()
+    local FT = stubs.load({ GetProfessions = function() error("x") end })
+    stubs.setDB({ characters = { [GUID] = { profSig = SIG } } })
+    FT.handlers.SKILL_LINES_CHANGED()
+    assert.is_nil(char().events)
+    assert.are.equal(SIG, char().profSig)
+  end)
+
+  it("an empty set with a non-empty persisted signature logs nothing", function()
+    local FT = stubs.load({ GetProfessions = function() return end })
+    stubs.setDB({ characters = { [GUID] = { profSig = SIG } } })
+    FT.handlers.SKILL_LINES_CHANGED()
+    assert.is_nil(char().events)
+    assert.are.equal(SIG, char().profSig)
+  end)
+
+  it("migrates an old name:rank signature silently", function()
+    local FT = stubs.load()
+    stubs.setDB({ characters = { [GUID] = { profSig = "Skinning:21" } } })
+    stubProfs({ row("Skinning", 21) })
+    fire(FT, 2)
+    assert.is_nil(char().events)
+    assert.are.equal("Skinning", char().profSig)
+  end)
+
+  it("first observation with an empty persisted signature and a set logs one event", function()
+    local FT = stubs.load()
+    stubs.setDB(nil)
+    fire(FT, 3)
+    assert.are.equal(1, #char().events)
+    assert.are.same({ count = 2, names = SIG }, char().events[1].data)
+  end)
+
+  it("first observation with nothing persisted and no professions logs nothing", function()
     local FT = stubs.load({ GetProfessions = function() return end })
     stubs.setDB(nil)
     fire(FT, 2)
     assert.are.equal(0, #(char() and char().events or {}))
-  end)
-
-  it("uses an empty signature when the collector is unavailable", function()
-    local FT = stubs.load({ GetProfessions = function() error("x") end })
-    stubs.setDB({ characters = { [GUID] = { profSig = SIG } } })
-    FT.handlers.SKILL_LINES_CHANGED()
-    assert.are.equal(1, #char().events)
-    assert.are.same({ count = 0 }, char().events[1].data)
-    assert.are.equal("", char().profSig)
   end)
 
   it("no-ops without a GUID", function()
@@ -320,7 +366,7 @@ describe("SKILL_LINES_CHANGED", function()
 
   it("works inline when C_Timer is missing", function()
     local FT = stubs.load({ C_Timer = stubs.NIL })
-    stubs.setDB({ characters = { [GUID] = { profSig = "" } } })
+    stubs.setDB({ characters = { [GUID] = { profSig = "Alchemy" } } })
     assert.has_no.errors(function() FT.handlers.SKILL_LINES_CHANGED() end)
     assert.is_table(char().snapshot)
     assert.are.equal(1, #char().events)

@@ -152,8 +152,9 @@ local function scheduleSave()
   end
 end
 
--- "name:rank" for each profession, sorted and joined by "|"; "" when there are
--- none or the collector is unavailable. Returns the signature and the count.
+-- Sorted profession names joined by "|" (rank excluded: skill-ups are not
+-- changes of the set). Returns nil when the collector is unavailable, else
+-- the signature ("" when empty) and the profession count.
 local function professionSignature()
   local list
   for _, c in ipairs(FT.collectors) do
@@ -162,28 +163,35 @@ local function professionSignature()
       break
     end
   end
-  if type(list) ~= "table" or FT.isUnavailable(list) then return "", 0 end
-  local parts = {}
+  if type(list) ~= "table" or FT.isUnavailable(list) then return nil end
+  local names = {}
   for _, p in ipairs(list) do
-    if type(p) == "table" and str(p.name) and num(p.rank) then
-      parts[#parts + 1] = p.name .. ":" .. p.rank
-    end
+    if type(p) == "table" and str(p.name) then names[#names + 1] = p.name end
   end
-  table.sort(parts)
-  return table.concat(parts, "|"), #parts
+  table.sort(names)
+  return table.concat(names, "|"), #names
 end
 
+-- Logs profession_changed only when the SET of professions changes. An
+-- unavailable result, or an empty set while a non-empty signature is
+-- persisted, is treated as "no information" (transient read), so dropping the
+-- very last profession is not logged. An old "name:rank" signature is
+-- migrated silently.
 local function onSkillLines()
   scheduleSave()
   local rec = FT.getCharacter(true)
   if not rec then return end
   local sig, count = professionSignature()
+  if sig == nil then return end
   local old = rec.profSig
   if type(old) ~= "string" then old = "" end
-  if sig ~= old then
+  if old:find(":", 1, true) then
     rec.profSig = sig
-    FT.logEvent("profession_changed", { count = count })
+    return
   end
+  if sig == old or (sig == "" and old ~= "") then return end
+  rec.profSig = sig
+  FT.logEvent("profession_changed", { count = count, names = sig })
 end
 
 local MAX_TURNED_IN = 5000

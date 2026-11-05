@@ -67,7 +67,7 @@ recorded. The whole section is `unavailable` when `C_Map` is missing.
 | `level_up` | `{ level }` | `PLAYER_LEVEL_UP` |
 | `quest_turned_in` | `{ questId }` | `QUEST_TURNED_IN` |
 | `zone_first_visit` | `{ mapId, subzone }` | a zone-changed event adds a new place |
-| `profession_changed` | `{ count }` | `SKILL_LINES_CHANGED`, only when the professions really changed (`count` = number of professions) |
+| `profession_changed` | `{ count, names }` | `SKILL_LINES_CHANGED`, only when the SET of professions changes (`count` = number of professions, `names` = sorted names joined by `\|`); skill rank is not a trigger |
 
 Snapshots are taken on login (entering the world), level-up, quest turn-in,
 profession change (debounced: one save 5 seconds after the first
@@ -75,10 +75,14 @@ profession change (debounced: one save 5 seconds after the first
 They are NOT taken at logout or `/reload`: unit APIs have already stopped
 answering by then and would overwrite the last good snapshot.
 
-`profession_changed` is logged only when the professions signature (sorted
-`name:rank` joined by `|`) differs from the persisted
-`characters[guid].profSig` (a string, created lazily beside `snapshot`; a
-missing value counts as the empty signature).
+`profession_changed` is logged only when the set of professions changes: the
+signature is the sorted profession names joined by `|` (e.g. `Mining|Skinning`;
+rank excluded, rank progress lives in the snapshot) and is compared with the
+persisted `characters[guid].profSig` (a string, created lazily beside
+`snapshot`; a missing value counts as empty). An unavailable collector result,
+or an empty set while a non-empty signature is persisted, is treated as no
+information (nothing logged, `profSig` unchanged), so dropping the very last
+profession is not logged. An old `name:rank` signature is migrated silently.
 
 ### `/ft sync`
 
