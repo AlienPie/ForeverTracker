@@ -97,7 +97,8 @@ function xpPct(identity: Obj | null): number | null {
   const xp = num(identity.xp);
   const max = num(identity.xpMax);
   if (xp === null || max === null || max <= 0 || xp < 0) return null;
-  return Math.min(100, Math.floor((xp / max) * 100));
+  // Multiply first: (57 / 100) * 100 is 56.99999999999999 in floating point.
+  return Math.min(100, Math.floor((xp * 100) / max));
 }
 
 function professions(progress: Obj | null): Profession[] {

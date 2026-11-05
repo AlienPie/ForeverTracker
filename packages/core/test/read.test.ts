@@ -86,6 +86,18 @@ describe("getRoster / getCharacter", () => {
     expect(c.events[0]).toEqual({ t: 1799500000, kind: "level_up", data: { level: 23 } });
   });
 
+  test("xpPct is an exact floored percentage, capped at 100", () => {
+    const pct = (xp: number, xpMax: number) => {
+      const g = `Player-9-xp-${xp}-${xpMax}`;
+      const db = load(single(g, `{ takenAt = ${NOW - 100}, identity = { name = "Vexa", xp = ${xp}, xpMax = ${xpMax} } }`));
+      return getCharacter(db, g, NOW)!.xpPct;
+    };
+    expect(pct(57, 100)).toBe(57);
+    expect(pct(29, 100)).toBe(29);
+    expect(pct(150, 100)).toBe(100);
+    expect(pct(999, 1000)).toBe(99);
+  });
+
   test("empty Lua tables ({} objects) give empty lists and zero counts", () => {
     const db = load(ROSTER);
     const c = getCharacter(db, Q, NOW)!;
