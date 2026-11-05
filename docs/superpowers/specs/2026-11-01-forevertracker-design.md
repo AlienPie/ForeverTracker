@@ -274,7 +274,8 @@ supplies their own keys. Keys and tokens are never logged.
   (replacing the interim profession rule); "Where to next" levelling areas; talent playground
   with guide builds; profession advice; alt comparison chart (level against date, all
   characters).
-- **M3:** sync agent, Battle.net login, planning view, theme polish.
+- **M3:** sync agent first (owner priority: automatic upload), then Battle.net login, planning view, theme polish.
+- **M4 (backlog, after M3):** dungeon planner and tracker; gear tab with best-in-slot at the level caps and where to find it; share card; quest finder alongside the M2 quest tags if not already done; backup and restore, "since your last upload" recap with gold trend, exploration and completion view, pace ETA (see `docs/superpowers/m1-bugs-and-tweaks.md` items 8 to 17 for the owner's priorities, which may pull some of these earlier).
 
 ## 12. Open items
 

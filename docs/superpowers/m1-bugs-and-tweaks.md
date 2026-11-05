@@ -94,3 +94,31 @@ Priorities as stated: exploration and completion matter most to the owner (not p
 - **Not in the backup (by design):** `.env` secrets (ForeverDB API key, owner password, session secret, Blizzard client) stay in `.env`; the README should say to copy them separately. After a restore the owner's session cookies are invalid if `SESSION_SECRET` changed (just log in again).
 - **Checks needed:** restore must refuse a file from a newer schema than the app, and a file that is not a ForeverTracker database; run migrations after restore for older files; keep the file permissions private; the download is behind the login.
 - **Status:** wanted, small; a good first item for the next pass.
+
+### 12. Chains count quests whose first quest was never taken (bug, owner's finding after testing M1.1)
+- **Seen (2026-11-05):** some quests are shared across starting regions (for example "Camping 101: Cooking"). ForeverDB records them per region (separate quest rows, each with its own "The Great Outdoors" parent and a zone such as Elwynn Forest), but the character took the Dun Morogh route. A completed quest id then makes the other region's chain look partly done.
+- **Found (real mirror rows):** 96626 "Camping 101: Cooking" (Elwynn Forest) has previous 95998 "The Great Outdoors" (Elwynn Forest) which has previous 96627; 96629 (Dun Morogh) has previous 96608 which has none; 96646 (Zephras Isle) and 96655 (Durotar) follow the same pattern. The chain code counts any completed member without checking that the chain's earlier quests were done.
+- **Owner's rule:** quests can only happen starting from the first one, so a completed quest whose earlier quests in the chain are not completed is not tracked as part of that chain.
+- **Proposed fix:** progress counts a completed quest toward a chain only when every earlier quest (all transitive prerequisites that are sequence links: complete first, chain link, offered after, next quest) is also completed; a chain is listed only when it has valid progress or a quest in the log; the chain page shows such quests honestly as "completed from another route" and keeps them out of the "N of M done" count; Next up's chain continuation already requires done prerequisites. Treat the shared-id case by the same rule (no special casing).
+- **Status:** bugfix for M1 (see the `m1-bugfix-chain-roots` work).
+
+## Later milestone ideas (owner, after M1 to M3 are complete)
+
+Order stated by the owner: after the other milestones are done.
+
+### 13. Automatic upload (sync agent): "please yes" (already planned as M3)
+- A small agent on the game machine that watches `SavedVariables/ForeverTracker.lua` and uploads when it changes, using a device token. Already in the spec as the M3 sync agent. Owner priority is high: build it first in M3, ahead of Battle.net login and the planning view. Needs: cross-platform (Linux, macOS, Wine/Proton paths), token in a config file, retry and backoff, quiet by default, run as a service or on login.
+
+### 14. Dungeon planner and tracker (idea)
+- From the mirror's dungeons (47): level ranges, which are in range, what quests each offers, and a per-character tracker (done, quests outstanding). Possibly a cross-alt view of who is ready for which dungeon.
+
+### 15. Gear tab with best-in-slot at level caps (idea)
+- The addon already records equipped gear (item ids by slot). Show it with item names, plus recommended best-in-slot gear at the level caps of 30, 40, 50 and so on, and where to find each piece (source dungeon, quest, vendor or profession). Needs item data (ForeverDB items on demand) and curated BiS lists from guides recorded as facts with sources and game build, in the same maintainer-tool style as the talent builds (spec section 8). Depends on guide coverage for Forever.
+
+### 16. Quest finder (idea; build with the class, race and profession quest tags in M2)
+- Search the mirrored quests ("where do I get this?"): name, level, zone, giver, chain, and the class, race or profession tag once the Wowhead-derived tags exist.
+
+### 17. Share card (idea)
+- A read-only page or image of a character's journey (level, professions, route, milestones) that can be sent to friends. Self-hosted privacy: opt-in per character, an unguessable link, revocable; must not expose the owner login or other characters.
+
+Staging: items 13 to 17 are after the M3 milestone (M4 backlog), except that the sync agent (13) leads M3.
