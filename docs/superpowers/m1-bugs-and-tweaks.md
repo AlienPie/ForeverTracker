@@ -34,3 +34,20 @@ Format: what the owner saw, what we found, the proposed fix, status.
 ### 5. Alt comparison chart (later)
 - All characters on one chart, level against date, to compare how fast each one levelled. Approved for a later stage, after item 4.
 - **Status:** later.
+
+## Roster
+
+### 6. Roster cards do not show the character's surname (bug)
+- **Seen:** WoW Forever characters have a surname; the roster does not display it.
+- **Found (2026-11-05):** the read model already carries `surname` (from the snapshot's `identity.surname`) and the character page header already renders it (`c/[guid]/+layout.svelte`, styled `.surname`). `CharacterCard.svelte` on the roster uses only `name`.
+- **Proposed fix:** show the surname on the roster card the same way as the character header (name, then the surname in the dim italic style), and keep it readable at 375px. Check the real data has a surname: the addon splits the in-game name at the first `-` (`Collectors/Identity.lua`); confirm with the owner's real character before closing.
+- **Status:** open, small.
+
+## Ideas
+
+### 7. Future levelling areas ("where to go next") (idea)
+- **Idea:** from the character's current level, suggest the regions to move on to next.
+- **Found (2026-11-05):** ForeverDB's `zones` records carry only id, name, type, parent and a link: no level range. A usable range can be derived from the mirrored quests, since every quest has a level and (for most) a zone: the spread of quest levels per zone (for example the 10th to 90th percentile, or the level where most quests sit) gives a zone's levelling band. Class and category "zones" (for example "Shaman") and null zones are excluded, as in the next-up rules.
+- **Proposed shape:** a "Where to next" panel on the Quests tab (and a one-line hint on the roster card): the current zone with how much of it is done (completed vs available quests at or below the character's level), then the 2 to 3 zones whose band starts within a few levels above the character's level, closest first, each with its band and quest count. Honest about the data: "based on quest levels in ForeverDB", no claim about travel routes or faction access unless the data supports it (zone `parentId` gives the continent; faction and flight-path links are not known).
+- **Needs:** a per-zone level-band helper in `packages/core` (pure, tested on the real fixture rows), cached with the quest catalog.
+- **Status:** idea, to plan with the Journey and Quests-tab pass.
