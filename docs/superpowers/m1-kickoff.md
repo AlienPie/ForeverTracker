@@ -75,3 +75,29 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 3. Create a device token in Settings (or via the CLI) if you want scripted uploads.
 
 **M2 list (spec section 11).** Class/race/profession chains (needs the maintainer quest-tagging tool), the talent playground with guide builds, profession advice, and a richer Journey tab with visited places. After that, M3: the sync agent, Battle.net login, a planning view and theme polish.
+
+## State at the end of M1.1
+
+**What exists now** (branch `m1-1-tweaks`, on top of M1). Roster cards and the character header show the surname (shared `CharacterName` component, bug-list item 6, `09e0353`..`e694a59`). "Next up" skips profession quests for professions the character cannot use (item 1, `f9c56ab`..`2ca683c`). Quest chains list only chains the character is on and each opens to a chain page, `/c/<guid>/quests/chain/<questId>` (item 2, `66ef9c5`..`2e583bf`). The quest log lists completed and in-progress quests with paging and search, `/c/<guid>/quests/log?list=completed|progress&page=&q=` (item 3, `3ce592a`). Journey is rebuilt as play sessions (newest first, expandable cards), a "Time per level" pace strip and a "Your route" strip, with times in UTC (item 4, `a6bd498`..`6495c61`). Items 5 (alt comparison chart) and 7 ("where to next") stay in M2. Task 7 adds the extended smoke test and these docs, plus two small Journey fixes (the empty state when no session survives, the "Showing N of total" note only when the read hit its cap).
+
+**Verified in the last task (2026-11-05).**
+- `pnpm test` (31 files, 431 tests), `pnpm typecheck` and `(cd addon && ./test.sh)` (126 successes) pass.
+- `pnpm --filter web test:e2e` passes 3 runs in a row against the built app on a temp `DATA_DIR`. The fixture now has a surname, two play sessions, level-ups and visited places, and a tiny invented quest mirror (3 chained quests) written into the temp DB with `openDb` from `@ft/db` before the first roster load. It covers: roster card and header with surname, the three Journey sections, a session card opening, the Quests tab chain link opening the chain page, the quest log page with its two tabs, `/quests/chain/12345` returning 404 for an unknown quest; no console errors, no failed requests, no third-party requests.
+- `podman build -t forevertracker:dev .`, then a throwaway container `ft-m11-check` on 127.0.0.1:3199 with a throwaway volume: `/api/health` 200, `/` redirects to login, form login gives 303 plus cookie, token via `create-token.mjs`, the same fixture ingested (1 character stored), then roster, Journey (all three sections present, surname in the page), Quests and quest-log pages all 200. `content-sync.mjs` without a key prints `FOREVERDB_API_KEY is not set` and exits 1. Container and volume were removed; the owner's compose stack was not touched. With an empty mirror, the chain URL for an unknown quest answers 200 with "No chain to show yet" (not 404); the 404 applies once the mirror holds quests (covered by the e2e).
+
+**NOT verified.**
+- Real game data on the new pages beyond temp-DB checks with invented fixtures, and the owner's own use.
+- Docker Compose (only `podman compose` was ever checked).
+- Tooltips after client-side navigation (the provider script is added once on mount).
+- Browsers other than Chromium; mobile layouts beyond manual resizing.
+
+**Interim and limits.**
+- The profession-quest rule is INTERIM: it matches quests by profession name; it is replaced by Wowhead tags in M2.
+- Only first visits to a place are recorded, so the route shows order and level ranges, not time per zone.
+- A level can show less than a minute when a session ends exactly at a level-up.
+
+**Owner actions.**
+1. Rebuild and recreate the container: `podman compose up -d --build --force-recreate`.
+2. Run the content sync once if not done: `podman compose exec forevertracker node /app/content-sync.mjs` (needs `FOREVERDB_API_KEY` in `.env`).
+
+**Next: M2** (spec section 11). Class/race/profession chains (maintainer quest-tagging tool, Wowhead tags), the talent playground with guide builds, profession advice, "where to next" and the alt comparison chart. After that, M3: the sync agent, Battle.net login, a planning view and theme polish.

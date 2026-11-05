@@ -74,7 +74,7 @@ The origin check stays on: a POST whose `Origin` is another site is still refuse
 
 ## The dashboard
 
-Sign in at `/` with the owner password. **Roster** lists your characters with level, play time, money and a "next up" hint. Each character opens to four tabs: **Journey** (timeline and places visited), **Quests** (next-up suggestions, chains, quest log), **Talents** and **Professions**. **Upload** takes a `ForeverTracker.lua` file in the browser (no token needed), and **Settings** creates and revokes device tokens and shows the state of the content mirror. Sync the ForeverDB content once (see "Sync ForeverDB content") so quest and zone names and the level cap are available.
+Sign in at `/` with the owner password. **Roster** lists your characters with level, play time, money and a "next up" hint. Cards show the character's full name (surname included). Each character opens to four tabs: **Journey** (play sessions with a summary and the events of each, a "Time per level" strip and "Your route" through the places visited), **Quests** (next-up suggestions, quest chains you are on, each opening to its own chain page, and the quest log lists of in-progress and completed quests with paging and search), **Talents** and **Professions**. **Upload** takes a `ForeverTracker.lua` file in the browser (no token needed), and **Settings** creates and revokes device tokens and shows the state of the content mirror. Sync the ForeverDB content once (see "Sync ForeverDB content") so quest and zone names and the level cap are available.
 
 ## Sync ForeverDB content
 

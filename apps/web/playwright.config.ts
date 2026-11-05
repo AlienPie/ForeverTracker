@@ -7,6 +7,7 @@ import { join } from "node:path";
 // All credentials below are throwaway test values.
 const port = Number(process.env.E2E_PORT ?? 4173);
 const dataDir = process.env.E2E_DATA_DIR ?? mkdtempSync(join(tmpdir(), "ft-e2e-"));
+process.env.E2E_DATA_DIR = dataDir; // workers re-read this config and must see the same directory
 process.env.E2E_BASE_URL = `http://127.0.0.1:${port}`;
 process.env.E2E_PASSWORD = "e2e-fake-password";
 
