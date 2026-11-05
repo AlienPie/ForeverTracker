@@ -1,0 +1,432 @@
+[
+  {
+    "id": 7,
+    "name": "Kobold Camp Cleanup",
+    "level": 2,
+    "zone": {
+      "n": "Elwynn Forest",
+      "slug": "elwynn-forest",
+      "m": 1429
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 783,
+          "name": "A Threat Within",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 6,
+          "url": "https://foreverdb.net/quest/783"
+        }
+      ],
+      "next": [
+        {
+          "questId": 15,
+          "name": "Investigate Echo Ridge",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 4,
+          "url": "https://foreverdb.net/quest/15"
+        },
+        {
+          "questId": 3100,
+          "name": "Simple Letter",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 1,
+          "url": "https://foreverdb.net/quest/3100"
+        },
+        {
+          "questId": 3101,
+          "name": "Consecrated Letter",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 1,
+          "url": "https://foreverdb.net/quest/3101"
+        },
+        {
+          "questId": 3102,
+          "name": "Encrypted Letter",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 2,
+          "url": "https://foreverdb.net/quest/3102"
+        },
+        {
+          "questId": 3103,
+          "name": "Hallowed Letter",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 2,
+          "url": "https://foreverdb.net/quest/3103"
+        },
+        {
+          "questId": 3104,
+          "name": "Glyphic Letter",
+          "relation": "Complete first",
+          "source": "Classic data (CMaNGOS)",
+          "url": "https://foreverdb.net/quest/3104"
+        },
+        {
+          "questId": 3105,
+          "name": "Tainted Letter",
+          "relation": "Complete first",
+          "source": "Classic data (CMaNGOS)",
+          "url": "https://foreverdb.net/quest/3105"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 197,
+      "name": "Marshal McBride",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 48.9,
+        "y": 41.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 197,
+      "name": "Marshal McBride",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 48.9,
+        "y": 41.6
+      }
+    }
+  },
+  {
+    "id": 15,
+    "name": "Investigate Echo Ridge",
+    "level": 3,
+    "zone": {
+      "n": "Elwynn Forest",
+      "slug": "elwynn-forest",
+      "m": 1429
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 7,
+          "name": "Kobold Camp Cleanup",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 4,
+          "url": "https://foreverdb.net/quest/7"
+        }
+      ],
+      "next": [
+        {
+          "questId": 21,
+          "name": "Skirmish at Echo Ridge",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 3,
+          "url": "https://foreverdb.net/quest/21"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 197,
+      "name": "Marshal McBride",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 48.9,
+        "y": 41.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 197,
+      "name": "Marshal McBride",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 48.9,
+        "y": 41.6
+      }
+    }
+  },
+  {
+    "id": 3100,
+    "name": "Simple Letter",
+    "level": 1,
+    "zone": {
+      "n": "Warrior",
+      "slug": "warrior",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 7,
+          "name": "Kobold Camp Cleanup",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 1,
+          "url": "https://foreverdb.net/quest/7"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 197,
+      "name": "Marshal McBride",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 48.9,
+        "y": 41.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 911,
+      "name": "Llane Beshere",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 50.1,
+        "y": 42.2
+      }
+    }
+  },
+  {
+    "id": 3101,
+    "name": "Consecrated Letter",
+    "level": 1,
+    "zone": {
+      "n": "Paladin",
+      "slug": "paladin",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 7,
+          "name": "Kobold Camp Cleanup",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 1,
+          "url": "https://foreverdb.net/quest/7"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 197,
+      "name": "Marshal McBride",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 48.9,
+        "y": 41.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 925,
+      "name": "Brother Sammuel",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 50.5,
+        "y": 42.1
+      }
+    }
+  },
+  {
+    "id": 3102,
+    "name": "Encrypted Letter",
+    "level": 1,
+    "zone": {
+      "n": "Rogue",
+      "slug": "rogue",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 7,
+          "name": "Kobold Camp Cleanup",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 2,
+          "url": "https://foreverdb.net/quest/7"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 197,
+      "name": "Marshal McBride",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 48.9,
+        "y": 41.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 915,
+      "name": "Jorik Kerridan",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 50.4,
+        "y": 40
+      }
+    }
+  },
+  {
+    "id": 3103,
+    "name": "Hallowed Letter",
+    "level": 1,
+    "zone": {
+      "n": "Priest",
+      "slug": "priest",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 7,
+          "name": "Kobold Camp Cleanup",
+          "relation": "Complete first",
+          "source": "seen in WoW Forever",
+          "players": 2,
+          "url": "https://foreverdb.net/quest/7"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 197,
+      "name": "Marshal McBride",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 48.8,
+        "y": 41.7
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 375,
+      "name": "Priestess Anetta",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 49.8,
+        "y": 39.6
+      }
+    }
+  },
+  {
+    "id": 3104,
+    "name": "Glyphic Letter",
+    "level": 1,
+    "zone": {
+      "n": "Mage",
+      "slug": "mage",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 7,
+          "name": "Kobold Camp Cleanup",
+          "relation": "Complete first",
+          "source": "Classic data (CMaNGOS)",
+          "url": "https://foreverdb.net/quest/7"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 197,
+      "name": "Marshal McBride",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 48.9,
+        "y": 41.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 198,
+      "name": "Khelden Bremen",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 49.7,
+        "y": 39.4
+      }
+    }
+  },
+  {
+    "id": 3105,
+    "name": "Tainted Letter",
+    "level": 1,
+    "zone": {
+      "n": "Warlock",
+      "slug": "warlock",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 7,
+          "name": "Kobold Camp Cleanup",
+          "relation": "Complete first",
+          "source": "Classic data (CMaNGOS)",
+          "url": "https://foreverdb.net/quest/7"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 197,
+      "name": "Marshal McBride",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 48.9,
+        "y": 41.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 459,
+      "name": "Drusilla La Salle",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 49.9,
+        "y": 42.6
+      }
+    }
+  }
+]

@@ -24,7 +24,8 @@
   // Path is /c/<guid>/<tab>[/...]: a tab stays marked on its sub-pages (a quest chain under Quests).
   const segments = $derived(page.url.pathname.split("/"));
   const active = $derived(tabs.find((t) => segments[3] === t.slug) ?? null);
-  const onTabRoot = $derived(segments.length === 4);
+  // "/c/<guid>/quests" and "/c/<guid>/quests/" are the tab itself.
+  const onTabRoot = $derived(segments.length === 4 || (segments.length === 5 && segments[4] === ""));
 </script>
 
 <svelte:head><title>{c.name}{active ? `, ${active.label}` : ""}, ForeverTracker</title></svelte:head>

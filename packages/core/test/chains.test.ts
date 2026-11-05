@@ -4,6 +4,7 @@ import { chainProgress, type QuestLink, type QuestRow } from "../src/index";
 
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/quests.json", import.meta.url), "utf8")) as QuestRow[];
 const CLASS = JSON.parse(readFileSync(new URL("./fixtures/quests-class.json", import.meta.url), "utf8")) as QuestRow[];
+const HUB = JSON.parse(readFileSync(new URL("./fixtures/quests-hub.json", import.meta.url), "utf8")) as QuestRow[];
 
 const link = (questId: number, relation = "Complete first"): QuestLink => ({ questId, name: `Quest ${questId}`, relation });
 
@@ -80,10 +81,12 @@ describe("chainProgress", () => {
   });
 
   test("other-class quests do not join a chain (real Dwarven Outfitters runes)", () => {
-    const out = chainProgress(CLASS, new Set([179]), new Set(), "PRIEST");
+    // 179 is a hub (its three runes count, whatever the class), so the Priest's own rune is put in
+    // the log to list the chain; the other classes' runes are still not members (2, not 4).
+    const out = chainProgress(CLASS, new Set([179]), new Set([3110]), "PRIEST");
     expect(out).toEqual([{ chain: 179, name: "Dwarven Outfitters", done: 1, total: 2, currentIndex: 1, complete: false }]);
     // No class known: every class quest is left out, so 179 stands alone.
-    expect(chainProgress(CLASS, new Set([179]), new Set())).toEqual([]);
+    expect(chainProgress(CLASS, new Set([179]), new Set([3110]))).toEqual([]);
   });
 
   test("a chain whose only progress is a hub is not listed (real Dwarven Outfitters, 179)", () => {
@@ -109,6 +112,26 @@ describe("chainProgress", () => {
     expect(chainProgress(quests, new Set([179, 3110]), new Set(), "PRIEST")).toEqual([
       { chain: 179, name: "Dwarven Outfitters", done: 2, total: 4, currentIndex: 2, complete: false },
     ]);
+  });
+
+  test("hubs are judged on all links, whatever the class (real 7 Kobold Camp Cleanup)", () => {
+    // 7 is followed by 15 and six class letters (3100-3105). A Priest sees only 15 and 3103, a
+    // Shaman only 15, no class only 15: 7 is still a hub for each, so only-7-done lists nothing.
+    for (const cls of ["PRIEST", "SHAMAN", null]) {
+      expect(chainProgress(HUB, new Set([7]), new Set(), cls), String(cls)).toEqual([]);
+    }
+    // A non-hub step done (15) or one in the log lists the chain, counted with the class filter.
+    expect(chainProgress(HUB, new Set([7, 15]), new Set(), "PRIEST")).toEqual([
+      { chain: 7, name: "Kobold Camp Cleanup", done: 2, total: 3, currentIndex: 1, complete: false },
+    ]);
+    expect(chainProgress(HUB, new Set([7]), new Set([3103]), "PRIEST")).toEqual([
+      { chain: 7, name: "Kobold Camp Cleanup", done: 1, total: 3, currentIndex: 1, complete: false },
+    ]);
+  });
+
+  test("with no class known, 179 is still a hub (its class runes count)", () => {
+    expect(chainProgress(CLASS, new Set([179]), new Set())).toEqual([]);
+    expect(chainProgress(CLASS, new Set([179]), new Set(), "PRIEST")).toEqual([]);
   });
 
   test("a hub in the log still lists its chain; a non-hub member done lists it", () => {

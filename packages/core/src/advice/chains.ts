@@ -50,17 +50,44 @@ export type ChainGraph = {
   groups: Map<number, QuestRow[]>;
   /** Representative id of the component holding `id` (only for ids in `byId`). */
   groupOf: (id: number) => number;
+  /** Hub quest ids, judged on all quests passed in (see `chainGraph`). */
+  hubs: Set<number>;
 };
 
 /**
  * Chains are connected components over SEQUENCE links (`previous` and `next`, either side may list
  * the link) between quests that are both in `quests`. Class quests for any class other than
- * `classToken` (or every class quest when it is null) are left out before linking. One pass over
- * the quests; shared by `chainProgress` and `chainDetail`.
+ * `classToken` (or every class quest when it is null) are left out before linking. Shared by
+ * `chainProgress` and `chainDetail`.
+ *
+ * Hubs are judged BEFORE the class filter, on every quest passed in: a quest is a hub when it has
+ * HUB_SUCCESSORS (3) or more distinct direct successors, counting its own SEQUENCE `next` links and
+ * other quests' SEQUENCE `previous` links to it (self-links and ids not in `quests` ignored). So a
+ * shared starter whose followers are mostly class quests (real 7 "Kobold Camp Cleanup") is a hub
+ * for every class, and hub status never depends on `classToken`.
  */
 export function chainGraph(quests: QuestRow[], classToken?: string | null): ChainGraph {
   const byId = new Map<number, QuestRow>();
-  for (const q of quests) if (classAllows(q, classToken)) byId.set(q.id, q);
+  const all = new Set<number>();
+  for (const q of quests) {
+    all.add(q.id);
+    if (classAllows(q, classToken)) byId.set(q.id, q);
+  }
+
+  // Unfiltered successor sets, only for hub detection.
+  const rawSucc = new Map<number, Set<number>>();
+  const rawEdge = (from: number, to: number) => {
+    if (from === to || !all.has(from) || !all.has(to)) return;
+    let s = rawSucc.get(from);
+    if (!s) rawSucc.set(from, (s = new Set()));
+    s.add(to);
+  };
+  for (const q of quests) {
+    for (const p of linkIds(q.chain?.previous, SEQUENCE)) rawEdge(p, q.id);
+    for (const n of linkIds(q.chain?.next, SEQUENCE)) rawEdge(q.id, n);
+  }
+  const hubs = new Set<number>();
+  for (const [id, s] of rawSucc) if (s.size >= HUB_SUCCESSORS) hubs.add(id);
 
   // Union-find over member ids, plus predecessor -> successors edges for ordering.
   const parent = new Map<number, number>();
@@ -98,11 +125,11 @@ export function chainGraph(quests: QuestRow[], classToken?: string | null): Chai
     if (g) g.push(q);
     else groups.set(r, [q]);
   }
-  return { byId, succ, groups, groupOf: find };
+  return { byId, succ, groups, groupOf: find, hubs };
 }
 
-/** Whether `id` is a hub: HUB_SUCCESSORS (3) or more direct successors in its chain. */
-export const isHub = (g: ChainGraph, id: number): boolean => (g.succ.get(id)?.size ?? 0) >= HUB_SUCCESSORS;
+/** Whether `id` is a hub (3 or more direct successors among all quests passed in; see `chainGraph`). */
+export const isHub = (g: ChainGraph, id: number): boolean => g.hubs.has(id);
 
 /**
  * Progress through quest chains derived from the quests passed in (see `chainGraph`; single
@@ -117,9 +144,9 @@ export const isHub = (g: ChainGraph, id: number): boolean => (g.succ.get(id)?.si
  * omitted the class is unknown and every class quest is left out.
  *
  * Only chains the character is on and has not finished are reported: a member is in the log, or
- * a completed member is not a hub. A hub is a quest with 3 or more direct successors in its chain
- * (a shared race or faction starter such as "Dwarven Outfitters"); a chain whose only progress is
- * a completed hub is not listed. `complete` is always false in v1 output. Ordered by root level,
+ * a completed member is not a hub. A hub is a quest with 3 or more direct successors among all
+ * quests passed in, class quests included (a shared race or faction starter such as "Dwarven
+ * Outfitters"); a chain whose only progress is a completed hub is not listed. `complete` is always false in v1 output. Ordered by root level,
  * then id.
  */
 export function chainProgress(

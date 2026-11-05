@@ -33,6 +33,16 @@ Across the full mirror every real place has a numeric `zone.m`; class names (Dru
 Paladin, Priest, Rogue, Shaman, Warlock, Warrior) and categories (Seasonal, Blacksmithing,
 Lunar Festival, ...) have `m: null`. 472 quests have a starter `uiMapId` different from `zone.m`.
 
+## quests-hub.json
+
+Eight more real rows from the same mirror (2026-11-05, read from a copy), trimmed the same way, for
+hub detection: 7 Kobold Camp Cleanup (Elwynn Forest, after 783, which is not included) and its
+successors 15 Investigate Echo Ridge (Elwynn Forest) and six class letters with `zone.n` a class
+name and `m: null`: 3100 Simple Letter (Warrior), 3101 Consecrated Letter (Paladin), 3102
+Encrypted Letter (Rogue), 3103 Hallowed Letter (Priest), 3104 Glyphic Letter (Mage), 3105 Tainted
+Letter (Warlock). 7 has 7 successors in the full link set but only 2 for a Priest after the class
+filter, so it shows why hubs are judged before the class filter.
+
 ## professions.json and quests-profession.json (interim profession-quest rule, M1.1)
 
 Inspected read-only (`sqlite3 -readonly`) on 2026-11-05, same mirror. Public game data only.

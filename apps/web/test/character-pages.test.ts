@@ -90,6 +90,9 @@ function seeded(withContent: boolean): Db {
     putContent(db, "quests", "9103", quest(9103, "Third Step", 12, ["Dun Morogh", 1426], after(9102, "Second Step")));
     putContent(db, "quests", "9104", quest(9104, "Wolf Trouble", 11, ["Dun Morogh", 1426]));
     putContent(db, "quests", "9105", quest(9105, "Lochside Errand", 14, ["Loch Modan", 1432]));
+    // HERO's quest log holds 9201. 9101 has three successors counting the Priest rune (a hub), so
+    // HERO is on this chain because of the logged step, not because 9101 is done.
+    putContent(db, "quests", "9201", quest(9201, "Fourth Step", 13, ["Dun Morogh", 1426], after(9103, "Third Step")));
     // Class quests: in the real mirror `zone.n` is the class name with `m: null`.
     putContent(db, "quests", "9301", quest(9301, "Call of Earth", 10, ["Shaman", null], after(9101, "First Step")));
     putContent(db, "quests", "9302", quest(9302, "Consecrated Rune", 9, ["Priest", null], after(9101, "First Step")));
@@ -176,9 +179,9 @@ describe("quests tab", () => {
     ]);
     expect(data.suggestions[0]!.reason).toMatch(/^Shaman class quest\./);
     expect(data.suggestions[1]!.reason).toContain('after "First Step"');
-    // The chain holds the Shaman quest but not the Priest one (4 members, not 5).
+    // The chain holds the Shaman quest but not the Priest one (5 members, not 6).
     expect(data.chains).toEqual([
-      { chain: 9101, name: "First Step", done: 1, total: 4, pips: ["done", "now", "todo", "todo"] },
+      { chain: 9101, name: "First Step", done: 1, total: 5, pips: ["done", "now", "todo", "todo", "todo"] },
     ]);
   });
 
@@ -262,24 +265,47 @@ describe("chain page", () => {
   test("unknown, invalid or other-class quest ids are a 404", async () => {
     state.db = seeded(true);
     // 9302 is a Priest rune: not a chain the Shaman can open.
-    for (const id of ["424242", "abc", "0", "-3", "1.5", "9101x", "", "99999999999999999999", "9302"]) {
+    for (const id of ["424242", "abc", "0", "-3", "1.5", "9101x", "", "99999999999999999999", "9302", "%", "%39101", "91%2001"]) {
       await expect(Promise.resolve().then(() => chainLoad(chainEv(HERO, id))), id).rejects.toMatchObject({ status: 404 });
     }
+  });
+
+  test("leading zeros are accepted as the same id", async () => {
+    state.db = seeded(true);
+    const data = (await chainLoad(chainEv(HERO, "0009102"))) as ChainData;
+    expect(data.chain!.chain).toBe(9101);
+    // 00012 is quest 12.
+    putContent(state.db as Db, "quests", "12", quest(12, "Lone Errand", 5, ["Dun Morogh", 1426]));
+    resetQuestCatalog();
+    const twelve = (await chainLoad(chainEv(HERO, "00012"))) as ChainData;
+    expect(twelve.chain).toMatchObject({ chain: 12, name: "Lone Errand", total: 1 });
   });
 
   test("a known member gives the whole chain in order, with states and the current step", async () => {
     state.db = seeded(true);
     const data = (await chainLoad(chainEv(HERO, "9103"))) as ChainData;
     expect(data.contentReady).toBe(true);
-    expect(data.chain).toMatchObject({ chain: 9101, name: "First Step", done: 1, total: 4 });
+    expect(data.chain).toMatchObject({ chain: 9101, name: "First Step", done: 1, total: 5 });
     expect(data.chain!.members.map((m) => [m.step, m.questId, m.state])).toEqual([
       [1, 9101, "done"],
       [2, 9301, "available"],
       [3, 9102, "available"],
       [4, 9103, "locked"],
+      [5, 9201, "in-log"],
     ]);
     expect(data.chain!.members[2]).toMatchObject({ name: "Second Step", level: 11, zone: "Dun Morogh", giver: null });
-    expect(data.current).toBe(9301);
+    // The quest in the log is the current step.
+    expect(data.current).toBe(9201);
+    // Nothing in the log: the first available quest is current (Priest: their rune, not the Shaman's).
+    const bare = (await chainLoad(chainEv(BARE, "9101"))) as ChainData;
+    expect(bare.chain!.members.map((m) => [m.questId, m.state])).toEqual([
+      [9101, "available"],
+      [9302, "locked"],
+      [9102, "locked"],
+      [9103, "locked"],
+      [9201, "locked"],
+    ]);
+    expect(bare.current).toBe(9101);
   });
 
   test("the current step is the quest in the log when there is one", async () => {
@@ -298,6 +324,7 @@ describe("chain page", () => {
       [9101, "done"],
       [9102, "in-log"],
       [9103, "locked"],
+      [9201, "locked"],
     ]);
     expect(data.current).toBe(9102);
   });
