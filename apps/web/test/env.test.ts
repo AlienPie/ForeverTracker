@@ -19,6 +19,12 @@ describe("readEnv", () => {
     expect(e.sessionSecret).toBe("y");
   });
 
+  test("ALLOWED_HOSTS: empty by default, comma-separated, trimmed, lower-cased", () => {
+    expect(readEnv({}).allowedHosts).toEqual([]);
+    expect(readEnv({ ALLOWED_HOSTS: "" }).allowedHosts).toEqual([]);
+    expect(readEnv({ ALLOWED_HOSTS: " Tracker.LAN , ,nas," }).allowedHosts).toEqual(["tracker.lan", "nas"]);
+  });
+
   test("tooltip provider defaults to none, empty string too", () => {
     expect(readEnv({}).tooltipProvider).toBe("none");
     expect(readEnv({ TOOLTIP_PROVIDER: "" }).tooltipProvider).toBe("none");

@@ -9,9 +9,20 @@ export interface Env {
   ownerPassword: string | null;
   /** Secret for signing session cookies; null when unset. */
   sessionSecret: string | null;
+  /**
+   * Extra host names (no port, lower-cased) that open mode answers to besides
+   * the loopback names; from the comma-separated ALLOWED_HOSTS.
+   */
+  allowedHosts: string[];
 }
 
 const orNull = (v: string | undefined): string | null => (v ? v : null);
+
+const hostList = (v: string | undefined): string[] =>
+  (v ?? "")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter((h) => h !== "");
 
 /** Read the environment once. Throws on an invalid value so a bad config stops the server at boot. */
 export function readEnv(source: Record<string, string | undefined> = process.env): Env {
@@ -28,6 +39,7 @@ export function readEnv(source: Record<string, string | undefined> = process.env
     tooltipProvider,
     ownerPassword: orNull(source.OWNER_PASSWORD),
     sessionSecret: orNull(source.SESSION_SECRET),
+    allowedHosts: hostList(source.ALLOWED_HOSTS),
   };
 }
 

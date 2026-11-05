@@ -39,9 +39,34 @@ export function safeNext(next: string | null | undefined): string {
   return next;
 }
 
+/**
+ * Paths served without a session. Only the hashed build assets and the version
+ * file under /_app/ are public: anything else SvelteKit may serve there later
+ * (remote functions, for one) must still require the login.
+ */
 export const isPublicPath = (path: string): boolean =>
   path === "/login" ||
   path === "/api/health" ||
   path === "/api/ingest" ||
   path === "/favicon.ico" ||
-  path.startsWith("/_app/");
+  path === "/_app/version.json" ||
+  path.startsWith("/_app/immutable/");
+
+/** Bearer-token or unauthenticated machine endpoints, reachable from any host name even in open mode. */
+export const isHostExemptPath = (path: string): boolean => path === "/api/ingest" || path === "/api/health";
+
+/**
+ * Open mode answers only to loopback host names (plus ALLOWED_HOSTS), so a
+ * DNS-rebinding page on another name that resolves to 127.0.0.1 is refused.
+ * `hostname` is URL.hostname: lower-case, no port, IPv6 in brackets.
+ */
+export function isAllowedOpenHost(hostname: string, allowed: readonly string[] = []): boolean {
+  const h = hostname.toLowerCase();
+  return (
+    h === "localhost" ||
+    h.endsWith(".localhost") ||
+    h === "127.0.0.1" ||
+    h === "[::1]" ||
+    allowed.includes(h)
+  );
+}

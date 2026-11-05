@@ -2,7 +2,12 @@ import type { RequestEvent } from "@sveltejs/kit";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
-  e: { contentMode: "mirror", ownerPassword: null as string | null, sessionSecret: null as string | null },
+  e: {
+    contentMode: "mirror",
+    ownerPassword: null as string | null,
+    sessionSecret: null as string | null,
+    allowedHosts: [] as string[],
+  },
 }));
 vi.mock("../src/lib/server/env", () => ({ env: () => state.e }));
 
@@ -15,14 +20,17 @@ function cookiesStub(value?: string) {
   return { get: vi.fn(() => value), set: vi.fn(), delete: vi.fn() };
 }
 
-function hookEvent(path: string, cookie?: string) {
+// A 32-character fake secret (init() requires at least 32).
+const SECRET = "test-fake-session-secret-0123456";
+
+function hookEvent(path: string, cookie?: string, host = "x") {
   const cookies = cookiesStub(cookie);
-  const url = new URL(`http://x${path}`);
+  const url = new URL(`http://${host}${path}`);
   return { url, cookies, locals: {} as { authed?: boolean }, request: new Request(url) };
 }
 
-async function run(path: string, cookie?: string) {
-  const ev = hookEvent(path, cookie);
+async function run(path: string, cookie?: string, host?: string) {
+  const ev = hookEvent(path, cookie, host);
   const resolve = vi.fn(async () => new Response("ok"));
   const res = await handle({ event: ev as unknown as RequestEvent, resolve } as never);
   return { res, resolve, ev };
@@ -47,13 +55,26 @@ function loginEvent(fields: Record<string, string>, query = "") {
 
 beforeEach(() => {
   state.e.ownerPassword = "pw";
-  state.e.sessionSecret = "sec";
+  state.e.sessionSecret = SECRET;
+  state.e.allowedHosts = [];
 });
 
 describe("init", () => {
   test("throws naming SESSION_SECRET when password set without secret", () => {
     state.e.sessionSecret = null;
     expect(() => init()).toThrow(/SESSION_SECRET/);
+  });
+  test("throws when SESSION_SECRET is shorter than 32 characters, suggesting openssl", () => {
+    state.e.sessionSecret = "x".repeat(31);
+    expect(() => init()).toThrow(/SESSION_SECRET/);
+    expect(() => init()).toThrow(/openssl rand -base64 32/);
+    state.e.sessionSecret = "x".repeat(32);
+    expect(() => init()).not.toThrow();
+  });
+  test("a short secret is fine in open mode (it is unused)", () => {
+    state.e.ownerPassword = null;
+    state.e.sessionSecret = "short";
+    expect(() => init()).not.toThrow();
   });
   test("ok when both or neither set", () => {
     expect(() => init()).not.toThrow();
@@ -72,7 +93,7 @@ describe("auth hook", () => {
   });
 
   test("lets public paths and assets through", async () => {
-    for (const p of ["/login", "/api/ingest", "/api/health", "/_app/immutable/x.js", "/favicon.ico"]) {
+    for (const p of ["/login", "/api/ingest", "/api/health", "/_app/immutable/x.js", "/_app/version.json", "/favicon.ico"]) {
       const { res, resolve } = await run(p);
       expect(res.status).toBe(200);
       expect(resolve).toHaveBeenCalled();
@@ -80,14 +101,14 @@ describe("auth hook", () => {
   });
 
   test("does not treat look-alike paths as public", async () => {
-    for (const p of ["/login-x", "/api/ingest/../x", "/api/healthz"]) {
+    for (const p of ["/login-x", "/api/ingest/../x", "/api/healthz", "/_app/remote/x", "/_app/env.js", "/_app/version.jsonx", "/_app/immutablex/a.js"]) {
       const { res } = await run(p);
       expect(res.status).toBe(303);
     }
   });
 
   test("passes an authenticated request and sets locals.authed", async () => {
-    const { res, ev } = await run("/", signSession("sec"));
+    const { res, ev } = await run("/", signSession(SECRET));
     expect(res.status).toBe(200);
     expect(ev.locals.authed).toBe(true);
   });
@@ -98,12 +119,62 @@ describe("auth hook", () => {
     expect(ev.locals.authed).toBe(false);
   });
 
-  test("open mode lets everything through", async () => {
+  test("password set without a secret fails closed with 500, never open mode", async () => {
+    state.e.sessionSecret = null;
+    const { res, resolve, ev } = await run("/anything", undefined, "localhost");
+    expect(res.status).toBe(500);
+    expect(resolve).not.toHaveBeenCalled();
+    expect(ev.locals.authed).not.toBe(true);
+  });
+
+  test("password mode is not host-restricted", async () => {
+    const r1 = await run("/", undefined, "evil.example:3000");
+    expect(r1.res.status).toBe(303);
+    const r2 = await run("/", signSession(SECRET), "evil.example:3000");
+    expect(r2.res.status).toBe(200);
+  });
+});
+
+describe("open mode", () => {
+  beforeEach(() => {
     state.e.ownerPassword = null;
     state.e.sessionSecret = null;
-    const { res, ev } = await run("/anything");
-    expect(res.status).toBe(200);
-    expect(ev.locals.authed).toBe(true);
+  });
+
+  test("lets everything through on a loopback host name", async () => {
+    for (const host of ["localhost", "localhost:3000", "127.0.0.1:3000", "[::1]:3000", "foo.localhost:3000", "LOCALHOST"]) {
+      const { res, ev, resolve } = await run("/anything", undefined, host);
+      expect(res.status, host).toBe(200);
+      expect(resolve).toHaveBeenCalled();
+      expect(ev.locals.authed).toBe(true);
+    }
+  });
+
+  test("rejects any other host name with 403 (DNS rebinding)", async () => {
+    for (const host of ["evil.example:3000", "x", "localhost.evil.example", "127.0.0.2", "192.168.1.5:3000", "evillocalhost"]) {
+      for (const path of ["/", "/settings", "/c/abc/quests", "/_app/immutable/x.js"]) {
+        const { res, resolve } = await run(path, undefined, host);
+        expect(res.status, `${host}${path}`).toBe(403);
+        expect(resolve).not.toHaveBeenCalled();
+      }
+    }
+  });
+
+  test("ALLOWED_HOSTS extends the loopback list", async () => {
+    state.e.allowedHosts = ["tracker.lan", "nas"];
+    expect((await run("/", undefined, "tracker.lan:3000")).res.status).toBe(200);
+    expect((await run("/", undefined, "NAS")).res.status).toBe(200);
+    expect((await run("/", undefined, "localhost")).res.status).toBe(200);
+    expect((await run("/", undefined, "evil.example")).res.status).toBe(403);
+    expect((await run("/", undefined, "sub.tracker.lan")).res.status).toBe(403);
+  });
+
+  test("/api/ingest and /api/health are exempt from the host check", async () => {
+    for (const path of ["/api/ingest", "/api/health"]) {
+      const { res, resolve } = await run(path, undefined, "evil.example:3000");
+      expect(res.status, path).toBe(200);
+      expect(resolve).toHaveBeenCalled();
+    }
   });
 });
 
