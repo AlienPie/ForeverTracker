@@ -72,8 +72,8 @@ function areaOf(q: QuestRow, zone: string | null, mapId: number | null): string 
  *    `areaOf`), and `level - 3 <= quest.level <= level`.
  * 3. next-level: as area but `quest.level === level + 1` (low confidence).
  *
- * Ordered by rule rank, then quest level, then id. Class quests say "<Class> class quest" in the
- * reason.
+ * Ordered by rule rank, then quest level, then id (free-slot profession picks last, see below).
+ * Class quests say "<Class> class quest" in the reason.
  *
  * Profession quests (INTERIM rule for M1.1, to be replaced in M2 by the curated Wowhead profession
  * tags): only with a non-empty `professionCatalog`. ForeverDB quests have no profession field, so
@@ -81,8 +81,8 @@ function areaOf(q: QuestRow, zone: string | null, mapId: number | null): string 
  * (see `professionMatcher`). It is allowed when the character knows that profession, or its kind
  * is `secondary` (always learnable), or its kind takes a slot (`primary` or `gathering`) and the
  * character's learned professions fill fewer than 2 slots: a free slot, low confidence, and the
- * reason says "You have a free profession slot". Otherwise it is dropped from every rule. An
- * allowed profession quest still needs one of the rules above; it then gets kind "profession"
+ * reason says "You have a free profession slot"; free-slot picks sort after every other
+ * suggestion, whatever their rule. Otherwise it is dropped from every rule. An allowed profession quest still needs one of the rules above; it then gets kind "profession"
  * and a reason naming the profession. A catalog profession of any other kind is not gated.
  */
 export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
@@ -156,7 +156,11 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
     }
   }
 
-  picked.sort((a, b) => RANK[a.rule] - RANK[b.rule] || a.q.level - b.q.level || a.q.id - b.q.id);
+  // Free-slot profession picks (low confidence) go after every other suggestion, whatever their rule.
+  picked.sort(
+    (a, b) =>
+      Number(a.freeSlot) - Number(b.freeSlot) || RANK[a.rule] - RANK[b.rule] || a.q.level - b.q.level || a.q.id - b.q.id,
+  );
   return picked.slice(0, Math.max(0, limit)).map(({ rule, q, reason, profession, freeSlot }) => ({
     kind: profession ? "profession" : rule === "chain-far" ? "chain" : rule,
     title: q.name,

@@ -342,6 +342,37 @@ describe("nextUp: profession quests (interim name rule)", () => {
     expect(out).toEqual([]);
   });
 
+  test("free-slot profession quests sort after every other suggestion, even ahead-ranked chain picks", () => {
+    // No professions: the Durotar Camping 101 continuations are chain picks but free-slot (low).
+    const area: QuestRow = { ...q(80, 6, "Durotar"), zone: { n: "Durotar", slug: "durotar", m: 1411 } };
+    const nextLevel: QuestRow = { ...q(81, 7, "Durotar"), zone: { n: "Durotar", slug: "durotar", m: 1411 } };
+    const quests = [...PROF_QUESTS, area, nextLevel];
+    const out = nextUp(input({ ...durotar, quests, professions: [], professionCatalog: CATALOG }), 10);
+    expect(out.map((s) => [s.kind, s.questId])).toEqual([
+      ["profession", 96655], // Cooking: secondary, not a free-slot pick, keeps its chain rank
+      ["area", 80],
+      ["next-level", 81],
+      ["profession", 97901],
+      ["profession", 97907],
+      ["profession", 97908],
+      ["profession", 97900],
+    ]);
+    expect(nextUp(input({ ...durotar, quests, professions: [], professionCatalog: CATALOG }), 1)[0]!.questId).toBe(96655);
+    expect(
+      nextUp(input({ ...durotar, completed: new Set([96604, 96655]), quests, professions: [], professionCatalog: CATALOG }), 1)[0]!.questId,
+    ).toBe(80);
+  });
+
+  test("when only free-slot profession quests exist they are still suggested", () => {
+    const out = nextUp(input({ ...durotar, completed: new Set([96604, 96655]), professions: [], professionCatalog: CATALOG }), 10);
+    expect(out.map((s) => [s.questId, s.confidence])).toEqual([
+      [97901, "low"],
+      [97907, "low"],
+      [97908, "low"],
+      [97900, "low"],
+    ]);
+  });
+
   test("odd catalog and profession entries do not throw", () => {
     const catalog = [null, { name: 4 }, { slug: "mining", name: "Mining", kind: "gathering" }] as unknown as ProfessionInfo[];
     const professions = [null, { name: null }, { name: "Mining" }] as unknown as NextUpInput["professions"];

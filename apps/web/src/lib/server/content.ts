@@ -82,6 +82,19 @@ export function catalogSource(mode: ContentMode, db: Db): ContentSource | null {
 }
 
 /**
+ * The professions catalog, or [] when it cannot be loaded. The profession-quest rule is optional,
+ * so a failure here must not lose the quests: it is logged and `nextUp` keeps its old behaviour.
+ */
+async function professionsOrNone(source: ContentSource): Promise<ProfessionInfo[]> {
+  try {
+    return await loadProfessions(source);
+  } catch (err) {
+    console.error("professions catalog unavailable:", err instanceof Error ? err.message : err);
+    return [];
+  }
+}
+
+/**
  * A memo of the quest catalog with a TTL. Concurrent callers share one load;
  * a failed load is not cached. With no quests the result is the empty shape
  * (level cap null too), so `quests.length > 0` means content is ready.
@@ -104,7 +117,7 @@ export function createQuestCatalog(opts: {
       quests,
       levelCap: await getLevelCap(source),
       mapNames: await loadMapNames(source, quests),
-      professions: await loadProfessions(source),
+      professions: await professionsOrNone(source),
     };
   }
 

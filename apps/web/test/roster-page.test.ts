@@ -322,6 +322,27 @@ describe("quest catalog memo", () => {
     expect((await memo.get()).quests).toHaveLength(2);
   });
 
+  test("a failing professions listing degrades to no professions; quests and level cap survive", async () => {
+    const good = catalogSource("mirror", seeded(true))!;
+    const source: ContentSource = {
+      get: good.get,
+      list: async (r, o) => {
+        if (r === "professions") throw new Error("professions unavailable");
+        return good.list(r, o);
+      },
+    };
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const cat = await createQuestCatalog({ source: () => source, now: () => 0 }).get();
+      expect(cat.quests.map((q) => q.id)).toEqual([9001, 9002]);
+      expect(cat.levelCap).toBe(60);
+      expect(cat.professions ?? []).toEqual([]);
+      expect(err).toHaveBeenCalledWith(expect.stringContaining("professions"), "professions unavailable");
+    } finally {
+      err.mockRestore();
+    }
+  });
+
   test("empty mirror gives the empty shape even when meta has a level cap", async () => {
     const db = openDb(":memory:");
     putContent(db, "meta", "current", { build: "1.0", levelCap: 60 });
