@@ -94,6 +94,7 @@ footer.site{border-top:1px solid var(--edge);padding:18px 0;color:var(--text-dim
 .tabs a:hover{color:var(--text)}
 .quests,.chains,.timeline,.places,.skills{list-style:none;margin:0;padding:0}
 .panel .sub.foot{margin:12px 0 0}
+.quest .hint{font-style:italic;margin-left:4px}
 .panel .banner{margin:4px 0 0}
 .timeline li{display:grid;grid-template-columns:9.5em 1fr;gap:2px 16px;padding:9px 0;border-top:1px solid #0003;font-size:15px}
 .timeline li:first-child{border-top:0}

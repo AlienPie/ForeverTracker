@@ -61,7 +61,7 @@ const FIXTURE = `ForeverTrackerDB = { schema = 1, characters = {
 } }`;
 
 type Link = { questId: number; name: string; relation: string };
-function quest(id: number, name: string, level: number, zone: [string, number] | null, previous: Link[] = []) {
+function quest(id: number, name: string, level: number, zone: [string, number | null] | null, previous: Link[] = []) {
   return {
     id,
     name,
@@ -89,6 +89,9 @@ function seeded(withContent: boolean): Db {
     putContent(db, "quests", "9103", quest(9103, "Third Step", 12, ["Dun Morogh", 1426], after(9102, "Second Step")));
     putContent(db, "quests", "9104", quest(9104, "Wolf Trouble", 11, ["Dun Morogh", 1426]));
     putContent(db, "quests", "9105", quest(9105, "Lochside Errand", 14, ["Loch Modan", 1432]));
+    // Class quests: in the real mirror `zone.n` is the class name with `m: null`.
+    putContent(db, "quests", "9301", quest(9301, "Call of Earth", 10, ["Shaman", null], after(9101, "First Step")));
+    putContent(db, "quests", "9302", quest(9302, "Consecrated Rune", 9, ["Priest", null], after(9101, "First Step")));
   }
   return db;
 }
@@ -160,16 +163,29 @@ describe("quests tab", () => {
     expect(data.completed).toBe(1);
   });
 
-  test("synthetic catalog: chain step first, then same area, and chain pips", async () => {
+  test("synthetic catalog: chain steps first (own class quest included), then same area, and chain pips", async () => {
     state.db = seeded(true);
     const data = (await questsLoad(ev(HERO))) as QuestsData;
     expect(data.contentReady).toBe(true);
+    // HERO is a Shaman: the Shaman quest is suggested, the Priest rune never is.
     expect(data.suggestions.map((s) => [s.kind, s.title])).toEqual([
+      ["chain", "Call of Earth"],
       ["chain", "Second Step"],
       ["area", "Wolf Trouble"],
     ]);
-    expect(data.suggestions[0]!.reason).toContain('after "First Step"');
-    expect(data.chains).toEqual([{ chain: 9101, name: "First Step", done: 1, total: 3, pips: ["done", "now", "todo"] }]);
+    expect(data.suggestions[0]!.reason).toMatch(/^Shaman class quest\./);
+    expect(data.suggestions[1]!.reason).toContain('after "First Step"');
+    // The chain holds the Shaman quest but not the Priest one (4 members, not 5).
+    expect(data.chains).toEqual([
+      { chain: 9101, name: "First Step", done: 1, total: 4, pips: ["done", "now", "todo", "todo"] },
+    ]);
+  });
+
+  test("roster Next passes the class too: the Shaman sees the Shaman quest, never the Priest rune", async () => {
+    state.db = seeded(true);
+    const roster = (await rosterLoad({} as never)) as { nextByGuid: Record<string, { title: string } | null> };
+    expect(roster.nextByGuid[HERO]).toMatchObject({ title: "Call of Earth" });
+    expect(Object.values(roster.nextByGuid).some((n) => n?.title === "Consecrated Rune")).toBe(false);
   });
 
   test("unknown level: content ready but nothing suggested", async () => {

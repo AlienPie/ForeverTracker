@@ -35,6 +35,7 @@ export const load: ServerLoad = async (): Promise<RosterPageData> => {
         level: card.level,
         zone: view.zone,
         mapId: view.mapId,
+        classToken: view.class,
         completed: new Set(view.completedIds),
         inLog: new Set(view.questLogIds),
         quests: catalog.quests,

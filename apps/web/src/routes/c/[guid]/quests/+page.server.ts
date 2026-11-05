@@ -40,6 +40,7 @@ export const load: ServerLoad = async ({ params }): Promise<QuestsPageData> => {
             level: view.level,
             zone: view.zone,
             mapId: view.mapId,
+            classToken: view.class,
             completed,
             inLog,
             quests: catalog.quests,
@@ -50,7 +51,7 @@ export const load: ServerLoad = async ({ params }): Promise<QuestsPageData> => {
         )
       : [];
   const chains = contentReady
-    ? chainProgress(catalog.quests, completed, inLog).map((c) => ({
+    ? chainProgress(catalog.quests, completed, inLog, view.class).map((c) => ({
         chain: c.chain,
         name: c.name,
         done: c.done,

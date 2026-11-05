@@ -36,12 +36,15 @@
           <li class="quest">
             <h3>{s.title}</h3>
             <span class="lvl">level {s.level}</span>
-            <div class="why"><span class="tag" class:cont={s.kind === "chain"}>{TAG[s.kind] ?? s.kind}</span>{s.reason}</div>
+            <div class="why">
+              <span class="tag" class:cont={s.kind === "chain" && s.confidence === "high"}>{TAG[s.kind] ?? s.kind}</span>{s.reason}
+              {#if s.confidence === "low"}<span class="hint">{s.kind === "chain" ? "May be a long way off." : "Less certain."}</span>{/if}
+            </div>
           </li>
         {/each}
       </ol>
       <p class="sub foot">
-        Why these? Quests come from ForeverDB. Class and race quests are not tagged yet, so some will be missing.
+        Why these? Quests come from ForeverDB. Class quests are matched to your class; race quests are not tagged yet, so some may be missing.
       </p>
     {/if}
   </section>
