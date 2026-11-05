@@ -1,9 +1,4 @@
-/** Journey tab helpers: event sentences and places. Pure, and never throw on odd data. */
-
-/** `iso` (for `<time datetime>`) and `when` (display, UTC) are null for an implausible time. */
-export type JourneyEvent = { t: number; kind: string; text: string; iso: string | null; when: string | null };
-/** `since` is the first-seen day (UTC), null for an implausible time. */
-export type Place = { mapId: number; name: string; subzones: string[]; firstSeen: number; since: string | null };
+/** Journey tab helpers: event sentences and safe time formatting. Pure, and never throw on odd data. */
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -15,7 +10,7 @@ const text = (v: unknown): string | null => (typeof v === "string" && v.trim() ?
  * Ingest keeps any finite number, so a corrupt upload can carry 1e20 or a
  * negative time; `toISOString` throws on those, so they never reach formatting.
  */
-function plausibleDate(t: number): Date | null {
+export function plausibleDate(t: number): Date | null {
   if (!Number.isFinite(t) || t <= 0) return null;
   const d = new Date(t * 1000);
   return Number.isFinite(d.getTime()) && d.getUTCFullYear() < 10000 ? d : null;
@@ -83,37 +78,4 @@ export function eventSentence(
     default:
       return ev.kind;
   }
-}
-
-/** Events as sentences, newest first. */
-export function journeyEvents(
-  events: { t: number; kind: string; data: unknown }[],
-  questNames: Map<number, string>,
-  mapNames: Record<number, string>,
-): JourneyEvent[] {
-  return [...events]
-    .sort((a, b) => b.t - a.t)
-    .map((e) => ({ t: e.t, kind: e.kind, text: eventSentence(e, questNames, mapNames), ...formatEventTime(e.t) }));
-}
-
-/**
- * Visited places grouped by map: the zone name (or "Map <id>"), its named
- * subzones in first-seen order, and the earliest first-seen time. Most recently
- * discovered map first.
- */
-export function groupPlaces(
-  visited: { mapId: number; subzone: string; firstSeen: number }[],
-  mapNames: Record<number, string>,
-): Place[] {
-  const byMap = new Map<number, Place>();
-  for (const v of [...visited].sort((a, b) => a.firstSeen - b.firstSeen)) {
-    let p = byMap.get(v.mapId);
-    if (!p) {
-      p = { mapId: v.mapId, name: mapName(v.mapId, mapNames), subzones: [], firstSeen: v.firstSeen, since: formatDay(v.firstSeen) };
-      byMap.set(v.mapId, p);
-    }
-    const sub = text(v.subzone);
-    if (sub && sub !== p.name && !p.subzones.includes(sub)) p.subzones.push(sub);
-  }
-  return [...byMap.values()].sort((a, b) => b.firstSeen - a.firstSeen || a.mapId - b.mapId);
 }

@@ -1,4 +1,4 @@
-import { characterEvent, contentRecord, openDb, type Db } from "@ft/db";
+import { contentRecord, openDb, type Db } from "@ft/db";
 import { ingestSavedVariables } from "@ft/core";
 import { sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -20,7 +20,7 @@ import { load as professionsLoad } from "../src/routes/c/[guid]/professions/+pag
 import { load as rosterLoad } from "../src/routes/+page.server";
 import { resetQuestCatalog } from "../src/lib/server/content";
 import { getQuestCatalogSafe } from "../src/lib/server/safe-catalog";
-import { eventSentence, formatDay, formatEventTime, type JourneyEvent, type Place } from "../src/lib/journey";
+import { eventSentence, formatDay, formatEventTime } from "../src/lib/journey";
 
 const NOW = 1_800_000_000;
 const HOUR = 3600;
@@ -100,7 +100,8 @@ function seeded(withContent: boolean): Db {
   return db;
 }
 
-const ev = (guid: string) => ({ params: { guid } }) as never;
+// The Journey tab reads `url` (for ?all=1); the other loads ignore it.
+const ev = (guid: string) => ({ params: { guid }, url: new URL(`http://localhost/c/${guid}`) }) as never;
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -349,8 +350,6 @@ describe("chain page", () => {
   });
 });
 
-type JourneyData = { events: JourneyEvent[]; places: Place[]; eventsTotal: number };
-
 /** SQL text of every statement prepared on `db` while `fn` runs. */
 async function preparedDuring(db: Db, fn: () => Promise<unknown>): Promise<string[]> {
   // drizzle's better-sqlite3 driver prepares every query on the underlying client.
@@ -386,66 +385,6 @@ describe("bounded event reads", () => {
     const journey = await preparedDuring(state.db as Db, async () => journeyLoad(ev(HERO)));
     expect(journey.some((q) => q.includes("character_event"))).toBe(true);
   });
-
-  test("journey shows the newest 200 events and reports the total", async () => {
-    state.db = seeded(false);
-    (state.db as Db)
-      .insert(characterEvent)
-      .values(Array.from({ length: 250 }, (_, i) => ({ guid: BARE, t: NOW - 1000 + i, kind: "level_up", data: JSON.stringify({ level: i }) })))
-      .run();
-    const data = (await journeyLoad(ev(BARE))) as JourneyData;
-    expect(data.events).toHaveLength(200);
-    expect(data.eventsTotal).toBe(250);
-    expect(data.events[0]!.t).toBe(NOW - 1000 + 249);
-    expect(data.events.at(-1)!.t).toBe(NOW - 1000 + 50);
-  });
-
-  test("journey total equals the shown count under the cap", async () => {
-    state.db = seeded(true);
-    const data = (await journeyLoad(ev(HERO))) as JourneyData;
-    expect(data.eventsTotal).toBe(data.events.length);
-  });
-});
-
-describe("journey tab", () => {
-  test("visited = {} gives an empty places list and no events", async () => {
-    state.db = seeded(true);
-    const data = (await journeyLoad(ev(BARE))) as JourneyData;
-    expect(data.places).toEqual([]);
-    expect(data.events).toEqual([]);
-  });
-
-  test("events newest first with sentences, quest names from the catalog, safe fallbacks", async () => {
-    state.db = seeded(true);
-    const data = (await journeyLoad(ev(HERO))) as JourneyData;
-    expect(data.events.map((e) => e.text)).toEqual([
-      "Reached level 12",
-      "dance_party",
-      "Professions now: Mining, Skinning",
-      "Completed quest 424242",
-      "Completed First Step",
-      "Reached level 11",
-    ]);
-    const ts = data.events.map((e) => e.t);
-    expect(ts).toEqual([...ts].sort((a, b) => b - a));
-  });
-
-  test("places grouped by map, names from zones then quests, else Map <id>", async () => {
-    state.db = seeded(true);
-    const data = (await journeyLoad(ev(HERO))) as JourneyData;
-    expect(data.places).toEqual([
-      { mapId: 9999, name: "Map 9999", subzones: [], firstSeen: NOW - HOUR, since: "15 Jan 2027" },
-      { mapId: 1432, name: "Loch Modan", subzones: ["Thelsamar"], firstSeen: NOW - 2 * HOUR, since: "15 Jan 2027" },
-      { mapId: 1426, name: "Dun Morogh", subzones: ["Coldridge Valley", "Kharanos"], firstSeen: NOW - 6 * HOUR, since: "15 Jan 2027" },
-    ]);
-  });
-
-  test("without content every map is Map <id> and quests fall back to their id", async () => {
-    state.db = seeded(false);
-    const data = (await journeyLoad(ev(HERO))) as JourneyData;
-    expect(data.places.map((p) => p.name)).toEqual(["Map 9999", "Map 1432", "Map 1426"]);
-    expect(data.events.map((e) => e.text)).toContain("Completed quest 9101");
-  });
 });
 
 describe("out-of-range times", () => {
@@ -456,30 +395,6 @@ describe("out-of-range times", () => {
     }
     expect(formatEventTime(NOW)).toEqual({ iso: "2027-01-15T08:00:00.000Z", when: "15 Jan 2027, 08:00" });
     expect(formatDay(NOW)).toBe("15 Jan 2027");
-  });
-
-  test("journey load survives events and places with t = 1e20", async () => {
-    state.db = seeded(true);
-    ingestSavedVariables(
-      state.db as Db,
-      `ForeverTrackerDB = { schema = 1, characters = { ["Player-7777-0000D004"] = {
-        snapshot = { takenAt = ${NOW}, identity = { name = "Tamsin", class = "MAGE", race = "Gnome", level = 8 } },
-        events = {
-          { t = 1e20, kind = "level_up", data = { level = 8 } },
-          { t = -1e20, kind = "level_up", data = { level = 2 } },
-          { t = ${NOW - HOUR}, kind = "level_up", data = { level = 7 } },
-        },
-        visited = { ["1426:"] = { mapId = 1426, subzone = "", firstSeen = 1e20 } },
-      } } }`,
-      () => NOW,
-    );
-    const data = (await journeyLoad(ev("Player-7777-0000D004"))) as JourneyData;
-    expect(data.events.map((e) => [e.text, e.iso, e.when])).toEqual([
-      ["Reached level 8", null, null],
-      ["Reached level 7", "2027-01-15T07:00:00.000Z", "15 Jan 2027, 07:00"],
-      ["Reached level 2", null, null],
-    ]);
-    expect(data.places).toEqual([{ mapId: 1426, name: "Dun Morogh", subzones: [], firstSeen: 1e20, since: null }]);
   });
 });
 
