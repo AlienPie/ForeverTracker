@@ -1,7 +1,8 @@
-// Bundle the token CLIs (create/list/revoke) into standalone ESM files (used by the container image,
-// which has no tsx). better-sqlite3 and drizzle-orm stay external (runtime node_modules).
+// Bundle the container CLIs (token create/list/revoke and the ForeverDB content sync) into standalone
+// ESM files (used by the container image, which has no tsx). better-sqlite3 and drizzle-orm stay
+// external (runtime node_modules).
 // Usage: node scripts/bundle-token.mjs [create-token outfile]   (default: ./create-token.mjs)
-// list-tokens.mjs and revoke-token.mjs are written next to it.
+// list-tokens.mjs, revoke-token.mjs and content-sync.mjs are written next to it.
 import { build } from "esbuild";
 import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -27,14 +28,15 @@ const pinDbMigrations = {
 };
 
 const entries = [
-  ["create-token.ts", createOut],
-  ["list-tokens.ts", join(outdir, "list-tokens.mjs")],
-  ["revoke-token.ts", join(outdir, "revoke-token.mjs")],
+  ["./create-token.ts", createOut],
+  ["./list-tokens.ts", join(outdir, "list-tokens.mjs")],
+  ["./revoke-token.ts", join(outdir, "revoke-token.mjs")],
+  ["../../../packages/content/src/cli/sync.ts", join(outdir, "content-sync.mjs")],
 ];
 
 for (const [entry, outfile] of entries) {
   await build({
-    entryPoints: [fileURLToPath(new URL(`./${entry}`, import.meta.url))],
+    entryPoints: [fileURLToPath(new URL(entry, import.meta.url))],
     outfile,
     bundle: true,
     platform: "node",

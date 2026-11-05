@@ -52,7 +52,7 @@ From `.env.example` (no secrets are committed; leave unused ones empty):
 
 | Variable | Purpose |
 | --- | --- |
-| `FOREVERDB_API_KEY` | ForeverDB API key, used by `pnpm content:sync` and `tools/live-check.ts` (not needed to serve the web app) |
+| `FOREVERDB_API_KEY` | ForeverDB API key, used by the content sync (`node /app/content-sync.mjs` in the container, `pnpm content:sync` in development) and `tools/live-check.ts`; not needed to serve the web app |
 | `CONTENT_MODE` | `mirror` (default, serve the local copy) or `on-demand` |
 | `TOOLTIP_PROVIDER` | `none` (default), `wowhead` or `foreverdb`. Hover tooltips on quest links. With `none` the app makes no third-party requests. `wowhead` makes the visitor's browser load `wow.zamimg.com` (script, icons) and `nether.wowhead.com` (tooltip data); `foreverdb` loads from `foreverdb.net` only, and covers items and spells, not quests. See `docs/design/m1/tooltip-findings.md` |
 | `DATA_DIR` | Directory for the SQLite database. `./data-local` for development; `/data` in the container |
@@ -74,7 +74,22 @@ The origin check stays on: a POST whose `Origin` is another site is still refuse
 
 ## The dashboard
 
-Sign in at `/` with the owner password. **Roster** lists your characters with level, play time, money and a "next up" hint. Each character opens to four tabs: **Journey** (timeline and places visited), **Quests** (next-up suggestions, chains, quest log), **Talents** and **Professions**. **Upload** takes a `ForeverTracker.lua` file in the browser (no token needed), and **Settings** creates and revokes device tokens and shows the state of the content mirror. Run `pnpm content:sync` once (see below) so quest and zone names and the level cap are available.
+Sign in at `/` with the owner password. **Roster** lists your characters with level, play time, money and a "next up" hint. Each character opens to four tabs: **Journey** (timeline and places visited), **Quests** (next-up suggestions, chains, quest log), **Talents** and **Professions**. **Upload** takes a `ForeverTracker.lua` file in the browser (no token needed), and **Settings** creates and revokes device tokens and shows the state of the content mirror. Sync the ForeverDB content once (see "Sync ForeverDB content") so quest and zone names and the level cap are available.
+
+## Sync ForeverDB content
+
+Quest and zone names, quest chains and the level cap come from a local mirror of ForeverDB.net. Fill it once after the first start, and again after a game patch. It needs `FOREVERDB_API_KEY` (about 100 requests, about a minute, resumable if interrupted).
+
+```sh
+# container (the key comes from the --env-file .env you started it with)
+podman exec forevertracker node /app/content-sync.mjs
+# compose
+podman compose exec forevertracker node /app/content-sync.mjs
+# development
+pnpm content:sync
+```
+
+The page data refreshes within a minute of the sync finishing. In the container the sync writes to `/data` on the same volume the server reads.
 
 ## Create a device token
 

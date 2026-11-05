@@ -2,7 +2,7 @@
 # Build:  podman build -t forevertracker:dev .
 ARG NODE_IMAGE=docker.io/library/node:26-slim
 
-# ---- build: install, build apps/web, bundle the token CLI, prune to prod deps ----
+# ---- build: install, build apps/web, bundle the CLIs, prune to prod deps ----
 FROM ${NODE_IMAGE} AS build
 RUN npm install -g pnpm@12.16.1
 WORKDIR /app
@@ -24,7 +24,7 @@ WORKDIR /app
 # @ft/db's migrations folder is pinned to /app/packages/db/drizzle at build time (same path here).
 COPY --from=build /app/packages/db/drizzle ./packages/db/drizzle
 COPY --from=build /app/apps/web/build ./build
-COPY --from=build /app/create-token.mjs /app/list-tokens.mjs /app/revoke-token.mjs ./
+COPY --from=build /app/create-token.mjs /app/list-tokens.mjs /app/revoke-token.mjs /app/content-sync.mjs ./
 COPY --from=build /deploy/node_modules ./node_modules
 RUN mkdir /data && chown node:node /data
 USER node

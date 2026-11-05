@@ -62,11 +62,11 @@
   <section class="panel" aria-labelledby="cont-title">
     <h2 id="cont-title">Content</h2>
     {#if content.resources.length === 0}
-      <p class="empty-note">Nothing synced yet. Run <code>pnpm content:sync</code> to mirror ForeverDB.net data.</p>
+      <p class="empty-note">Nothing synced yet. In the container run <code>podman exec forevertracker node /app/content-sync.mjs</code> (or <code>pnpm content:sync</code> in development) to mirror ForeverDB.net data.</p>
     {:else}
       <p class="sub">
         Game build {content.build ?? "unknown"}{#if content.levelCap !== null}, level cap {content.levelCap}{/if}.
-        Refresh with <code>pnpm content:sync</code>.
+        Refresh with <code>podman exec forevertracker node /app/content-sync.mjs</code> or <code>pnpm content:sync</code>.
       </p>
       <table class="grid">
         <thead><tr><th scope="col">Resource</th><th scope="col">Build</th><th scope="col">Status</th><th scope="col">Records</th><th scope="col">Last synced</th></tr></thead>
