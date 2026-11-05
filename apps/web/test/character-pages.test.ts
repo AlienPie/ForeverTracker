@@ -9,11 +9,15 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock("../src/lib/server/db", () => ({ getDb: () => state.db }));
 vi.mock("../src/lib/server/env", () => ({ env: () => state.e }));
+// The chain page reads the guid for its back link; outside SvelteKit there is no $app/state.
+vi.mock("$app/state", () => ({ page: { params: { guid: "Player-7777-0000D006" }, data: {} } }));
 
 import { load as layoutLoad } from "../src/routes/c/[guid]/+layout.server";
 import { load as indexLoad } from "../src/routes/c/[guid]/+page.server";
 import { load as questsLoad } from "../src/routes/c/[guid]/quests/+page.server";
 import { load as chainLoad } from "../src/routes/c/[guid]/quests/chain/[questId]/+page.server";
+import ChainPage from "../src/routes/c/[guid]/quests/chain/[questId]/+page.svelte";
+import { render } from "svelte/server";
 import { load as journeyLoad } from "../src/routes/c/[guid]/journey/+page.server";
 import { load as talentsLoad } from "../src/routes/c/[guid]/talents/+page.server";
 import { load as professionsLoad } from "../src/routes/c/[guid]/professions/+page.server";
@@ -250,8 +254,9 @@ type ChainData = {
     chain: number;
     name: string;
     done: number;
+    otherRoute: number;
     total: number;
-    members: { questId: number; name: string; level: number; zone: string | null; giver: string | null; state: string; step: number }[];
+    members: { questId: number; name: string; level: number; zone: string | null; giver: string | null; state: string; otherRoute: boolean; step: number }[];
   } | null;
   current: number | null;
 };
@@ -328,6 +333,41 @@ describe("chain page", () => {
       [9201, "locked"],
     ]);
     expect(data.current).toBe(9102);
+  });
+
+  test("a quest completed without the chain's earlier quests is 'not through this chain' and not counted", async () => {
+    state.db = seeded(true);
+    const db = state.db as Db;
+    // Invented character who did Second Step (9102) by another route, never First Step (9101).
+    const STRAY = "Player-7777-0000D006";
+    ingestSavedVariables(
+      db,
+      `ForeverTrackerDB = { schema = 1, characters = { ["${STRAY}"] = { snapshot = { takenAt = ${NOW},
+        identity = { name = "Halvi", class = "WARRIOR", race = "Dwarf", level = 11 },
+        progress = { professions = {}, questsCompleted = { 9102 }, questLog = {} } } } } }`,
+      () => NOW,
+    );
+    const data = (await chainLoad(chainEv(STRAY, "9102"))) as ChainData;
+    expect(data.chain).toMatchObject({ chain: 9101, done: 0, otherRoute: 1, total: 4 });
+    expect(data.chain!.members.map((m) => [m.questId, m.state, m.otherRoute])).toEqual([
+      [9101, "available", false],
+      [9102, "done", true],
+      [9103, "available", false],
+      [9201, "locked", false],
+    ]);
+    // The Quests tab does not list the chain: nothing counts and nothing is in the log.
+    const tab = (await questsLoad(ev(STRAY))) as QuestsData;
+    expect(tab.chains).toEqual([]);
+    expect(tab.suggestions.filter((s) => s.kind === "chain")).toEqual([]);
+
+    const html = render(ChainPage, { props: { data } }).body.replace(/<!--.*?-->/g, "");
+    expect(html).toContain("0 of 4 done");
+    expect(html).toContain("completed, but not through this chain");
+    expect(html).toContain("same name in other starting regions");
+    // A character on the route sees neither the state text nor the note.
+    const hero = render(ChainPage, { props: { data: await chainLoad(chainEv(HERO, "9101")) } }).body;
+    expect(hero).not.toContain("not through this chain");
+    expect(hero).not.toContain("other starting regions");
   });
 
   test("empty catalog: no 404, content not ready, no chain", async () => {

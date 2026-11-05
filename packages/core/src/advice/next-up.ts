@@ -1,3 +1,4 @@
+import { validCompleted } from "./chain-validity";
 import { prerequisites } from "./chains";
 import { classAllows, questClass } from "./classes";
 import type { QuestRow } from "./content";
@@ -65,7 +66,10 @@ function areaOf(q: QuestRow, zone: string | null, mapId: number | null): string 
  * "Offered after" or "Next quest" ("Must be active", "Quest line" and odd values are ignored).
  * Each quest takes the first rule it matches:
  *
- * 1. chain: has prerequisites, every one completed or in the log, and at least one completed.
+ * 1. chain: has prerequisites, every one completed or in the log, and at least one VALID
+ *    completed (see `validCompleted`: its own earlier quests are all completed too), so a quest
+ *    done out of route (same name, another starting region) never makes its successors chain
+ *    steps; they can still match the area rules.
  *    When the quest is more than CHAIN_WINDOW (5) levels above the character it is kept but
  *    demoted: confidence "low", ranked after area and next-level.
  * 2. area: every prerequisite completed or in the log (or none), in the character's area (see
@@ -95,6 +99,7 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
   const professionOf = catalog.length > 0 ? professionMatcher(catalog) : null;
   const learned = professionOf ? learnedNames(input.professions) : new Set<string>();
   const used = professionOf ? slotsUsed(learned, catalog) : 0;
+  const valid = validCompleted(input.quests, completed);
 
   const picked: { rule: Rule; q: QuestRow; reason: string; profession: boolean; freeSlot: boolean }[] = [];
   for (const q of input.quests) {
@@ -112,8 +117,9 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
     let doneCount = 0;
     let met = true;
     for (const p of pre) {
-      if (completed.has(p.questId)) doneCount++;
-      else if (!inLog.has(p.questId)) {
+      if (completed.has(p.questId)) {
+        if (valid.has(p.questId)) doneCount++;
+      } else if (!inLog.has(p.questId)) {
         met = false;
         break;
       }
@@ -127,7 +133,7 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
       (freeSlot ? "You have a free profession slot. " : "");
 
     if (pre.length > 0 && doneCount > 0) {
-      const after = pre.find((p) => completed.has(p.questId));
+      const after = pre.find((p) => valid.has(p.questId));
       const name = after?.name ?? `quest ${after?.questId}`;
       const above = q.level - level;
       const far = above > CHAIN_WINDOW;

@@ -3,6 +3,8 @@ import { describe, expect, test } from "vitest";
 import { chainDetail, type QuestLink, type QuestRow } from "../src/index";
 
 const CLASS = JSON.parse(readFileSync(new URL("./fixtures/quests-class.json", import.meta.url), "utf8")) as QuestRow[];
+/** Real "The Great Outdoors" / "Camping 101" rows of the four starting regions (see quests.fixture.md). */
+const CAMP = JSON.parse(readFileSync(new URL("./fixtures/quests-camping.json", import.meta.url), "utf8")) as QuestRow[];
 
 const link = (questId: number, relation = "Complete first"): QuestLink => ({ questId, name: `Quest ${questId}`, relation });
 
@@ -113,6 +115,41 @@ describe("chainDetail", () => {
       [901, "done", null, null],
       [902, "available", "Elwynn Forest", null],
     ]);
+  });
+
+  test("a member completed without its earlier quests is marked otherRoute and not counted as done", () => {
+    // 601 not done; 602 and 603 done anyway (both need 601): another route. 604 needs only 603.
+    const d = chainDetail(BRANCH, 601, new Set([602, 603]), new Set())!;
+    expect(d.members.map((m) => [m.questId, m.state, m.otherRoute])).toEqual([
+      [601, "available", false],
+      [602, "done", true],
+      [603, "done", true],
+      [604, "available", false],
+      [605, "locked", false],
+    ]);
+    expect(d).toMatchObject({ done: 0, otherRoute: 2, total: 5 });
+    // Through the first quest: every completed member counts.
+    const e = chainDetail(BRANCH, 601, new Set([601, 602]), new Set())!;
+    expect(e.members.map((m) => m.otherRoute)).toEqual([false, false, false, false, false]);
+    expect(e).toMatchObject({ done: 2, otherRoute: 0 });
+  });
+
+  test("real Camping 101 rows: the Elwynn Cooking quest done from another region is otherRoute", () => {
+    const d = chainDetail(CAMP, 96626, new Set([96626]), new Set())!;
+    expect(d).toMatchObject({ chain: 96627, name: "The Adventurer", done: 0, otherRoute: 1, total: 6 });
+    expect(d.members.map((m) => [m.questId, m.zone, m.state, m.otherRoute])).toEqual([
+      // 96627 needs 21 "Skirmish at Echo Ridge" (not in the fixture, not completed): locked.
+      [96627, "Elwynn Forest", "locked", false],
+      [95998, "Elwynn Forest", "locked", false],
+      [96626, "Elwynn Forest", "done", true],
+      [97920, "Elwynn Forest", "locked", false],
+      [97923, "Elwynn Forest", "locked", false],
+      [97924, "Elwynn Forest", "locked", false],
+    ]);
+    const full = chainDetail(CAMP, 96626, new Set([96627, 95998, 96626]), new Set())!;
+    expect(full).toMatchObject({ done: 3, otherRoute: 0, total: 6 });
+    const dun = chainDetail(CAMP, 96629, new Set([96608, 96629, 96626]), new Set())!;
+    expect(dun).toMatchObject({ chain: 96608, done: 2, otherRoute: 0, total: 2 });
   });
 
   test("4000 quests finish quickly", () => {

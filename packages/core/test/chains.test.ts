@@ -5,6 +5,8 @@ import { chainProgress, type QuestLink, type QuestRow } from "../src/index";
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/quests.json", import.meta.url), "utf8")) as QuestRow[];
 const CLASS = JSON.parse(readFileSync(new URL("./fixtures/quests-class.json", import.meta.url), "utf8")) as QuestRow[];
 const HUB = JSON.parse(readFileSync(new URL("./fixtures/quests-hub.json", import.meta.url), "utf8")) as QuestRow[];
+/** Real "The Great Outdoors" / "Camping 101" rows of the four starting regions (see quests.fixture.md). */
+const CAMP = JSON.parse(readFileSync(new URL("./fixtures/quests-camping.json", import.meta.url), "utf8")) as QuestRow[];
 
 const link = (questId: number, relation = "Complete first"): QuestLink => ({ questId, name: `Quest ${questId}`, relation });
 
@@ -143,6 +145,46 @@ describe("chainProgress", () => {
     // Two successors is not a hub: a plain first step done still lists the chain.
     const two = [q(701, 1, [], [702, 703]), q(702, 2, [701]), q(703, 2, [701])];
     expect(chainProgress(two, new Set([701]), new Set())).toMatchObject([{ chain: 701, done: 1, total: 3 }]);
+  });
+
+  test("a completed quest whose earlier quests are not completed does not count", () => {
+    // Middle quest only: not on the chain.
+    expect(chainProgress(line(201, 3), new Set([202]), new Set())).toEqual([]);
+    // Last quest only: not on the chain either.
+    expect(chainProgress(line(201, 3), new Set([203]), new Set())).toEqual([]);
+    // Root and last: only the root counts, so 1 of 3, current at the second.
+    expect(chainProgress(line(201, 3), new Set([201, 203]), new Set())).toEqual([
+      { chain: 201, name: "Quest 201", done: 1, total: 3, currentIndex: 1, complete: false },
+    ]);
+    // In the log still lists the chain, counting only valid progress.
+    expect(chainProgress(line(201, 3), new Set([203]), new Set([201]))).toEqual([
+      { chain: 201, name: "Quest 201", done: 0, total: 3, currentIndex: 0, complete: false },
+    ]);
+    // Every member completed through an invalid route is not a finished chain: it is not listed.
+    expect(chainProgress(line(201, 3), new Set([202, 203]), new Set())).toEqual([]);
+  });
+
+  describe("real Camping 101 rows in the four starting regions", () => {
+    test("the Elwynn Cooking quest alone does not list the Elwynn chain (the bug)", () => {
+      expect(chainProgress(CAMP, new Set([96626]), new Set())).toEqual([]);
+    });
+
+    test("the Elwynn route done through its first quest lists the chain with 3 done", () => {
+      expect(chainProgress(CAMP, new Set([96627, 95998, 96626]), new Set())).toEqual([
+        { chain: 96627, name: "The Adventurer", done: 3, total: 6, currentIndex: 3, complete: false },
+      ]);
+    });
+
+    test("the Dun Morogh route lists only its own chain, never another region's", () => {
+      expect(chainProgress(CAMP, new Set([96608]), new Set())).toEqual([
+        { chain: 96608, name: "The Great Outdoors", done: 1, total: 2, currentIndex: 1, complete: false },
+      ]);
+      // Whole Dun Morogh route done: a finished chain, so nothing is listed, and the other regions'
+      // Cooking quests completed under the same name do not list their chains either.
+      expect(chainProgress(CAMP, new Set([96608, 96629]), new Set())).toEqual([]);
+      expect(chainProgress(CAMP, new Set([96608, 96629, 96626, 96646, 96655]), new Set())).toEqual([]);
+      expect(chainProgress(CAMP, new Set([96608, 96626, 96646, 96655]), new Set()).map((c) => c.chain)).toEqual([96608]);
+    });
   });
 
   test("4000 quests finish quickly", () => {

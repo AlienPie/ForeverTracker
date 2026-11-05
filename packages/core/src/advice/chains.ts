@@ -1,3 +1,4 @@
+import { PREREQUISITE, validCompleted } from "./chain-validity";
 import { classAllows } from "./classes";
 import type { QuestRow } from "./content";
 import type { ChainProgress } from "./types";
@@ -7,8 +8,7 @@ import type { ChainProgress } from "./types";
  * unknown or non-string relation is ignored. "Quest line" groups quests into a chain but is not a
  * pickup prerequisite, so it is in SEQUENCE but not in PREREQUISITE.
  */
-const SEQUENCE = new Set(["Complete first", "Chain link", "Offered after", "Next quest", "Quest line"]);
-const PREREQUISITE = new Set(["Complete first", "Chain link", "Offered after", "Next quest"]);
+const SEQUENCE = new Set([...PREREQUISITE, "Quest line"]);
 
 type AnyLink = { questId?: unknown; name?: unknown; relation?: unknown };
 
@@ -135,8 +135,10 @@ export const isHub = (g: ChainGraph, id: number): boolean => g.hubs.has(id);
  * Progress through quest chains derived from the quests passed in (see `chainGraph`; single
  * unlinked quests are not chains). Members are ordered topologically (predecessor before
  * successor, ties by level then id; any cycle remainder appended by level then id). The first
- * member in that order is the root, which names and identifies the chain. `done` counts completed
- * members; `currentIndex` is the position of the first member not completed.
+ * member in that order is the root, which names and identifies the chain. `done` counts VALID
+ * completed members (see `validCompleted`: completed, and every earlier quest completed too, judged
+ * on all quests passed in), so a quest of the same name done in another starting region does not
+ * count; `currentIndex` is the position of the first member that is not valid completed.
  *
  * Class quests (`zone.n` is a class name) for any class other than `classToken` (snapshot token,
  * e.g. "PRIEST") are left out before linking, so a shared starter quest such as "Dwarven
@@ -144,7 +146,7 @@ export const isHub = (g: ChainGraph, id: number): boolean => g.hubs.has(id);
  * omitted the class is unknown and every class quest is left out.
  *
  * Only chains the character is on and has not finished are reported: a member is in the log, or
- * a completed member is not a hub. A hub is a quest with 3 or more direct successors among all
+ * a valid completed member is not a hub. A hub is a quest with 3 or more direct successors among all
  * quests passed in, class quests included (a shared race or faction starter such as "Dwarven
  * Outfitters"); a chain whose only progress is a completed hub is not listed. `complete` is always false in v1 output. Ordered by root level,
  * then id.
@@ -156,13 +158,14 @@ export function chainProgress(
   classToken?: string | null,
 ): ChainProgress[] {
   const g = chainGraph(quests, classToken);
+  const valid = validCompleted(quests, completed);
   const out: ChainProgress[] = [];
   for (const members of g.groups.values()) {
     if (members.length < 2) continue;
     let done = 0;
     let on = false;
     for (const m of members) {
-      if (completed.has(m.id)) {
+      if (valid.has(m.id)) {
         done++;
         if (!isHub(g, m.id)) on = true;
       } else if (inLog.has(m.id)) on = true;
@@ -171,7 +174,7 @@ export function chainProgress(
 
     const order = topoOrder(members, g.succ);
     const root = order[0]!;
-    const idx = order.findIndex((m) => !completed.has(m.id));
+    const idx = order.findIndex((m) => !valid.has(m.id));
     out.push({
       chain: root.id,
       name: root.name,

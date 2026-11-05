@@ -162,6 +162,9 @@ footer.site{border-top:1px solid var(--edge);padding:18px 0;color:var(--text-dim
 .step .lvl{font:italic 15px var(--serif);color:var(--ink-soft);white-space:nowrap}
 .step.st-done h3{color:var(--ink-soft)}.step.st-done .num{color:var(--gilt-dim)}
 .step.st-done .tag.state{background:var(--gilt-dim);color:var(--cellar)}
+.step.other .tag.state{background:transparent;color:var(--ink-soft);border:1px dashed var(--ink-soft);padding:0 6px}
+.chainpage .pips i.other{background:transparent;border:1px dashed var(--gilt-dim)}
+.chainpage .note{margin:-6px 0 12px;font-size:14px}
 .step.st-in-log .tag.state{background:var(--ink);color:var(--vellum)}
 .step.st-available .tag.state{background:transparent;border:1px solid var(--ink);padding:0 6px}
 .step.st-locked{color:var(--ink-soft)}.step.st-locked h3{font-weight:400}

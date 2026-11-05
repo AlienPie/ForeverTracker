@@ -178,6 +178,38 @@ describe("nextUp", () => {
   });
 });
 
+describe("nextUp: chain steps only after earlier quests were completed", () => {
+  /** Real "The Great Outdoors" / "Camping 101" rows of the four starting regions (see quests.fixture.md). */
+  const CAMP = JSON.parse(readFileSync(new URL("./fixtures/quests-camping.json", import.meta.url), "utf8")) as QuestRow[];
+
+  test("an out-of-route middle quest does not make its successors chain steps", () => {
+    // 1 -> 2 -> 3: 2 completed without 1.
+    const quests = [q(1, 5, null), q(2, 6, null, [link(1)]), q(3, 7, null, [link(2)])];
+    expect(nextUp(input({ quests, completed: new Set([2]) }))).toEqual([]);
+    // Through the first quest: 3 continues the chain.
+    expect(nextUp(input({ quests, completed: new Set([1, 2]) })).map((s) => [s.kind, s.questId])).toEqual([["chain", 3]]);
+  });
+
+  test("real rows: 95998 done without 96627 gives no Camping 101 chain steps; with it, it does", () => {
+    const away = nextUp(input({ level: 10, zone: "Mossvale", quests: CAMP, completed: new Set([95998]) }), 10);
+    expect(away).toEqual([]);
+    const route = nextUp(input({ level: 10, zone: "Mossvale", quests: CAMP, completed: new Set([96627, 95998]) }), 10);
+    expect(route.map((s) => [s.kind, s.questId])).toEqual([
+      ["chain", 96626],
+      ["chain", 97920],
+      ["chain", 97923],
+      ["chain", 97924],
+    ]);
+  });
+
+  test("an out-of-route successor in the character's area is still an area pick, never a chain step", () => {
+    const out = nextUp(input({ level: 6, zone: "Elwynn Forest", mapId: 1429, quests: CAMP, completed: new Set([95998]) }), 10);
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.every((s) => s.kind === "area")).toBe(true);
+    expect(out.map((s) => s.questId)).toContain(96626);
+  });
+});
+
 describe("nextUp: class quests and zone matching (real-data defects)", () => {
   const dunMorogh = { level: 1, zone: "Dun Morogh", mapId: 1426, completed: new Set([179]), quests: [...CLASS, ...FIXTURE] };
 

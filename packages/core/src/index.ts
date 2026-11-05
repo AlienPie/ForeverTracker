@@ -32,6 +32,7 @@ export {
 export type { ChainProgress, NextUpInput, Suggestion } from "./advice/types";
 export { nextUp } from "./advice/next-up";
 export { chainProgress } from "./advice/chains";
+export { validCompleted } from "./advice/chain-validity";
 export {
   chainDetail,
   type ChainDetail,

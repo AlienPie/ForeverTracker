@@ -1,3 +1,4 @@
+import { validCompleted } from "./chain-validity";
 import { chainGraph, prerequisites, topoOrder } from "./chains";
 import { questClass } from "./classes";
 import type { QuestRow } from "./content";
@@ -13,11 +14,26 @@ export type ChainMember = {
   /** Name of the NPC or object that starts it, when known. */
   giver: string | null;
   state: ChainMemberState;
+  /**
+   * True when the quest is completed ("done") but not through this chain: some earlier quest of it
+   * is not completed (see `validCompleted`), typically a quest of the same name in another
+   * starting region. Such a member is not counted in `done`.
+   */
+  otherRoute: boolean;
   /** 1-based position in chain order. */
   step: number;
 };
 
-export type ChainDetail = { chain: number; name: string; members: ChainMember[]; done: number; total: number };
+export type ChainDetail = {
+  chain: number;
+  name: string;
+  members: ChainMember[];
+  /** Members completed through this chain (state "done" and not `otherRoute`). */
+  done: number;
+  /** Members completed, but not through this chain (`otherRoute`). */
+  otherRoute: number;
+  total: number;
+};
 
 const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
 const obj = (v: unknown): Record<string, unknown> | null =>
@@ -40,7 +56,10 @@ function zoneName(q: QuestRow): string | null {
  *
  * State per member: "done" when completed; "in-log" when in the quest log; "available" when every
  * prerequisite (as in `nextUp`: `chain.previous` links of the prerequisite relations) is completed;
- * "locked" otherwise. Pure; builds the chain graph once.
+ * "locked" otherwise. Availability uses plain completion (a prerequisite done by any route lets the
+ * game offer the quest); the counts do not: a "done" member whose earlier quests are not all
+ * completed (see `validCompleted`) is `otherRoute` and counted in `otherRoute`, not in `done`.
+ * Pure; builds the chain graph and the valid set once.
  */
 export function chainDetail(
   quests: QuestRow[],
@@ -53,13 +72,20 @@ export function chainDetail(
   if (!g.byId.has(questId)) return null;
   const order = topoOrder(g.groups.get(g.groupOf(questId))!, g.succ);
   const root = order[0]!;
+  const valid = validCompleted(quests, completed);
 
   let done = 0;
+  let otherRoute = 0;
   const members = order.map((q, i): ChainMember => {
     let state: ChainMemberState;
+    let other = false;
     if (completed.has(q.id)) {
       state = "done";
-      done++;
+      if (valid.has(q.id)) done++;
+      else {
+        other = true;
+        otherRoute++;
+      }
     } else if (inLog.has(q.id)) state = "in-log";
     else state = prerequisites(q).every((p) => completed.has(p.questId)) ? "available" : "locked";
     return {
@@ -69,8 +95,9 @@ export function chainDetail(
       zone: zoneName(q),
       giver: str(obj(q.starts)?.name),
       state,
+      otherRoute: other,
       step: i + 1,
     };
   });
-  return { chain: root.id, name: root.name, members, done, total: members.length };
+  return { chain: root.id, name: root.name, members, done, otherRoute, total: members.length };
 }

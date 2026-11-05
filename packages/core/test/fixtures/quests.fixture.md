@@ -43,6 +43,25 @@ Encrypted Letter (Rogue), 3103 Hallowed Letter (Priest), 3104 Glyphic Letter (Ma
 Letter (Warlock). 7 has 7 successors in the full link set but only 2 for a Priest after the class
 filter, so it shows why hubs are judged before the class filter.
 
+## quests-camping.json
+
+Nineteen real rows from the same mirror (read with `sqlite3 -readonly` on 2026-11-05), trimmed the
+same way, for the chain-validity rule (a completed quest counts toward a chain only when every
+earlier quest is completed). "The Great Outdoors" and "Camping 101" exist once per starting region,
+as separate rows, all level 6, all links "Offered after":
+
+- Elwynn Forest: 96627 The Adventurer (previous 21 Skirmish at Echo Ridge, not included) ->
+  95998 The Great Outdoors -> 96626 Cooking, 97920 Fishing, 97923 Mining, 97924 Skinning.
+- Dun Morogh: 96608 The Great Outdoors (no previous) -> 96629 Cooking. (96628 The Adventurer,
+  Dun Morogh, is not linked to 96608 in the mirror.)
+- Zephras Isle: 96638 The Adventurer (previous 92470 Foul Matriarch, not included) -> 96101 The
+  Great Outdoors -> 96646 Cooking, 97963 Alchemy, 97968 Herbalism.
+- Durotar: 96652 The Adventurer (no previous) -> 96604 The Great Outdoors -> 96655 Cooking,
+  97901 Enchanting, 97907 Mining, 97908 Skinning.
+
+Links are listed on both sides in every case. Other "Camping 101" rows (for example 97900, 97922,
+96661) have no links at all.
+
 ## professions.json and quests-profession.json (interim profession-quest rule, M1.1)
 
 Inspected read-only (`sqlite3 -readonly`) on 2026-11-05, same mirror. Public game data only.
