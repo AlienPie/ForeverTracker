@@ -1,0 +1,637 @@
+[
+  {
+    "id": 1000,
+    "name": "The New Frontier",
+    "level": 55,
+    "zone": {
+      "n": "Thunder Bluff",
+      "slug": "thunder-bluff",
+      "m": 1456
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 1123,
+          "name": "Rabine Saturna",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 10881,
+      "name": "Bluff Runner Windstrider",
+      "location": {
+        "uiMapId": 1456,
+        "zone": "Thunder Bluff",
+        "x": 44.3,
+        "y": 58.8
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 5769,
+      "name": "Arch Druid Hamuul Runetotem",
+      "location": {
+        "uiMapId": 1456,
+        "zone": "Thunder Bluff",
+        "x": 78.6,
+        "y": 28.6
+      }
+    }
+  },
+  {
+    "id": 1004,
+    "name": "The New Frontier",
+    "level": 55,
+    "zone": {
+      "n": "Undercity",
+      "slug": "undercity",
+      "m": 1458
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 1123,
+          "name": "Rabine Saturna",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 10879,
+      "name": "Harbinger Balthazad",
+      "location": {
+        "uiMapId": 1458,
+        "zone": "Undercity",
+        "x": 63.9,
+        "y": 44.1
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 5769,
+      "name": "Arch Druid Hamuul Runetotem",
+      "location": {
+        "uiMapId": 1456,
+        "zone": "Thunder Bluff",
+        "x": 78.6,
+        "y": 28.6
+      }
+    }
+  },
+  {
+    "id": 1018,
+    "name": "The New Frontier",
+    "level": 55,
+    "zone": {
+      "n": "Orgrimmar",
+      "slug": "orgrimmar",
+      "m": 1454
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 1123,
+          "name": "Rabine Saturna",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 10880,
+      "name": "Warcaller Gorlach",
+      "location": {
+        "uiMapId": 1454,
+        "zone": "Orgrimmar",
+        "x": 48.2,
+        "y": 66.1
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 5769,
+      "name": "Arch Druid Hamuul Runetotem",
+      "location": {
+        "uiMapId": 1456,
+        "zone": "Thunder Bluff",
+        "x": 78.6,
+        "y": 28.6
+      }
+    }
+  },
+  {
+    "id": 1123,
+    "name": "Rabine Saturna",
+    "level": 55,
+    "zone": {
+      "n": "Thunder Bluff",
+      "slug": "thunder-bluff",
+      "m": 1456
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 1000,
+          "name": "The New Frontier",
+          "relation": "Chain link"
+        },
+        {
+          "questId": 1004,
+          "name": "The New Frontier",
+          "relation": "Chain link"
+        },
+        {
+          "questId": 1018,
+          "name": "The New Frontier",
+          "relation": "Chain link"
+        }
+      ],
+      "next": [
+        {
+          "questId": 1124,
+          "name": "Wasteland",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 5769,
+      "name": "Arch Druid Hamuul Runetotem",
+      "location": {
+        "uiMapId": 1456,
+        "zone": "Thunder Bluff",
+        "x": 78.6,
+        "y": 28.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 11801,
+      "name": "Rabine Saturna",
+      "location": {
+        "uiMapId": 1450,
+        "zone": "Moonglade",
+        "x": 51.7,
+        "y": 45.1
+      }
+    }
+  },
+  {
+    "id": 6761,
+    "name": "The New Frontier",
+    "level": 55,
+    "zone": {
+      "n": "Darnassus",
+      "slug": "darnassus",
+      "m": 1457
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 1015,
+          "name": "The New Frontier",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 1019,
+          "name": "The New Frontier",
+          "relation": "Chain link"
+        },
+        {
+          "questId": 1047,
+          "name": "The New Frontier",
+          "relation": "Chain link"
+        }
+      ],
+      "next": [
+        {
+          "questId": 6762,
+          "name": "Rabine Saturna",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 3516,
+      "name": "Arch Druid Fandral Staghelm",
+      "location": {
+        "uiMapId": 1457,
+        "zone": "Darnassus",
+        "x": 34.8,
+        "y": 9.3
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 4217,
+      "name": "Mathrengyl Bearwalker",
+      "location": {
+        "uiMapId": 1457,
+        "zone": "Darnassus",
+        "x": 35.4,
+        "y": 8.4
+      }
+    }
+  },
+  {
+    "id": 6762,
+    "name": "Rabine Saturna",
+    "level": 55,
+    "zone": {
+      "n": "Darnassus",
+      "slug": "darnassus",
+      "m": 1457
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 6761,
+          "name": "The New Frontier",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 1124,
+          "name": "Wasteland",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 4217,
+      "name": "Mathrengyl Bearwalker",
+      "location": {
+        "uiMapId": 1457,
+        "zone": "Darnassus",
+        "x": 35.4,
+        "y": 8.4
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 11801,
+      "name": "Rabine Saturna",
+      "location": {
+        "uiMapId": 1450,
+        "zone": "Moonglade",
+        "x": 51.7,
+        "y": 45.1
+      }
+    }
+  },
+  {
+    "id": 1124,
+    "name": "Wasteland",
+    "level": 55,
+    "zone": {
+      "n": "Moonglade",
+      "slug": "moonglade",
+      "m": 1450
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 1123,
+          "name": "Rabine Saturna",
+          "relation": "Chain link"
+        },
+        {
+          "questId": 6762,
+          "name": "Rabine Saturna",
+          "relation": "Chain link"
+        }
+      ],
+      "next": [
+        {
+          "questId": 1125,
+          "name": "The Spirits of Southwind",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 11801,
+      "name": "Rabine Saturna",
+      "location": {
+        "uiMapId": 1450,
+        "zone": "Moonglade",
+        "x": 51.7,
+        "y": 45.1
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 13220,
+      "name": "Layo Starstrike",
+      "location": {
+        "uiMapId": 1451,
+        "zone": "Silithus",
+        "x": 81.9,
+        "y": 18.9
+      }
+    }
+  },
+  {
+    "id": 1522,
+    "name": "Call of Fire",
+    "level": 10,
+    "zone": {
+      "n": "Shaman",
+      "slug": "shaman",
+      "m": null
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 1524,
+          "name": "Call of Fire",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 5892,
+      "name": "Searn Firewarder",
+      "location": {
+        "uiMapId": 1454,
+        "zone": "Orgrimmar",
+        "x": 38,
+        "y": 37.7
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 5907,
+      "name": "Kranal Fiss",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 20.7,
+        "y": 43.7
+      }
+    }
+  },
+  {
+    "id": 1523,
+    "name": "Call of Fire",
+    "level": 10,
+    "zone": {
+      "n": "Shaman",
+      "slug": "shaman",
+      "m": null
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 1524,
+          "name": "Call of Fire",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 3032,
+      "name": "Beram Skychaser",
+      "location": {
+        "uiMapId": 1456,
+        "zone": "Thunder Bluff",
+        "x": 22,
+        "y": 18.8
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 5907,
+      "name": "Kranal Fiss",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 20.7,
+        "y": 43.7
+      }
+    }
+  },
+  {
+    "id": 2983,
+    "name": "Call of Fire",
+    "level": 10,
+    "zone": {
+      "n": "Shaman",
+      "slug": "shaman",
+      "m": null
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 1524,
+          "name": "Call of Fire",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 3173,
+      "name": "Swart",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 54.4,
+        "y": 42.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 5907,
+      "name": "Kranal Fiss",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 20.7,
+        "y": 43.7
+      }
+    }
+  },
+  {
+    "id": 2984,
+    "name": "Call of Fire",
+    "level": 10,
+    "zone": {
+      "n": "Shaman",
+      "slug": "shaman",
+      "m": null
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 1524,
+          "name": "Call of Fire",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 3066,
+      "name": "Narm Skychaser",
+      "location": {
+        "uiMapId": 1412,
+        "zone": "Mulgore",
+        "x": 47.4,
+        "y": 62.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 5907,
+      "name": "Kranal Fiss",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 20.7,
+        "y": 43.7
+      }
+    }
+  },
+  {
+    "id": 1524,
+    "name": "Call of Fire",
+    "level": 11,
+    "zone": {
+      "n": "Shaman",
+      "slug": "shaman",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 1522,
+          "name": "Call of Fire",
+          "relation": "Chain link"
+        },
+        {
+          "questId": 1523,
+          "name": "Call of Fire",
+          "relation": "Chain link"
+        },
+        {
+          "questId": 2983,
+          "name": "Call of Fire",
+          "relation": "Chain link"
+        },
+        {
+          "questId": 2984,
+          "name": "Call of Fire",
+          "relation": "Chain link"
+        }
+      ],
+      "next": [
+        {
+          "questId": 1525,
+          "name": "Call of Fire",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 5907,
+      "name": "Kranal Fiss",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 20.7,
+        "y": 43.7
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 5900,
+      "name": "Telf Joolam",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 38.6,
+        "y": 59
+      }
+    }
+  },
+  {
+    "id": 1525,
+    "name": "Call of Fire",
+    "level": 12,
+    "zone": {
+      "n": "Shaman",
+      "slug": "shaman",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 1524,
+          "name": "Call of Fire",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 1526,
+          "name": "Call of Fire",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 5900,
+      "name": "Telf Joolam",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 38.6,
+        "y": 59
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 5900,
+      "name": "Telf Joolam",
+      "location": {
+        "uiMapId": 1411,
+        "zone": "Durotar",
+        "x": 38.6,
+        "y": 59
+      }
+    }
+  }
+]

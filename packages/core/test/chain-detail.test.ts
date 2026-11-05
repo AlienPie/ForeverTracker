@@ -5,6 +5,8 @@ import { chainDetail, type QuestLink, type QuestRow } from "../src/index";
 const CLASS = JSON.parse(readFileSync(new URL("./fixtures/quests-class.json", import.meta.url), "utf8")) as QuestRow[];
 /** Real "The Great Outdoors" / "Camping 101" rows of the four starting regions (see quests.fixture.md). */
 const CAMP = JSON.parse(readFileSync(new URL("./fixtures/quests-camping.json", import.meta.url), "utf8")) as QuestRow[];
+/** Real rows whose several prerequisites are alternatives (Call of Fire, Wasteland; see quests.fixture.md). */
+const ALT = JSON.parse(readFileSync(new URL("./fixtures/quests-alternatives.json", import.meta.url), "utf8")) as QuestRow[];
 
 const link = (questId: number, relation = "Complete first"): QuestLink => ({ questId, name: `Quest ${questId}`, relation });
 
@@ -150,6 +152,19 @@ describe("chainDetail", () => {
     expect(full).toMatchObject({ done: 3, otherRoute: 0, total: 6 });
     const dun = chainDetail(CAMP, 96629, new Set([96608, 96629, 96626]), new Set())!;
     expect(dun).toMatchObject({ chain: 96608, done: 2, otherRoute: 0, total: 2 });
+  });
+
+  test("alternative prerequisites: Call of Fire done via 1522 is not otherRoute (real rows)", () => {
+    const d = chainDetail(ALT, 1524, new Set([1522, 1524]), new Set(), "SHAMAN")!;
+    expect(d).toMatchObject({ chain: 1522, done: 2, otherRoute: 0, total: 6 });
+    const byId = new Map(d.members.map((m) => [m.questId, m]));
+    expect(byId.get(1524)).toMatchObject({ state: "done", otherRoute: false });
+    expect(byId.get(1522)).toMatchObject({ state: "done", otherRoute: false });
+    // The next step needs only 1524: available.
+    expect(byId.get(1525)).toMatchObject({ state: "available", otherRoute: false });
+    // Alliance Wasteland route.
+    const w = chainDetail(ALT, 1124, new Set([6761, 6762, 1124]), new Set())!;
+    expect(w).toMatchObject({ done: 3, otherRoute: 0 });
   });
 
   test("4000 quests finish quickly", () => {

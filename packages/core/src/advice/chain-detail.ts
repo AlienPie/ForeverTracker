@@ -57,8 +57,8 @@ function zoneName(q: QuestRow): string | null {
  * State per member: "done" when completed; "in-log" when in the quest log; "available" when every
  * prerequisite (as in `nextUp`: `chain.previous` links of the prerequisite relations) is completed;
  * "locked" otherwise. Availability uses plain completion (a prerequisite done by any route lets the
- * game offer the quest); the counts do not: a "done" member whose earlier quests are not all
- * completed (see `validCompleted`) is `otherRoute` and counted in `otherRoute`, not in `done`.
+ * game offer the quest); the counts do not: a "done" member with no completed route back to a
+ * starting quest (see `validCompleted`; alternative prerequisites count as OR) is `otherRoute` and counted in `otherRoute`, not in `done`.
  * Pure; builds the chain graph and the valid set once.
  */
 export function chainDetail(

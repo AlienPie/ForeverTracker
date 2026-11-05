@@ -67,8 +67,8 @@ function areaOf(q: QuestRow, zone: string | null, mapId: number | null): string 
  * Each quest takes the first rule it matches:
  *
  * 1. chain: has prerequisites, every one completed or in the log, and at least one VALID
- *    completed (see `validCompleted`: its own earlier quests are all completed too), so a quest
- *    done out of route (same name, another starting region) never makes its successors chain
+ *    completed (see `validCompleted`: reached through a completed route, alternatives as OR), so
+ *    a quest done out of route (same name, another starting region) never makes its successors chain
  *    steps; they can still match the area rules.
  *    When the quest is more than CHAIN_WINDOW (5) levels above the character it is kept but
  *    demoted: confidence "low", ranked after area and next-level.

@@ -7,6 +7,8 @@ const CLASS = JSON.parse(readFileSync(new URL("./fixtures/quests-class.json", im
 const HUB = JSON.parse(readFileSync(new URL("./fixtures/quests-hub.json", import.meta.url), "utf8")) as QuestRow[];
 /** Real "The Great Outdoors" / "Camping 101" rows of the four starting regions (see quests.fixture.md). */
 const CAMP = JSON.parse(readFileSync(new URL("./fixtures/quests-camping.json", import.meta.url), "utf8")) as QuestRow[];
+/** Real rows whose several prerequisites are alternatives (Call of Fire, Wasteland; see quests.fixture.md). */
+const ALT = JSON.parse(readFileSync(new URL("./fixtures/quests-alternatives.json", import.meta.url), "utf8")) as QuestRow[];
 
 const link = (questId: number, relation = "Complete first"): QuestLink => ({ questId, name: `Quest ${questId}`, relation });
 
@@ -162,6 +164,15 @@ describe("chainProgress", () => {
     ]);
     // Every member completed through an invalid route is not a finished chain: it is not listed.
     expect(chainProgress(line(201, 3), new Set([202, 203]), new Set())).toEqual([]);
+  });
+
+  test("alternative prerequisites: a Shaman who did Call of Fire via 1522 counts 1524 (real rows)", () => {
+    // Chain order: the four level-10 starters (1522, 1523, 2983, 2984), then 1524, 1525.
+    expect(chainProgress(ALT, new Set([1522, 1524]), new Set(), "SHAMAN")).toEqual([
+      { chain: 1522, name: "Call of Fire", done: 2, total: 6, currentIndex: 1, complete: false },
+    ]);
+    // Horde Wasteland route: 1004, 1123, 1124 all count.
+    expect(chainProgress(ALT, new Set([1004, 1123, 1124]), new Set())).toMatchObject([{ chain: 1000, done: 3 }]);
   });
 
   describe("real Camping 101 rows in the four starting regions", () => {

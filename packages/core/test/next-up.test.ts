@@ -202,6 +202,13 @@ describe("nextUp: chain steps only after earlier quests were completed", () => {
     ]);
   });
 
+  test("real Call of Fire: after 1522 and 1524 (one of four alternative starters), 1525 continues the chain", () => {
+    const ALT = JSON.parse(readFileSync(new URL("./fixtures/quests-alternatives.json", import.meta.url), "utf8")) as QuestRow[];
+    const out = nextUp(input({ level: 12, zone: null, quests: ALT, completed: new Set([1522, 1524]), classToken: "SHAMAN" }), 10);
+    expect(out.map((s) => [s.kind, s.questId])).toEqual([["chain", 1525]]);
+    expect(out[0]!.reason).toContain("Call of Fire");
+  });
+
   test("an out-of-route successor in the character's area is still an area pick, never a chain step", () => {
     const out = nextUp(input({ level: 6, zone: "Elwynn Forest", mapId: 1429, quests: CAMP, completed: new Set([95998]) }), 10);
     expect(out.length).toBeGreaterThan(0);

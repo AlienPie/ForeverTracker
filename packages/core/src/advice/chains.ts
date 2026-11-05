@@ -136,9 +136,9 @@ export const isHub = (g: ChainGraph, id: number): boolean => g.hubs.has(id);
  * unlinked quests are not chains). Members are ordered topologically (predecessor before
  * successor, ties by level then id; any cycle remainder appended by level then id). The first
  * member in that order is the root, which names and identifies the chain. `done` counts VALID
- * completed members (see `validCompleted`: completed, and every earlier quest completed too, judged
- * on all quests passed in), so a quest of the same name done in another starting region does not
- * count; `currentIndex` is the position of the first member that is not valid completed.
+ * completed members (see `validCompleted`: completed, with an unbroken completed route back to a
+ * starting quest, alternative prerequisites counting as OR, judged on all quests passed in), so a
+ * quest of the same name done in another starting region does not count; `currentIndex` is the position of the first member that is not valid completed.
  *
  * Class quests (`zone.n` is a class name) for any class other than `classToken` (snapshot token,
  * e.g. "PRIEST") are left out before linking, so a shared starter quest such as "Dwarven

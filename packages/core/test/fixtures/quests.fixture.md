@@ -62,6 +62,23 @@ as separate rows, all level 6, all links "Offered after":
 Links are listed on both sides in every case. Other "Camping 101" rows (for example 97900, 97922,
 96661) have no links at all.
 
+## quests-alternatives.json
+
+Thirteen real rows from the same mirror (read with `sqlite3 -readonly` on 2026-11-05), trimmed the
+same way, where a quest lists several prerequisites that are ALTERNATIVES (OR), for the
+chain-validity rule:
+
+- 1524 Call of Fire (Shaman, level 11) needs one of 1522, 1523, 2983, 2984 (all "Call of Fire",
+  level 10, per-race starters, "Chain link", no prerequisites); 1525 Call of Fire (level 12) follows
+  1524 ("Complete first").
+- 1124 Wasteland (Moonglade, level 55) needs Horde 1123 or Alliance 6762 "Rabine Saturna"
+  ("Chain link"). 1123 (Thunder Bluff) needs one of 1000 (Thunder Bluff), 1004 (Undercity), 1018
+  (Orgrimmar), all "The New Frontier", no prerequisites. 6762 (Darnassus) needs 6761 "The New
+  Frontier" (Darnassus), whose own prerequisites 1015, 1019, 1047 are not included.
+
+Links are listed on both sides. In the full mirror 122 quests have 2 or more prerequisites; in
+about half of them the prerequisites share a name or differ by faction, race or class.
+
 ## professions.json and quests-profession.json (interim profession-quest rule, M1.1)
 
 Inspected read-only (`sqlite3 -readonly`) on 2026-11-05, same mirror. Public game data only.

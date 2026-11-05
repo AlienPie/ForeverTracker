@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import { validCompleted, type QuestLink, type QuestRow } from "../src/index";
 
@@ -9,6 +10,9 @@ function q(id: number, previous: QuestLink[] = [], next: QuestLink[] = []): Ques
 }
 
 const sorted = (s: Set<number>) => [...s].sort((a, b) => a - b);
+
+/** Real rows whose several prerequisites are ALTERNATIVES (see quests.fixture.md, quests-alternatives.json). */
+const ALT = JSON.parse(readFileSync(new URL("./fixtures/quests-alternatives.json", import.meta.url), "utf8")) as QuestRow[];
 
 describe("validCompleted", () => {
   // 1 -> 2 -> 3
@@ -55,14 +59,63 @@ describe("validCompleted", () => {
     expect(sorted(validCompleted(quests, new Set([1, 2, 4, 5])))).toEqual([1, 2, 5]);
   });
 
-  test("cycles terminate; a cycle member counts only when the whole cycle and its ancestors are completed", () => {
+  test("cycles terminate; a cycle member counts only when fed from a valid quest outside the cycle", () => {
     // 0 -> 1 -> 2 -> 3 -> 1
     const cyc = [q(0), q(1, [link(0), link(3)]), q(2, [link(1)]), q(3, [link(2)])];
     expect(sorted(validCompleted(cyc, new Set([0, 1, 2, 3])))).toEqual([0, 1, 2, 3]);
-    expect(sorted(validCompleted(cyc, new Set([0, 1, 2])))).toEqual([0]);
+    // 0 is valid and feeds 1 (one of its alternatives), 1 feeds 2; 3 is not completed.
+    expect(sorted(validCompleted(cyc, new Set([0, 1, 2])))).toEqual([0, 1, 2]);
+    // Nothing outside the cycle is valid: the cycle never validates itself.
     expect(sorted(validCompleted(cyc, new Set([1, 2, 3])))).toEqual([]);
+    // A pure cycle with no way in never counts, even fully completed.
+    const ring = [q(1, [link(3)]), q(2, [link(1)]), q(3, [link(2)])];
+    expect(sorted(validCompleted(ring, new Set([1, 2, 3])))).toEqual([]);
     // Self-links are ignored.
     expect(sorted(validCompleted([q(9, [link(9)])], new Set([9])))).toEqual([9]);
+  });
+
+  test("several prerequisites are alternatives: one valid prerequisite is enough", () => {
+    // 3 needs 1 or 2; only 1 completed.
+    const quests = [q(1), q(2), q(3, [link(1), link(2)])];
+    expect(sorted(validCompleted(quests, new Set([1, 3])))).toEqual([1, 3]);
+    // Neither alternative completed: not valid.
+    expect(sorted(validCompleted(quests, new Set([3])))).toEqual([]);
+    // An alternative completed but itself out of route (its own prerequisite missing) does not count.
+    const deep = [q(0), q(1, [link(0)]), q(2), q(3, [link(1), link(2)])];
+    expect(sorted(validCompleted(deep, new Set([1, 3])))).toEqual([]);
+    // An unknown alternative (not in the list) counts as satisfied.
+    expect(sorted(validCompleted([q(1), q(3, [link(1), link(99)])], new Set([3])))).toEqual([3]);
+    // Uncompleted siblings and successors never invalidate a completed quest.
+    const fork = [q(1), q(2, [link(1)]), q(3, [link(1)]), q(4, [link(2)])];
+    expect(sorted(validCompleted(fork, new Set([1, 2])))).toEqual([1, 2]);
+  });
+
+  test("real Call of Fire (Shaman): 1524 needs one of 1522, 1523, 2983, 2984", () => {
+    expect(sorted(validCompleted(ALT, new Set([1522, 1524, 1525])))).toEqual([1522, 1524, 1525]);
+    expect(sorted(validCompleted(ALT, new Set([2984, 1524])))).toEqual([1524, 2984]);
+    // 1524 alone (no starter done) is still out of route.
+    expect(sorted(validCompleted(ALT, new Set([1524, 1525])))).toEqual([]);
+  });
+
+  test("real Wasteland: 1124 needs Horde 1123 or Alliance 6762; 1123 needs one of three 'The New Frontier'", () => {
+    // Horde route through Undercity's New Frontier (1000 and 1018 not done): all valid.
+    expect(sorted(validCompleted(ALT, new Set([1004, 1123, 1124])))).toEqual([1004, 1123, 1124]);
+    // Alliance route (6761's own prerequisites are not in the list: satisfied).
+    expect(sorted(validCompleted(ALT, new Set([6761, 6762, 1124])))).toEqual([1124, 6761, 6762]);
+    // Wasteland without either Rabine Saturna, or Rabine Saturna without any New Frontier: not valid.
+    expect(sorted(validCompleted(ALT, new Set([1124])))).toEqual([]);
+    expect(sorted(validCompleted(ALT, new Set([1123, 1124])))).toEqual([]);
+  });
+
+  test("a 4000-quest single chain is evaluated without recursion", () => {
+    const quests: QuestRow[] = [];
+    for (let i = 1; i <= 4000; i++) quests.push(q(i, i > 1 ? [link(i - 1)] : []));
+    const all = new Set(quests.map((r) => r.id));
+    const t = performance.now();
+    expect(validCompleted(quests, all).size).toBe(4000);
+    expect(performance.now() - t).toBeLessThan(2000);
+    all.delete(1);
+    expect(validCompleted(quests, all).size).toBe(0);
   });
 
   test("4000 quests finish quickly", () => {
