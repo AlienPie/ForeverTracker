@@ -22,3 +22,15 @@ Format: what the owner saw, what we found, the proposed fix, status.
 - **Seen:** the quest log panel says how many are in progress and completed, with no names.
 - **Proposed fix:** a quest log section on the Quests tab (or a sub-page) with two lists: In progress (name, level, zone) and Completed (name, level, zone; searchable or paged, since it can reach thousands). Names come from the quest mirror by id. Completed ids are already in the snapshot (`completedIds`); ids missing from the mirror show as "Quest <id>".
 - **Status:** open.
+
+## Journey tab
+
+### 4. Journey rebuilt as a journal (tweak, approved direction)
+- **Seen:** the Journey tab is one long list of events.
+- **Agreed design (2026-11-05):** (1) play sessions as the unit: events grouped into sessions (a gap of 30 minutes or more starts a new one), each shown as one summary line (date, length, level change, places, professions) that expands to its events; (2) a pacing strip of time per level from the level-up timestamps, with chapter detail on click; (3) a route strip: places in the order first seen, drawn as a connected path with a marker per level-up. Mockup: `docs/design/m1/journey.html`.
+- **Limits:** only first visits are recorded, not time in each zone (needs more from the addon); event times are real-world time, so offline gaps stretch a level (sessions handle this).
+- **Status:** mockup, then plan.
+
+### 5. Alt comparison chart (later)
+- All characters on one chart, level against date, to compare how fast each one levelled. Approved for a later stage, after item 4.
+- **Status:** later.
