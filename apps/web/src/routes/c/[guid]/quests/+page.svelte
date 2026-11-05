@@ -1,5 +1,6 @@
 <script lang="ts">
   import ContentBanner from "../../../../lib/components/ContentBanner.svelte";
+  import ItemLink from "../../../../lib/components/ItemLink.svelte";
   import type { QuestsPageData } from "./+page.server";
 
   let { data }: { data: QuestsPageData } = $props();
@@ -34,7 +35,7 @@
       <ol class="quests">
         {#each data.suggestions as s (s.questId ?? s.title)}
           <li class="quest">
-            <h3>{s.title}</h3>
+            <h3>{#if s.questId !== null}<ItemLink kind="quest" id={s.questId} name={s.title} />{:else}{s.title}{/if}</h3>
             <span class="lvl">level {s.level}</span>
             <div class="why">
               <span class="tag" class:cont={s.kind === "chain" && s.confidence === "high"}>{TAG[s.kind] ?? s.kind}</span>{s.reason}

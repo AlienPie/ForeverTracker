@@ -54,6 +54,7 @@ From `.env.example` (no secrets are committed; leave unused ones empty):
 | --- | --- |
 | `FOREVERDB_API_KEY` | ForeverDB API key, used by `pnpm content:sync` and `tools/live-check.ts` (not needed to serve the web app) |
 | `CONTENT_MODE` | `mirror` (default, serve the local copy) or `on-demand` |
+| `TOOLTIP_PROVIDER` | `none` (default), `wowhead` or `foreverdb`. Hover tooltips on quest links. With `none` the app makes no third-party requests. `wowhead` makes the visitor's browser load `wow.zamimg.com` (script, icons) and `nether.wowhead.com` (tooltip data); `foreverdb` loads from `foreverdb.net` only, and covers items and spells, not quests. See `docs/design/m1/tooltip-findings.md` |
 | `DATA_DIR` | Directory for the SQLite database. `./data-local` for development; `/data` in the container |
 | `SESSION_SECRET`, `OWNER_BATTLETAG`, `BLIZZARD_CLIENT_ID`, `BLIZZARD_CLIENT_SECRET`, `BLIZZARD_REDIRECT_URI` | Reserved for login (later milestone); unused in M0 |
 | `BODY_SIZE_LIMIT` | adapter-node request body limit; must be at least the ingest cap of 8 MB (default `8M`) |

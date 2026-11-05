@@ -1,7 +1,10 @@
 import { parseContentMode, type ContentMode } from "@ft/content";
+import { parseTooltipProvider, type TooltipProvider } from "../links";
 
 export interface Env {
   contentMode: ContentMode;
+  /** Which third-party tooltip script the browser may load; "none" means no external requests. */
+  tooltipProvider: TooltipProvider;
   /** Owner dashboard password; null when unset (owner login stays disabled). */
   ownerPassword: string | null;
   /** Secret for signing session cookies; null when unset. */
@@ -19,8 +22,10 @@ export function readEnv(source: Record<string, string | undefined> = process.env
     const detail = err instanceof Error ? err.message : String(err);
     throw new Error(`Invalid CONTENT_MODE: ${detail}`);
   }
+  const tooltipProvider = parseTooltipProvider(source.TOOLTIP_PROVIDER);
   return {
     contentMode,
+    tooltipProvider,
     ownerPassword: orNull(source.OWNER_PASSWORD),
     sessionSecret: orNull(source.SESSION_SECRET),
   };

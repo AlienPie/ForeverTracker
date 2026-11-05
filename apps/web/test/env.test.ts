@@ -18,4 +18,19 @@ describe("readEnv", () => {
     expect(e.ownerPassword).toBe("x");
     expect(e.sessionSecret).toBe("y");
   });
+
+  test("tooltip provider defaults to none, empty string too", () => {
+    expect(readEnv({}).tooltipProvider).toBe("none");
+    expect(readEnv({ TOOLTIP_PROVIDER: "" }).tooltipProvider).toBe("none");
+  });
+
+  test("accepts valid tooltip providers", () => {
+    for (const p of ["none", "wowhead", "foreverdb"] as const) {
+      expect(readEnv({ TOOLTIP_PROVIDER: p }).tooltipProvider).toBe(p);
+    }
+  });
+
+  test("throws on a bad TOOLTIP_PROVIDER", () => {
+    expect(() => readEnv({ TOOLTIP_PROVIDER: "bogus" })).toThrow(/TOOLTIP_PROVIDER/);
+  });
 });

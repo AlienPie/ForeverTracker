@@ -5,8 +5,22 @@
   import "../lib/theme.css";
   import type { Snippet } from "svelte";
   import { page } from "$app/state";
+  import { onMount } from "svelte";
+  import { providerScriptUrl, type TooltipProvider } from "../lib/links";
 
-  let { data, children }: { data: { loginEnabled: boolean }; children: Snippet } = $props();
+  let { data, children }: { data: { loginEnabled: boolean; tooltipProvider: TooltipProvider }; children: Snippet } =
+    $props();
+
+  // Third-party tooltip script: added client-side only, and only when a provider is configured.
+  onMount(() => {
+    const src = providerScriptUrl(data.tooltipProvider);
+    if (!src) return;
+    const s = document.createElement("script");
+    s.src = src;
+    s.async = true;
+    document.head.appendChild(s);
+    return () => s.remove();
+  });
 
   const links = [
     { href: "/", label: "Roster" },
