@@ -72,6 +72,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@ft/content':
+        specifier: workspace:*
+        version: link:../content
       '@ft/db':
         specifier: workspace:*
         version: link:../db

@@ -138,7 +138,10 @@ export async function checkBuild(
  * everything); the failed resource keeps its checkpoint for the next run.
  */
 export async function syncAll(deps: SyncDeps): Promise<void> {
-  const { build } = await checkBuild(deps);
+  const { build, levelCap } = await checkBuild(deps);
+  // Mirror /meta so offline readers (advice rules) can know the level cap. Always refreshed; it
+  // has no sync_state row, so it never affects checkBuild's `changed`.
+  putRecord(deps.db, "meta", "current", { build, levelCap }, build, (deps.now ?? Date.now)());
   for (const spec of RESOURCES) {
     const s = getSyncState(deps.db, spec.name);
     if (s && s.status === "complete" && s.build === build) continue;

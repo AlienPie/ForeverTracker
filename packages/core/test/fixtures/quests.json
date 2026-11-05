@@ -1,0 +1,1044 @@
+[
+  {
+    "id": 92461,
+    "name": "Harmony in Balance",
+    "level": 1,
+    "zone": {
+      "n": "Zephras Isle",
+      "slug": "zephras-isle",
+      "m": 2521
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 92460,
+          "name": "Coming of Age",
+          "relation": "Next quest"
+        }
+      ],
+      "next": [
+        {
+          "questId": 92481,
+          "name": "A Student of the Arcane",
+          "relation": "Offered after"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 251361,
+      "name": "Rorian the Dayseeker",
+      "location": {
+        "uiMapId": 2521,
+        "zone": "Zephras Isle",
+        "x": 42.1,
+        "y": 23.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 251361,
+      "name": "Rorian the Dayseeker",
+      "location": {
+        "uiMapId": 2521,
+        "zone": "Zephras Isle",
+        "x": 42.1,
+        "y": 23.5
+      }
+    }
+  },
+  {
+    "id": 1686,
+    "name": "The Shade of Elura",
+    "level": 10,
+    "zone": {
+      "n": "Warrior",
+      "slug": "warrior",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 1683,
+          "name": "Vorlus Vilehoof",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 1692,
+          "name": "Smith Mathiel",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 4088,
+      "name": "Elanaria",
+      "location": {
+        "uiMapId": 1457,
+        "zone": "Darnassus",
+        "x": 57.3,
+        "y": 34.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 4088,
+      "name": "Elanaria",
+      "location": {
+        "uiMapId": 1457,
+        "zone": "Darnassus",
+        "x": 57.3,
+        "y": 34.6
+      }
+    }
+  },
+  {
+    "id": 1899,
+    "name": "The Deathstalkers",
+    "level": 13,
+    "zone": {
+      "n": "Rogue",
+      "slug": "rogue",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 1898,
+          "name": "The Deathstalkers",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 1978,
+          "name": "The Deathstalkers",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 6522,
+      "name": "Andron Gant",
+      "location": {
+        "uiMapId": 1458,
+        "zone": "Undercity",
+        "x": 54.8,
+        "y": 76.3
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 6467,
+      "name": "Mennet Carkad",
+      "location": {
+        "uiMapId": 1458,
+        "zone": "Undercity",
+        "x": 83.5,
+        "y": 69.1
+      }
+    }
+  },
+  {
+    "id": 461,
+    "name": "The Hidden Niche",
+    "level": 18,
+    "zone": {
+      "n": "Silverpine Forest",
+      "slug": "silverpine-forest",
+      "m": 1421
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 460,
+          "name": "Resting in Pieces",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 491,
+          "name": "Wand to Bethor",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "object",
+      "id": 1599,
+      "name": "Shallow Grave",
+      "location": {
+        "uiMapId": 1416,
+        "zone": "Alterac Mountains",
+        "x": 6.6,
+        "y": 28.3
+      }
+    },
+    "ends": {
+      "type": "object",
+      "id": 112888,
+      "name": "Dusty Shelf",
+      "location": {
+        "uiMapId": 1416,
+        "zone": "Alterac Mountains",
+        "x": 2.8,
+        "y": 28.3
+      }
+    }
+  },
+  {
+    "id": 527,
+    "name": "Battle of Hillsbrad",
+    "level": 24,
+    "zone": {
+      "n": "Hillsbrad Foothills",
+      "slug": "hillsbrad-foothills",
+      "m": 1424
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 494,
+          "name": "Time To Strike",
+          "relation": "Offered after"
+        }
+      ],
+      "next": [
+        {
+          "questId": 528,
+          "name": "Battle of Hillsbrad",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 546,
+          "name": "Souvenirs of Death",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 2215,
+      "name": "High Executor Darthalia",
+      "location": {
+        "uiMapId": 1424,
+        "zone": "Hillsbrad Foothills",
+        "x": 62.3,
+        "y": 20.3
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 2215,
+      "name": "High Executor Darthalia",
+      "location": {
+        "uiMapId": 1416,
+        "zone": "Alterac Mountains",
+        "x": 61.1,
+        "y": 82.3
+      }
+    }
+  },
+  {
+    "id": 160,
+    "name": "Note to the Mayor",
+    "level": 30,
+    "zone": {
+      "n": "Duskwood",
+      "slug": "duskwood",
+      "m": 1431
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 134,
+          "name": "Ogre Thieves",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 251,
+          "name": "Translate Abercrombie's Note",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 289,
+      "name": "Abercrombie",
+      "location": {
+        "uiMapId": 1431,
+        "zone": "Duskwood",
+        "x": 28,
+        "y": 31.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 263,
+      "name": "Lord Ello Ebonlocke",
+      "location": {
+        "uiMapId": 1431,
+        "zone": "Duskwood",
+        "x": 72,
+        "y": 46.6
+      }
+    }
+  },
+  {
+    "id": 7043,
+    "name": "You're a Mean One...",
+    "level": 35,
+    "zone": {
+      "n": "Seasonal",
+      "slug": "seasonal",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 7042,
+          "name": "Stolen Winter Veil Treats",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 7045,
+          "name": "A Smokywood Pastures Thank You!",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 13636,
+      "name": "Strange Snowman",
+      "location": {
+        "uiMapId": 1416,
+        "zone": "Alterac Mountains",
+        "x": 35.4,
+        "y": 72.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 13433,
+      "name": "Wulmort Jinglepocket",
+      "location": {
+        "uiMapId": 1455,
+        "zone": "Ironforge",
+        "x": 33.7,
+        "y": 67.2
+      }
+    }
+  },
+  {
+    "id": 722,
+    "name": "Amulet of Secrets",
+    "level": 40,
+    "zone": {
+      "n": "Badlands",
+      "slug": "badlands",
+      "m": 1418
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 721,
+          "name": "A Sign of Hope",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 723,
+          "name": "Prospect of Faith",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 2909,
+      "name": "Hammertoe Grez",
+      "location": {
+        "uiMapId": 1432,
+        "zone": "Loch Modan",
+        "x": 37.3,
+        "y": 85.8
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 2909,
+      "name": "Hammertoe Grez",
+      "location": {
+        "uiMapId": 1432,
+        "zone": "Loch Modan",
+        "x": 37.3,
+        "y": 85.8
+      }
+    }
+  },
+  {
+    "id": 3125,
+    "name": "Faerie Dragon Muisek",
+    "level": 45,
+    "zone": {
+      "n": "Feralas",
+      "slug": "feralas",
+      "m": 1444
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 3124,
+          "name": "Hippogryph Muisek",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 3126,
+          "name": "Treant Muisek",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 8115,
+      "name": "Witch Doctor Uzer'i",
+      "location": {
+        "uiMapId": 1444,
+        "zone": "Feralas",
+        "x": 74.4,
+        "y": 43.4
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 8115,
+      "name": "Witch Doctor Uzer'i",
+      "location": {
+        "uiMapId": 1444,
+        "zone": "Feralas",
+        "x": 74.4,
+        "y": 43.4
+      }
+    }
+  },
+  {
+    "id": 4142,
+    "name": "A Visit to Gregan",
+    "level": 52,
+    "zone": {
+      "n": "Un'Goro Crater",
+      "slug": "ungoro-crater",
+      "m": 1449
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 4141,
+          "name": "Muigin and Larion",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 4143,
+          "name": "Haze of Evil",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 9119,
+      "name": "Muigin",
+      "location": {
+        "uiMapId": 1449,
+        "zone": "Un'Goro Crater",
+        "x": 42.9,
+        "y": 9.6
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 7775,
+      "name": "Gregan Brewspewer",
+      "location": {
+        "uiMapId": 1444,
+        "zone": "Feralas",
+        "x": 45.1,
+        "y": 25.6
+      }
+    }
+  },
+  {
+    "id": 5086,
+    "name": "Toxic Horrors",
+    "level": 56,
+    "zone": {
+      "n": "Winterspring",
+      "slug": "winterspring",
+      "m": 1452
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 5085,
+          "name": "Mystery Goo",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 5087,
+          "name": "Winterfall Runners",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 9298,
+      "name": "Donova Snowden",
+      "location": {
+        "uiMapId": 1452,
+        "zone": "Winterspring",
+        "x": 31.3,
+        "y": 45.2
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 9298,
+      "name": "Donova Snowden",
+      "location": {
+        "uiMapId": 1452,
+        "zone": "Winterspring",
+        "x": 31.3,
+        "y": 45.2
+      }
+    }
+  },
+  {
+    "id": 5721,
+    "name": "The Battle of Darrowshire",
+    "level": 60,
+    "zone": {
+      "n": "Eastern Plaguelands",
+      "slug": "eastern-plaguelands",
+      "m": 1423
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 5941,
+          "name": "Return to Chromie",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 5942,
+          "name": "Hidden Treasures",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 10667,
+      "name": "Chromie",
+      "location": {
+        "uiMapId": 1416,
+        "zone": "Alterac Mountains",
+        "x": 73.7,
+        "y": 2.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 10926,
+      "name": "Pamela Redpath",
+      "location": {
+        "uiMapId": 1423,
+        "zone": "Eastern Plaguelands",
+        "x": 31.2,
+        "y": 78
+      }
+    }
+  },
+  {
+    "id": 8730,
+    "name": "Nefarius's Corruption",
+    "level": 60,
+    "zone": null,
+    "chain": {
+      "previous": [
+        {
+          "questId": 8555,
+          "name": "The Charge of the Dragonflights",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 8742,
+          "name": "The Might of Kalimdor",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 13020,
+      "name": "Vaelastrasz the Corrupt",
+      "location": null
+    },
+    "ends": {
+      "type": "npc",
+      "id": 15192,
+      "name": "Anachronos",
+      "location": {
+        "uiMapId": 1446,
+        "zone": "Tanaris",
+        "x": 65.3,
+        "y": 50
+      }
+    }
+  },
+  {
+    "id": 9251,
+    "name": "Atiesh, the Befouled Greatstaff",
+    "level": 60,
+    "zone": null,
+    "chain": {
+      "previous": [
+        {
+          "questId": 9250,
+          "name": "Frame of Atiesh",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 9257,
+          "name": "Atiesh, Greatstaff of the Guardian",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 9269,
+          "name": "Atiesh, Greatstaff of the Guardian",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 9270,
+          "name": "Atiesh, Greatstaff of the Guardian",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 9271,
+          "name": "Atiesh, Greatstaff of the Guardian",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 15192,
+      "name": "Anachronos",
+      "location": {
+        "uiMapId": 1446,
+        "zone": "Tanaris",
+        "x": 65.3,
+        "y": 50
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 15192,
+      "name": "Anachronos",
+      "location": {
+        "uiMapId": 1446,
+        "zone": "Tanaris",
+        "x": 65.3,
+        "y": 50
+      }
+    }
+  },
+  {
+    "id": 5545,
+    "name": "A Bundle of Trouble",
+    "level": 9,
+    "zone": {
+      "n": "Elwynn Forest",
+      "slug": "elwynn-forest",
+      "m": 1429
+    },
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 10616,
+      "name": "Supervisor Raelen",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 81.3,
+        "y": 66.2
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 10616,
+      "name": "Supervisor Raelen",
+      "location": {
+        "uiMapId": 1429,
+        "zone": "Elwynn Forest",
+        "x": 81.4,
+        "y": 66.2
+      }
+    }
+  },
+  {
+    "id": 883,
+    "name": "Lakota'mani",
+    "level": 22,
+    "zone": {
+      "n": "The Barrens",
+      "slug": "the-barrens",
+      "m": 1413
+    },
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "item",
+      "id": 5099,
+      "name": "Hoof of Lakota'mani",
+      "location": null
+    },
+    "ends": {
+      "type": "npc",
+      "id": 3387,
+      "name": "Jorn Skyseer",
+      "location": {
+        "uiMapId": 1413,
+        "zone": "The Barrens",
+        "x": 44.9,
+        "y": 59.1
+      }
+    }
+  },
+  {
+    "id": 5301,
+    "name": "The Art of the Armorsmith",
+    "level": 40,
+    "zone": {
+      "n": "Blacksmithing",
+      "slug": "blacksmithing",
+      "m": null
+    },
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 11177,
+      "name": "Okothos Ironrager",
+      "location": {
+        "uiMapId": 1454,
+        "zone": "Orgrimmar",
+        "x": 79.8,
+        "y": 24.1
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 11177,
+      "name": "Okothos Ironrager",
+      "location": {
+        "uiMapId": 1454,
+        "zone": "Orgrimmar",
+        "x": 79.8,
+        "y": 24.1
+      }
+    }
+  },
+  {
+    "id": 8061,
+    "name": "Paragons of Power: The Confessor's Wraps",
+    "level": 60,
+    "zone": {
+      "n": "Stranglethorn Vale",
+      "slug": "stranglethorn-vale",
+      "m": 1434
+    },
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 14903,
+      "name": "Al'tabim the All-Seeing",
+      "location": {
+        "uiMapId": 1434,
+        "zone": "Stranglethorn Vale",
+        "x": 15.3,
+        "y": 16.1
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 14903,
+      "name": "Al'tabim the All-Seeing",
+      "location": {
+        "uiMapId": 1434,
+        "zone": "Stranglethorn Vale",
+        "x": 15.3,
+        "y": 16.1
+      }
+    }
+  },
+  {
+    "id": 92742,
+    "name": "Testing the Wells",
+    "level": 12,
+    "zone": {
+      "n": "Westfall",
+      "slug": "westfall",
+      "m": 1436
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 92744,
+          "name": "Murloc Gills",
+          "relation": "Quest line"
+        }
+      ],
+      "questLine": {
+        "name": "Toxic Soil",
+        "part": 1,
+        "of": 11,
+        "source": "Forever client"
+      }
+    },
+    "starts": {
+      "type": null,
+      "id": null,
+      "name": null,
+      "location": {
+        "uiMapId": 1436,
+        "zone": "Westfall",
+        "x": 52.5,
+        "y": 53
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 253092,
+      "name": "Npc #253092",
+      "location": {
+        "uiMapId": 1436,
+        "zone": "Westfall",
+        "x": 52.5,
+        "y": 53
+      }
+    }
+  },
+  {
+    "id": 166,
+    "name": "The Defias Brotherhood",
+    "level": 22,
+    "zone": null,
+    "chain": {
+      "previous": [
+        {
+          "questId": 155,
+          "name": "The Defias Brotherhood",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 234,
+      "name": "Gryan Stoutmantle",
+      "location": {
+        "uiMapId": 1436,
+        "zone": "Westfall",
+        "x": 56.3,
+        "y": 47.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 234,
+      "name": "Gryan Stoutmantle",
+      "location": {
+        "uiMapId": 1436,
+        "zone": "Westfall",
+        "x": 56.3,
+        "y": 47.5
+      }
+    }
+  },
+  {
+    "id": 7068,
+    "name": "Shadowshard Fragments",
+    "level": 42,
+    "zone": null,
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 7311,
+      "name": "Uthel'nay",
+      "location": {
+        "uiMapId": 1454,
+        "zone": "Orgrimmar",
+        "x": 39.2,
+        "y": 86.3
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 7311,
+      "name": "Uthel'nay",
+      "location": {
+        "uiMapId": 1454,
+        "zone": "Orgrimmar",
+        "x": 39.2,
+        "y": 86.3
+      }
+    }
+  },
+  {
+    "id": 950,
+    "name": "Return to Onu",
+    "level": 17,
+    "zone": {
+      "n": "Darkshore",
+      "slug": "darkshore",
+      "m": 1439
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 949,
+          "name": "The Twilight Camp",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [
+        {
+          "questId": 951,
+          "name": "Mathystra Relics",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "object",
+      "id": 12666,
+      "name": "Twilight Tome",
+      "location": {
+        "uiMapId": 1439,
+        "zone": "Darkshore",
+        "x": 38.5,
+        "y": 86.1
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 3616,
+      "name": "Onu",
+      "location": {
+        "uiMapId": 1439,
+        "zone": "Darkshore",
+        "x": 43.6,
+        "y": 76.3
+      }
+    }
+  },
+  {
+    "id": 8283,
+    "name": "Wanted - Deathclasp, Terror of the Sands",
+    "level": 59,
+    "zone": {
+      "n": "Silithus",
+      "slug": "silithus",
+      "m": 1451
+    },
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "object",
+      "id": 180448,
+      "name": "Wanted Poster: Deathclasp",
+      "location": {
+        "uiMapId": 1451,
+        "zone": "Silithus",
+        "x": 51.4,
+        "y": 38.3
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 15182,
+      "name": "Vish Kozus",
+      "location": {
+        "uiMapId": 1451,
+        "zone": "Silithus",
+        "x": 50.8,
+        "y": 33.7
+      }
+    }
+  }
+]

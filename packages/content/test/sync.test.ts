@@ -256,6 +256,25 @@ describe("checkBuild / syncAll / getItem", () => {
     expect(r).toEqual({ build: "A", levelCap: 35, changed: false });
   });
 
+  test("syncAll stores the /meta record (build and levelCap) as resource meta", async () => {
+    const db = openDb(":memory:");
+    const { syncState } = await import("@ft/db");
+    for (const r of RESOURCES) {
+      db.insert(syncState)
+        .values({ resource: r.name, build: "A", nextOffset: 0, total: 1, status: "complete", updatedAt: 1 })
+        .run();
+    }
+    await syncAll({ client: fake({ meta: { build: "A", levelCap: 60 } }).client, db, now: () => 5 });
+    expect(getRecord(db, "meta", "current")).toEqual({
+      data: { build: "A", levelCap: 60 },
+      build: "A",
+      fetchedAt: 5,
+    });
+    // a later build overwrites it, even when no resource needs re-syncing
+    await syncAll({ client: fake({ meta: { build: "A", levelCap: 70 } }).client, db });
+    expect((getRecord(db, "meta", "current")?.data as { levelCap: number }).levelCap).toBe(70);
+  });
+
   test("checkBuild reports changed=true when the build differs", async () => {
     const db = openDb(":memory:");
     await syncResource({ client: fake().client, db }, things);
