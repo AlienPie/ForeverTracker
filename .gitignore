@@ -12,3 +12,5 @@ addon/tests/out/
 *.tsbuildinfo
 .svelte-kit/
 build/
+test-results/
+playwright-report/

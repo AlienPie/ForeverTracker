@@ -2,7 +2,7 @@
 
 Self-hosted companion app for WoW: Forever. pnpm TypeScript monorepo plus a Lua addon.
 
-- `apps/web`: SvelteKit server (`/api/health`, token-guarded `/api/ingest`)
+- `apps/web`: SvelteKit server and dashboard (`/api/health`, token-guarded `/api/ingest`, owner login)
 - `addon/ForeverTracker`: the in-game addon that writes SavedVariables
 - `packages/savedvars`: SavedVariables parser
 - `packages/content`: ForeverDB client and mirror
@@ -56,7 +56,8 @@ From `.env.example` (no secrets are committed; leave unused ones empty):
 | `CONTENT_MODE` | `mirror` (default, serve the local copy) or `on-demand` |
 | `TOOLTIP_PROVIDER` | `none` (default), `wowhead` or `foreverdb`. Hover tooltips on quest links. With `none` the app makes no third-party requests. `wowhead` makes the visitor's browser load `wow.zamimg.com` (script, icons) and `nether.wowhead.com` (tooltip data); `foreverdb` loads from `foreverdb.net` only, and covers items and spells, not quests. See `docs/design/m1/tooltip-findings.md` |
 | `DATA_DIR` | Directory for the SQLite database. `./data-local` for development; `/data` in the container |
-| `SESSION_SECRET`, `OWNER_BATTLETAG`, `BLIZZARD_CLIENT_ID`, `BLIZZARD_CLIENT_SECRET`, `BLIZZARD_REDIRECT_URI` | Reserved for login (later milestone); unused in M0 |
+| `OWNER_PASSWORD`, `SESSION_SECRET` | Owner login. Set both to require a password for every dashboard page (a signed session cookie lasts 30 days). **If `OWNER_PASSWORD` is unset the app runs in open mode: anyone who can reach it sees all characters** (Settings shows a warning). Use a long random `SESSION_SECRET`; changing it signs everyone out. `/api/health` and the token-guarded `/api/ingest` never need the password |
+| `OWNER_BATTLETAG`, `BLIZZARD_CLIENT_ID`, `BLIZZARD_CLIENT_SECRET`, `BLIZZARD_REDIRECT_URI` | Reserved for Battle.net login (later milestone); unused |
 | `BODY_SIZE_LIMIT` | adapter-node request body limit; must be at least the ingest cap of 8 MB (default `8M`) |
 | `PROTOCOL_HEADER`, `HOST_HEADER` | Optional, only behind a reverse proxy; see below. `PROTOCOL_HEADER` defaults to `x-forwarded-proto` |
 
@@ -69,6 +70,10 @@ SvelteKit rejects a form POST (sign in, sign out, uploads) with 403 "Cross-site 
 - If your proxy uses a different header for the scheme, set `PROTOCOL_HEADER` to that header name.
 
 The origin check stays on: a POST whose `Origin` is another site is still refused.
+
+## The dashboard
+
+Sign in at `/` with the owner password. **Roster** lists your characters with level, play time, money and a "next up" hint. Each character opens to four tabs: **Journey** (timeline and places visited), **Quests** (next-up suggestions, chains, quest log), **Talents** and **Professions**. **Upload** takes a `ForeverTracker.lua` file in the browser (no token needed), and **Settings** creates and revokes device tokens and shows the state of the content mirror. Run `pnpm content:sync` once (see below) so quest and zone names and the level cap are available.
 
 ## Create a device token
 
@@ -131,7 +136,12 @@ pnpm typecheck
 cd addon && ./test.sh   # addon specs under LuaJIT
 pnpm addon:quest-ids # regenerate addon/ForeverTracker/Data/QuestIds.lua from the content mirror
 pnpm --filter web build && pnpm --filter web start
+pnpm --filter web test:e2e   # browser smoke test, see below
 ```
+
+### Browser smoke test
+
+`pnpm --filter web test:e2e` builds the app, starts it on port 4173 with a throwaway data directory and fake credentials, and drives it with Playwright (login, upload of an invented file, roster, every character tab, settings, sign out; it also asserts no console errors and no third-party requests). It is not part of `pnpm test`. Playwright's own browser is not downloaded (`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` at install); the test uses a system Chromium at `/usr/bin/chromium`, or set `PLAYWRIGHT_CHROMIUM_PATH`.
 
 Environment variables: only the container's `--env-file` and variables exported in your shell are read. Nothing in development loads `.env` automatically, so export what you need (for example `export FOREVERDB_API_KEY=...`) before running `pnpm content:sync` or `pnpm --filter web start`. When `DATA_DIR` is unset or relative, the web app, `pnpm token:create` and `pnpm content:sync` all use `<workspace root>/data-local/forevertracker.sqlite`.
 

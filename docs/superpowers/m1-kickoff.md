@@ -51,3 +51,27 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 - Git: `origin` is HTTPS with no credentials here; pushing works over SSH with `git push git@github.com:AlienPie/ForeverTracker.git main`.
 - Never commit `.env`, tokens, the WoW account folder name, character names, or home paths; scan tracked files before every push.
 - Reinstalling the addon: remove the installed `ForeverTracker` folder, copy `addon/ForeverTracker`, then `/reload` in game.
+
+## State at the end of M1
+
+**What exists.** Owner login (`OWNER_PASSWORD` + `SESSION_SECRET`, open mode when unset), WoW-styled theme, roster, character pages (Journey, Quests, Talents, Professions) with "next up" suggestions and quest chains, a browser Upload page, a Settings page (create/revoke tokens, content status), token list/revoke CLIs, an optional tooltip provider (`TOOLTIP_PROVIDER`, default none = no third-party requests), and bundled local fonts. Code is on branch `m1-dashboard`.
+
+**How to run.** Container: see `README.md` (`podman build`, `podman run` with `.env`). Development: `pnpm --filter web build && pnpm --filter web start` with `DATA_DIR`, `OWNER_PASSWORD`, `SESSION_SECRET` exported. Checks: `pnpm test`, `pnpm typecheck`, `(cd addon && ./test.sh)`, `pnpm --filter web test:e2e`.
+
+**Verified in the last task (2026-11-05).**
+- `pnpm test` (24 files, 274 tests), `pnpm typecheck` and `addon/test.sh` (126 successes) pass.
+- `pnpm --filter web test:e2e` (Playwright, system Chromium) passes against the built app on a temp DB: login redirect, wrong and right password, empty-roster invitation, upload of an invented file, roster, all four character tabs, settings token create/revoke, sign out; no console errors, no third-party requests, footer credit present. Repeated 12+ times without a failure after ignoring cancelled requests.
+- `podman build -t forevertracker:dev .` succeeds. A throwaway container on port 3199 with a throwaway volume: `/api/health` ok, `/` redirects to `/login`, form login gives 303 plus cookie, `/` then 200, token create/list/revoke CLIs work, ingest with the bearer token stores 2 characters (401 after revoke), roster shows them, fonts are served from `/_app/immutable/assets/*.woff2` on the same origin. Container and volume were removed afterwards.
+
+**NOT verified.**
+- Real game data on the dashboard beyond temp-DB checks with invented fixtures.
+- Docker Compose (only `podman compose` was ever checked, and not re-run for M1).
+- Tooltips after client-side navigation (the provider script is added once on mount).
+- Browsers other than Chromium; mobile layouts beyond manual resizing.
+
+**Owner actions, once.**
+1. Set `OWNER_PASSWORD` and a long random `SESSION_SECRET` in `.env`, then recreate the container.
+2. Run `pnpm content:sync` (or the container equivalent) so the level-cap `meta` record exists and the mirror is current.
+3. Create a device token in Settings (or via the CLI) if you want scripted uploads.
+
+**M2 list (spec section 11).** Class/race/profession chains (needs the maintainer quest-tagging tool), the talent playground with guide builds, profession advice, and a richer Journey tab with visited places. After that, M3: the sync agent, Battle.net login, a planning view and theme polish.
