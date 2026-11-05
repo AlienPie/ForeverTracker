@@ -11,3 +11,6 @@ export {
   type QuestLink,
   type QuestRow,
 } from "./advice/content";
+export type { ChainProgress, NextUpInput, Suggestion } from "./advice/types";
+export { nextUp } from "./advice/next-up";
+export { chainProgress } from "./advice/chains";
