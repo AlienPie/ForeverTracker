@@ -1,0 +1,367 @@
+[
+  {
+    "id": 179,
+    "name": "Dwarven Outfitters",
+    "level": 1,
+    "zone": {
+      "n": "Dun Morogh",
+      "slug": "dun-morogh",
+      "m": 1426
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 170,
+          "name": "A New Threat",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 233,
+          "name": "Coldridge Valley Mail Delivery",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3106,
+          "name": "Simple Rune",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3107,
+          "name": "Consecrated Rune",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3108,
+          "name": "Etched Rune",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3109,
+          "name": "Encrypted Rune",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3110,
+          "name": "Hallowed Rune",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3112,
+          "name": "Simple Memorandum",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3113,
+          "name": "Encrypted Memorandum",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3114,
+          "name": "Glyphic Memorandum",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3115,
+          "name": "Tainted Memorandum",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 658,
+      "name": "Sten Stoutarm",
+      "location": {
+        "uiMapId": 1426,
+        "zone": "Dun Morogh",
+        "x": 29.9,
+        "y": 71.2
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 658,
+      "name": "Sten Stoutarm",
+      "location": {
+        "uiMapId": 1426,
+        "zone": "Dun Morogh",
+        "x": 29.9,
+        "y": 71.3
+      }
+    }
+  },
+  {
+    "id": 747,
+    "name": "The Hunt Begins",
+    "level": 2,
+    "zone": {
+      "n": "Mulgore",
+      "slug": "mulgore",
+      "m": 1412
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 750,
+          "name": "The Hunt Continues",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3091,
+          "name": "Simple Note",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3092,
+          "name": "Etched Note",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3093,
+          "name": "Rune-Inscribed Note",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 3094,
+          "name": "Verdant Note",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 2980,
+      "name": "Grull Hawkwind",
+      "location": {
+        "uiMapId": 1412,
+        "zone": "Mulgore",
+        "x": 44.5,
+        "y": 77.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 2980,
+      "name": "Grull Hawkwind",
+      "location": {
+        "uiMapId": 1412,
+        "zone": "Mulgore",
+        "x": 44.5,
+        "y": 77.5
+      }
+    }
+  },
+  {
+    "id": 1013,
+    "name": "The Book of Ur",
+    "level": 26,
+    "zone": {
+      "n": "Silverpine Forest",
+      "slug": "silverpine-forest",
+      "m": 1421
+    },
+    "chain": {
+      "previous": [],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 2934,
+      "name": "Keeper Bel'dugur",
+      "location": {
+        "uiMapId": 1458,
+        "zone": "Undercity",
+        "x": 53.9,
+        "y": 54.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 2934,
+      "name": "Keeper Bel'dugur",
+      "location": {
+        "uiMapId": 1458,
+        "zone": "Undercity",
+        "x": 53.7,
+        "y": 54.2
+      }
+    }
+  },
+  {
+    "id": 3093,
+    "name": "Rune-Inscribed Note",
+    "level": 1,
+    "zone": {
+      "n": "Shaman",
+      "slug": "shaman",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 747,
+          "name": "The Hunt Begins",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 2980,
+      "name": "Grull Hawkwind",
+      "location": {
+        "uiMapId": 1412,
+        "zone": "Mulgore",
+        "x": 44.5,
+        "y": 77.5
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 3062,
+      "name": "Meela Dawnstrider",
+      "location": {
+        "uiMapId": 1412,
+        "zone": "Mulgore",
+        "x": 44.6,
+        "y": 76.6
+      }
+    }
+  },
+  {
+    "id": 3106,
+    "name": "Simple Rune",
+    "level": 1,
+    "zone": {
+      "n": "Warrior",
+      "slug": "warrior",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 179,
+          "name": "Dwarven Outfitters",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 658,
+      "name": "Sten Stoutarm",
+      "location": {
+        "uiMapId": 1426,
+        "zone": "Dun Morogh",
+        "x": 29.9,
+        "y": 71.2
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 912,
+      "name": "Thran Khorman",
+      "location": {
+        "uiMapId": 1426,
+        "zone": "Dun Morogh",
+        "x": 28.8,
+        "y": 67.2
+      }
+    }
+  },
+  {
+    "id": 3107,
+    "name": "Consecrated Rune",
+    "level": 1,
+    "zone": {
+      "n": "Paladin",
+      "slug": "paladin",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 179,
+          "name": "Dwarven Outfitters",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 658,
+      "name": "Sten Stoutarm",
+      "location": {
+        "uiMapId": 1426,
+        "zone": "Dun Morogh",
+        "x": 29.9,
+        "y": 71.2
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 926,
+      "name": "Bromos Grummner",
+      "location": {
+        "uiMapId": 1426,
+        "zone": "Dun Morogh",
+        "x": 28.8,
+        "y": 68.3
+      }
+    }
+  },
+  {
+    "id": 3110,
+    "name": "Hallowed Rune",
+    "level": 1,
+    "zone": {
+      "n": "Priest",
+      "slug": "priest",
+      "m": null
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 179,
+          "name": "Dwarven Outfitters",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": {
+      "type": "npc",
+      "id": 658,
+      "name": "Sten Stoutarm",
+      "location": {
+        "uiMapId": 1426,
+        "zone": "Dun Morogh",
+        "x": 29.9,
+        "y": 71.2
+      }
+    },
+    "ends": {
+      "type": "npc",
+      "id": 837,
+      "name": "Branstock Khalder",
+      "location": {
+        "uiMapId": 1426,
+        "zone": "Dun Morogh",
+        "x": 28.6,
+        "y": 66.4
+      }
+    }
+  }
+]

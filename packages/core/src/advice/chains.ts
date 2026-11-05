@@ -1,3 +1,4 @@
+import { classAllows } from "./classes";
 import type { QuestRow } from "./content";
 import type { ChainProgress } from "./types";
 
@@ -46,12 +47,21 @@ const byLevelThenId = (a: QuestRow, b: QuestRow) => a.level - b.level || a.id - 
  * and identifies the chain. `done` counts completed members; `currentIndex` is the position of the
  * first member not completed.
  *
+ * Class quests (`zone.n` is a class name) for any class other than `classToken` (snapshot token,
+ * e.g. "PRIEST"; all class quests when null or omitted) are left out before linking, so a shared
+ * starter quest such as "Dwarven Outfitters" does not pull every class's rune into one chain.
+ *
  * Only chains the character has started (at least one member completed or in the log) and not
  * finished are reported, so `complete` is always false in v1 output. Ordered by root level, then id.
  */
-export function chainProgress(quests: QuestRow[], completed: Set<number>, inLog: Set<number>): ChainProgress[] {
+export function chainProgress(
+  quests: QuestRow[],
+  completed: Set<number>,
+  inLog: Set<number>,
+  classToken?: string | null,
+): ChainProgress[] {
   const byId = new Map<number, QuestRow>();
-  for (const q of quests) byId.set(q.id, q);
+  for (const q of quests) if (classAllows(q, classToken)) byId.set(q.id, q);
 
   // Union-find over member ids, plus predecessor -> successors edges for ordering.
   const parent = new Map<number, number>();

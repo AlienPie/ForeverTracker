@@ -3,6 +3,8 @@ import { describe, expect, test } from "vitest";
 import { nextUp, type NextUpInput, type QuestLink, type QuestRow } from "../src/index";
 
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/quests.json", import.meta.url), "utf8")) as QuestRow[];
+/** Real rows: 179 Dwarven Outfitters, 747 The Hunt Begins, 1013 The Book of Ur, class runes 3093/3106/3107/3110. */
+const CLASS = JSON.parse(readFileSync(new URL("./fixtures/quests-class.json", import.meta.url), "utf8")) as QuestRow[];
 
 const link = (questId: number, relation = "Complete first"): QuestLink => ({ questId, name: `Quest ${questId}`, relation });
 
@@ -12,7 +14,7 @@ function q(id: number, level: number, zone: string | null, previous: QuestLink[]
     id,
     name: `Quest ${id}`,
     level,
-    zone: zone === null ? null : { n: zone, slug: zone.toLowerCase(), m: null },
+    zone: zone === null ? null : { n: zone, slug: zone.toLowerCase(), m: 9001 },
     chain: { previous, next, questLine: null },
     starts: {
       type: "npc",
@@ -118,10 +120,12 @@ describe("nextUp", () => {
     expect(out[2]!.confidence).toBe("low");
   });
 
-  test("optional mapId matches the starter's uiMapId", () => {
+  test("optional mapId matches the quest zone's own uiMapId", () => {
     const quests = [q(1, 10, "Somewhere Else")];
-    expect(nextUp(input({ zone: "Mossvale", quests }))).toEqual([]);
-    expect(nextUp(input({ zone: "Mossvale", mapId: 9001, quests })).map((s) => s.questId)).toEqual([1]);
+    expect(nextUp(input({ zone: null, quests }))).toEqual([]);
+    const out = nextUp(input({ zone: null, mapId: 9001, quests }));
+    expect(out.map((s) => s.questId)).toEqual([1]);
+    expect(out[0]!.reason).toContain("Somewhere Else");
   });
 
   test("real fixture: Elwynn Forest level 9 quest suggested for a level 9 in Elwynn", () => {
@@ -171,5 +175,62 @@ describe("nextUp", () => {
     const out = nextUp(input({ level: 30, zone: "Zone 7", quests, completed }));
     expect(performance.now() - t).toBeLessThan(2000);
     expect(out.length).toBeGreaterThan(0);
+  });
+});
+
+describe("nextUp: class quests and zone matching (real-data defects)", () => {
+  const dunMorogh = { level: 1, zone: "Dun Morogh", mapId: 1426, completed: new Set([179]), quests: [...CLASS, ...FIXTURE] };
+
+  test("a Priest never sees another class's rune, and sees their own labelled", () => {
+    const out = nextUp(input({ ...dunMorogh, classToken: "PRIEST" }), 10);
+    expect(out.map((s) => [s.kind, s.questId])).toEqual([["chain", 3110]]);
+    expect(out[0]!.reason).toContain("Priest class quest");
+    expect(out[0]!.reason).toContain("Dwarven Outfitters");
+  });
+
+  test("a Shaman sees the Shaman class quest labelled", () => {
+    const out = nextUp(
+      input({ level: 2, zone: "Mulgore", mapId: 1412, completed: new Set([747]), quests: CLASS, classToken: "shaman" }),
+      10,
+    );
+    expect(out.map((s) => s.questId)).toEqual([3093]);
+    expect(out[0]!.reason).toContain("Shaman class quest");
+  });
+
+  test("without a known class, class quests are never suggested", () => {
+    expect(nextUp(input({ ...dunMorogh }), 10)).toEqual([]);
+    expect(nextUp(input({ ...dunMorogh, classToken: null }), 10)).toEqual([]);
+  });
+
+  test("a matching class quest with no prerequisites is an area pick by its starter's zone", () => {
+    const shamanQuest: QuestRow = { ...q(50, 10, "Mossvale"), zone: { n: "Shaman", slug: "shaman", m: null } };
+    const out = nextUp(input({ quests: [shamanQuest], classToken: "SHAMAN" }));
+    expect(out.map((s) => [s.kind, s.questId])).toEqual([["area", 50]]);
+    expect(out[0]!.reason).toContain("Shaman class quest");
+    expect(out[0]!.reason).toContain("Mossvale");
+    expect(nextUp(input({ quests: [shamanQuest], classToken: "MAGE" }))).toEqual([]);
+  });
+
+  test("real zone mismatch: a quest set in Silverpine Forest but started in Undercity is not 'in your area'", () => {
+    // 1013 The Book of Ur: zone Silverpine Forest (m 1421), starter in Undercity (uiMapId 1458).
+    expect(nextUp(input({ level: 26, zone: "Undercity", mapId: 1458, quests: CLASS }))).toEqual([]);
+    expect(nextUp(input({ level: 26, zone: "Silverpine Forest", mapId: 1421, quests: CLASS }))).toEqual([]);
+  });
+
+  test("a category zone (no uiMapId) is never a place", () => {
+    const cat: QuestRow = { ...q(60, 10, null), zone: { n: "Blacksmithing", slug: "blacksmithing", m: null } };
+    expect(nextUp(input({ zone: "Blacksmithing", quests: [cat] }))).toEqual([]);
+  });
+
+  test("a continuation more than 5 levels up is low confidence and sorts after area and next-level", () => {
+    const quests = [q(1, 5, null), q(2, 16, null, [link(1)]), q(3, 15, null, [link(1)]), q(4, 9, "Mossvale"), q(5, 11, "Mossvale")];
+    const out = nextUp(input({ level: 10, quests, completed: new Set([1]) }));
+    expect(out.map((s) => [s.kind, s.questId, s.confidence])).toEqual([
+      ["chain", 3, "high"],
+      ["area", 4, "high"],
+      ["next-level", 5, "low"],
+      ["chain", 2, "low"],
+    ]);
+    expect(out[3]!.reason).toContain("6 levels above you");
   });
 });

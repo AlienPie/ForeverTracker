@@ -17,10 +17,16 @@ export type NextUpInput = {
   /** Character's zone name from the snapshot (e.g. "Anvilmar"); matched case-insensitively to `quest.zone.n`. */
   zone: string | null;
   /**
-   * Optional uiMapId of the character's current map. When set, a quest also counts as same-area
-   * when its starter's `location.uiMapId` (or its `zone.m`) equals it.
+   * Optional uiMapId of the character's current map. When set, a place quest also counts as
+   * same-area when its `zone.m` equals it (never by the starter's map alone).
    */
   mapId?: number | null;
+  /**
+   * Character class token from the snapshot (`CharacterCard.class`, e.g. "SHAMAN"; any case).
+   * Class quests (`zone.n` is a class name) are only suggested when it matches; when null or
+   * omitted, no class quest is suggested.
+   */
+  classToken?: string | null;
   completed: Set<number>;
   inLog: Set<number>;
   quests: QuestRow[];

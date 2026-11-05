@@ -21,3 +21,14 @@ Verified shapes across all 3862 rows (the plan's `zone: string` / `chain: number
   location: { uiMapId, zone, x, y } | null }`. `location` is null for many (e.g. item starters).
 - The mirror has NO `meta` record: `checkBuild` fetched `/meta` but never stored `levelCap`.
   `syncAll` now stores it as resource `meta`, id `current`, data `{ build, levelCap }`.
+
+## quests-class.json
+
+Seven more real rows from the same mirror, trimmed the same way, for the class-quest and zone
+fixes: 179 Dwarven Outfitters (Dun Morogh), 747 The Hunt Begins (Mulgore), 1013 The Book of Ur
+(zone Silverpine Forest, m 1421, but starter in Undercity, uiMapId 1458), and class quests whose
+`zone.n` is a class name with `m: null`: 3093 Rune-Inscribed Note (Shaman, after 747), 3106 Simple
+Rune (Warrior), 3107 Consecrated Rune (Paladin), 3110 Hallowed Rune (Priest), all after 179.
+Across the full mirror every real place has a numeric `zone.m`; class names (Druid, Hunter, Mage,
+Paladin, Priest, Rogue, Shaman, Warlock, Warrior) and categories (Seasonal, Blacksmithing,
+Lunar Festival, ...) have `m: null`. 472 quests have a starter `uiMapId` different from `zone.m`.

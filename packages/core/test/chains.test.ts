@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import { chainProgress, type QuestLink, type QuestRow } from "../src/index";
 
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/quests.json", import.meta.url), "utf8")) as QuestRow[];
+const CLASS = JSON.parse(readFileSync(new URL("./fixtures/quests-class.json", import.meta.url), "utf8")) as QuestRow[];
 
 const link = (questId: number, relation = "Complete first"): QuestLink => ({ questId, name: `Quest ${questId}`, relation });
 
@@ -76,6 +77,13 @@ describe("chainProgress", () => {
     ] as unknown as QuestRow[];
     const out = chainProgress(odd, new Set([701]), new Set());
     expect(out).toEqual([{ chain: 701, name: "Quest 701", done: 1, total: 2, currentIndex: 1, complete: false }]);
+  });
+
+  test("other-class quests do not join a chain (real Dwarven Outfitters runes)", () => {
+    const out = chainProgress(CLASS, new Set([179]), new Set(), "PRIEST");
+    expect(out).toEqual([{ chain: 179, name: "Dwarven Outfitters", done: 1, total: 2, currentIndex: 1, complete: false }]);
+    // No class known: every class quest is left out, so 179 stands alone.
+    expect(chainProgress(CLASS, new Set([179]), new Set())).toEqual([]);
   });
 
   test("4000 quests finish quickly", () => {
