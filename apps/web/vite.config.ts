@@ -25,7 +25,8 @@ function pinDbMigrations(): Plugin {
 export default defineConfig({
   plugins: [
     pinDbMigrations(),
-    sveltekit({ adapter: adapter() }),
+    // The app goes to build/app; build/index.js is our entry (entry/index.js), so `node build` still starts it.
+    sveltekit({ adapter: adapter({ out: "build/app" }) }),
   ],
   ssr: { noExternal: [/^@ft\//], external: ["better-sqlite3"] },
 });

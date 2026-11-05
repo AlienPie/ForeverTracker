@@ -140,7 +140,7 @@ describe("logout", () => {
     const r = await expectRedirect(Promise.resolve().then(() => logoutMod.POST({ cookies } as never)));
     expect(r.status).toBe(303);
     expect(r.location).toBe("/login");
-    expect(cookies.delete).toHaveBeenCalledWith("ft_session", { path: "/" });
+    expect(cookies.delete).toHaveBeenCalledWith("ft_session", { path: "/", secure: false });
   });
   test("no GET handler", () => {
     expect("GET" in logoutMod).toBe(false);

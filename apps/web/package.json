@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "rm -rf build && vite build && cp entry/index.js entry/protocol.js build/",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "prepare": "svelte-kit sync",

@@ -1,7 +1,9 @@
 import type { ServerLoad } from "@sveltejs/kit";
+import type { ContentMode } from "@ft/content";
 import { getCharacter, getRoster, nextUp, type Roster, type Suggestion } from "@ft/core";
 import { getQuestCatalog } from "../lib/server/content";
 import { getDb } from "../lib/server/db";
+import { env } from "../lib/server/env";
 
 export type RosterPageData = {
   roster: Roster;
@@ -9,6 +11,8 @@ export type RosterPageData = {
   nextByGuid: Record<string, Suggestion | null>;
   /** The quest catalog has at least one quest. */
   contentReady: boolean;
+  /** CONTENT_MODE; in "on-demand" the roster never loads content (no network at page load). */
+  contentMode: ContentMode;
   /** Server clock (unix seconds) the sync labels are computed against. */
   now: number;
 };
@@ -41,5 +45,5 @@ export const load: ServerLoad = async (): Promise<RosterPageData> => {
     );
     nextByGuid[card.guid] = first ?? null;
   }
-  return { roster, nextByGuid, contentReady, now };
+  return { roster, nextByGuid, contentReady, contentMode: env().contentMode, now };
 };

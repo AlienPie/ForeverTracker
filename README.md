@@ -57,6 +57,17 @@ From `.env.example` (no secrets are committed; leave unused ones empty):
 | `DATA_DIR` | Directory for the SQLite database. `./data-local` for development; `/data` in the container |
 | `SESSION_SECRET`, `OWNER_BATTLETAG`, `BLIZZARD_CLIENT_ID`, `BLIZZARD_CLIENT_SECRET`, `BLIZZARD_REDIRECT_URI` | Reserved for login (later milestone); unused in M0 |
 | `BODY_SIZE_LIMIT` | adapter-node request body limit; must be at least the ingest cap of 8 MB (default `8M`) |
+| `PROTOCOL_HEADER`, `HOST_HEADER` | Optional, only behind a reverse proxy; see below. `PROTOCOL_HEADER` defaults to `x-forwarded-proto` |
+
+### Plain HTTP and reverse proxies
+
+SvelteKit rejects a form POST (sign in, sign out, uploads) with 403 "Cross-site POST form submissions are forbidden" unless the browser's `Origin` header equals the origin the server thinks it has. adapter-node builds that origin from a protocol header and the `Host` header, and assumes `https` when the protocol header is missing. The server entry (`apps/web/entry/index.js`, built to `build/index.js`) therefore sets `PROTOCOL_HEADER=x-forwarded-proto` by default and marks any request that arrives without that header as `http`. This is correct because the server itself only listens on plain HTTP. As a result:
+
+- Direct access works with no settings: `http://localhost:3000` and `http://127.0.0.1:3000`, and any port.
+- Behind a TLS reverse proxy, have the proxy set `X-Forwarded-Proto: https` and pass the original `Host` header through. Caddy and nginx with `proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme;` do this. If your proxy sends the public host in another header, set `HOST_HEADER=x-forwarded-host`.
+- If your proxy uses a different header for the scheme, set `PROTOCOL_HEADER` to that header name.
+
+The origin check stays on: a POST whose `Origin` is another site is still refused.
 
 ## Create a device token
 

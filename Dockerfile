@@ -30,4 +30,5 @@ RUN mkdir /data && chown node:node /data
 USER node
 VOLUME /data
 EXPOSE 3000
+# build/index.js is the app entry (apps/web/entry/index.js): plain-HTTP origin handling, see README.
 CMD ["node", "build"]

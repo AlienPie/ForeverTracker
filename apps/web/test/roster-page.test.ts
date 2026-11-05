@@ -69,6 +69,7 @@ type PageData = {
   roster: { characters: { guid: string; name: string; class: string | null; level: number | null }[] };
   nextByGuid: Record<string, { title: string; reason: string } | null>;
   contentReady: boolean;
+  contentMode: "mirror" | "on-demand";
   now: number;
 };
 const runLoad = async () => (await load({} as never)) as PageData;
@@ -108,6 +109,20 @@ describe("roster page load", () => {
     expect(data.nextByGuid[NEW]).toMatchObject({ title: "Trouble in the Pass", reason: "Level 9 quest in Dun Morogh." });
     expect(data.nextByGuid[OLD]).toBeNull();
     expect(data.nextByGuid[DEGRADED]).toBeNull();
+  });
+
+  test("on-demand mode: content is not loaded at page load, even with a filled mirror", async () => {
+    state.db = seeded(true);
+    state.e.contentMode = "on-demand";
+    const data = await runLoad();
+    expect(data.contentReady).toBe(false);
+    expect(data.contentMode).toBe("on-demand");
+    expect(Object.values(data.nextByGuid).every((n) => n === null)).toBe(true);
+  });
+
+  test("mirror mode is reported for the banner text", async () => {
+    state.db = seeded(false);
+    expect((await runLoad()).contentMode).toBe("mirror");
   });
 
   test("empty roster", async () => {
