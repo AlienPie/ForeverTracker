@@ -32,9 +32,6 @@ importers:
       '@ft/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@ft/savedvars':
-        specifier: workspace:*
-        version: link:../../packages/savedvars
       better-sqlite3:
         specifier: ^13.0.3
         version: 13.0.3

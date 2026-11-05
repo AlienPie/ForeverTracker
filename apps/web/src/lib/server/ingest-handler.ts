@@ -1,6 +1,5 @@
 import type { Db } from "@ft/db";
-import { IngestError, ingestSavedVariables } from "@ft/core";
-import { LuaParseError } from "@ft/savedvars";
+import { IngestError, LuaParseError, ingestSavedVariables } from "@ft/core";
 import { verifyDeviceToken } from "./tokens";
 
 export const MAX_BODY_BYTES = 8 * 1024 * 1024;
@@ -47,7 +46,7 @@ export async function handleIngest(db: Db, request: Request): Promise<Response> 
     if (!token || !verifyDeviceToken(db, token)) return json({ error: "unauthorized" }, 401);
 
     const text = await readCapped(request, MAX_BODY_BYTES);
-    if (text === null) return json({ error: "too large" }, 413);
+    if (text === null) return json({ error: "too_large" }, 413);
 
     try {
       return json(ingestSavedVariables(db, text), 200);

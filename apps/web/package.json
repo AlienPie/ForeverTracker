@@ -17,7 +17,6 @@
     "@ft/content": "workspace:*",
     "@ft/core": "workspace:*",
     "@ft/db": "workspace:*",
-    "@ft/savedvars": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.4"
   },

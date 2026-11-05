@@ -119,7 +119,7 @@ describe("POST /api/ingest", () => {
     });
     const res = await handleIngest(db, req(body, token));
     expect(res.status).toBe(413);
-    expect(await res.json()).toEqual({ error: "too large" });
+    expect(await res.json()).toEqual({ error: "too_large" });
   });
 
   test("other stream read errors give 500 internal", async () => {
