@@ -2,18 +2,6 @@
   import type { JourneyPageData } from "./+page.server";
 
   let { data }: { data: JourneyPageData } = $props();
-
-  const date = (t: number) =>
-    new Date(t * 1000).toLocaleString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "UTC",
-    });
-  const day = (t: number) =>
-    new Date(t * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 </script>
 
 <div class="cols">
@@ -29,7 +17,7 @@
       <ol class="timeline">
         {#each data.events as e, i (i)}
           <li class="ev ev-{e.kind}">
-            <time datetime={new Date(e.t * 1000).toISOString()}>{date(e.t)}</time>
+            {#if e.iso}<time datetime={e.iso}>{e.when}</time>{:else}<span class="when">Time unknown</span>{/if}
             <span>{e.text}</span>
           </li>
         {/each}
@@ -47,7 +35,7 @@
         <ul class="places">
           {#each data.places as p (p.mapId)}
             <li>
-              <div class="top"><span>{p.name}</span><span class="sub">since {day(p.firstSeen)}</span></div>
+              <div class="top"><span>{p.name}</span><span class="sub">{p.since ? `since ${p.since}` : "first visit time unknown"}</span></div>
               {#if p.subzones.length > 0}<div class="subz">{p.subzones.join(", ")}</div>{/if}
             </li>
           {/each}

@@ -19,7 +19,7 @@ import { load as professionsLoad } from "../src/routes/c/[guid]/professions/+pag
 import { load as rosterLoad } from "../src/routes/+page.server";
 import { resetQuestCatalog } from "../src/lib/server/content";
 import { getQuestCatalogSafe } from "../src/lib/server/safe-catalog";
-import { eventSentence } from "../src/lib/journey";
+import { eventSentence, formatDay, formatEventTime, type JourneyEvent, type Place } from "../src/lib/journey";
 
 const NOW = 1_800_000_000;
 const HOUR = 3600;
@@ -187,10 +187,7 @@ describe("quests tab", () => {
   });
 });
 
-type JourneyData = {
-  events: { t: number; kind: string; text: string }[];
-  places: { mapId: number; name: string; subzones: string[]; firstSeen: number }[];
-};
+type JourneyData = { events: JourneyEvent[]; places: Place[] };
 
 describe("journey tab", () => {
   test("visited = {} gives an empty places list and no events", async () => {
@@ -219,9 +216,9 @@ describe("journey tab", () => {
     state.db = seeded(true);
     const data = (await journeyLoad(ev(HERO))) as JourneyData;
     expect(data.places).toEqual([
-      { mapId: 9999, name: "Map 9999", subzones: [], firstSeen: NOW - HOUR },
-      { mapId: 1432, name: "Loch Modan", subzones: ["Thelsamar"], firstSeen: NOW - 2 * HOUR },
-      { mapId: 1426, name: "Dun Morogh", subzones: ["Coldridge Valley", "Kharanos"], firstSeen: NOW - 6 * HOUR },
+      { mapId: 9999, name: "Map 9999", subzones: [], firstSeen: NOW - HOUR, since: "15 Jan 2027" },
+      { mapId: 1432, name: "Loch Modan", subzones: ["Thelsamar"], firstSeen: NOW - 2 * HOUR, since: "15 Jan 2027" },
+      { mapId: 1426, name: "Dun Morogh", subzones: ["Coldridge Valley", "Kharanos"], firstSeen: NOW - 6 * HOUR, since: "15 Jan 2027" },
     ]);
   });
 
@@ -230,6 +227,41 @@ describe("journey tab", () => {
     const data = (await journeyLoad(ev(HERO))) as JourneyData;
     expect(data.places.map((p) => p.name)).toEqual(["Map 9999", "Map 1432", "Map 1426"]);
     expect(data.events.map((e) => e.text)).toContain("Completed quest 9101");
+  });
+});
+
+describe("out-of-range times", () => {
+  test("formatters give nulls instead of throwing", () => {
+    for (const t of [1e20, -1e20, 0, -5, Number.NaN, Number.POSITIVE_INFINITY, 1e15]) {
+      expect(formatEventTime(t)).toEqual({ iso: null, when: null });
+      expect(formatDay(t)).toBeNull();
+    }
+    expect(formatEventTime(NOW)).toEqual({ iso: "2027-01-15T08:00:00.000Z", when: "15 Jan 2027, 08:00" });
+    expect(formatDay(NOW)).toBe("15 Jan 2027");
+  });
+
+  test("journey load survives events and places with t = 1e20", async () => {
+    state.db = seeded(true);
+    ingestSavedVariables(
+      state.db as Db,
+      `ForeverTrackerDB = { schema = 1, characters = { ["Player-7777-0000D004"] = {
+        snapshot = { takenAt = ${NOW}, identity = { name = "Tamsin", class = "MAGE", race = "Gnome", level = 8 } },
+        events = {
+          { t = 1e20, kind = "level_up", data = { level = 8 } },
+          { t = -1e20, kind = "level_up", data = { level = 2 } },
+          { t = ${NOW - HOUR}, kind = "level_up", data = { level = 7 } },
+        },
+        visited = { ["1426:"] = { mapId = 1426, subzone = "", firstSeen = 1e20 } },
+      } } }`,
+      () => NOW,
+    );
+    const data = (await journeyLoad(ev("Player-7777-0000D004"))) as JourneyData;
+    expect(data.events.map((e) => [e.text, e.iso, e.when])).toEqual([
+      ["Reached level 8", null, null],
+      ["Reached level 7", "2027-01-15T07:00:00.000Z", "15 Jan 2027, 07:00"],
+      ["Reached level 2", null, null],
+    ]);
+    expect(data.places).toEqual([{ mapId: 1426, name: "Dun Morogh", subzones: [], firstSeen: 1e20, since: null }]);
   });
 });
 

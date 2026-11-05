@@ -97,7 +97,7 @@ footer.site{border-top:1px solid var(--edge);padding:18px 0;color:var(--text-dim
 .panel .banner{margin:4px 0 0}
 .timeline li{display:grid;grid-template-columns:9.5em 1fr;gap:2px 16px;padding:9px 0;border-top:1px solid #0003;font-size:15px}
 .timeline li:first-child{border-top:0}
-.timeline time{font:italic 15px var(--serif);color:var(--ink-soft)}
+.timeline time,.timeline .when{font:italic 15px var(--serif);color:var(--ink-soft)}
 .timeline .ev-level_up span{font-weight:600}
 .places li{padding:10px 0;border-top:1px solid var(--edge)}.places li:first-child{border-top:0}
 .places .top,.skills .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
