@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import { page } from "$app/state";
   import { formatMoney, formatPlayed } from "@ft/core/format";
+  import CharacterName from "../../../lib/components/CharacterName.svelte";
   import Seal from "../../../lib/components/Seal.svelte";
   import XpBar from "../../../lib/components/XpBar.svelte";
   import { className, classColor, raceName } from "../../../lib/classes";
@@ -28,7 +29,7 @@
 <div class="hero" style:--cc={classColor(c.class)}>
   <Seal level={c.level} classToken={c.class} />
   <div class="hero-main">
-    <h1>{c.name}{#if c.surname}<span class="surname"> {c.surname}</span>{/if}</h1>
+    <h1><CharacterName name={c.name} surname={c.surname} /></h1>
     <div class="facts">
       {#if kind}<span>{kind}</span>{/if}
       {#if c.zone}<span><span class="sr-only">Zone: </span><b>{c.zone}</b></span>{/if}

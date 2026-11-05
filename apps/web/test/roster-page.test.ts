@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
 vi.mock("../src/lib/server/db", () => ({ getDb: () => state.db }));
 vi.mock("../src/lib/server/env", () => ({ env: () => state.e }));
 
+import CharacterName from "../src/lib/components/CharacterName.svelte";
 import CharacterCardView from "../src/lib/components/CharacterCard.svelte";
 import { load } from "../src/routes/+page.server";
 import { load as layoutLoad } from "../src/routes/+layout.server";
@@ -177,6 +178,17 @@ describe("roster surname", () => {
     const body = card(NEW);
     expect(body).toContain("<h3>Elswyth</h3>");
     expect(body).not.toContain('class="surname"');
+  });
+});
+
+describe("CharacterName (shared by roster card and character header)", () => {
+  const name = (surname: string | null) =>
+    render(CharacterName, { props: { name: "Merrowyn", surname } }).body.replace(/<!--.*?-->/g, "");
+  test("a space separates the name from the surname", () => {
+    expect(name("Ashgrove")).toBe('Merrowyn <span class="surname">Ashgrove</span>');
+  });
+  test("no surname: just the name", () => {
+    expect(name(null)).toBe("Merrowyn");
   });
 });
 

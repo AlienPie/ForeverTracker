@@ -3,6 +3,7 @@
   import { formatMoney, formatPlayed } from "@ft/core/format";
   import { className, raceName } from "../classes";
   import { syncLabel } from "../sync";
+  import CharacterName from "./CharacterName.svelte";
   import Seal from "./Seal.svelte";
   import XpBar from "./XpBar.svelte";
 
@@ -26,7 +27,7 @@
 
 <a class="card" href="/c/{encodeURIComponent(card.guid)}">
   <Seal level={card.level} classToken={card.class} />
-  <h3>{card.name}{#if card.surname}{" "}<span class="surname">{card.surname}</span>{/if}</h3>
+  <h3><CharacterName name={card.name} surname={card.surname} /></h3>
   <div class="cls">{who}</div>
   <XpBar pct={card.xpPct} level={card.level} />
   <div class="row">
