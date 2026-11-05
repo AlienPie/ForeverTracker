@@ -67,3 +67,30 @@ M1.1 plan: `docs/superpowers/plans/2026-11-05-m1-1-quests-journey.md`. Reason fo
 - **Caveats:** some ranges are very wide or odd (for example a starter zone listed 1 to 56 after a level change, one zone 36 to 61), and some zones have no range. Use the quest-derived band as a cross-check or fallback, and show "no recommendation yet" when neither exists. Curated files record the game build and source, as the spec requires.
 - **Needs:** the maintainer snippet and `data/zones.json` (with build and source), a per-zone helper in `packages/core` merging the curated range with the quest-derived band (pure, tested on real fixture rows), cached with the quest catalog.
 - **Status:** M2 idea (needs `data/zones.json` from the maintainer tool).
+
+## New feature ideas (from the owner, 2026-11-05; not yet planned)
+
+Priorities as stated: exploration and completion matter most to the owner (not power levelling or end game); backup/restore is wanted so moving computers or rebuilding the app does not mean re-syncing ForeverDB or re-creating tokens; the pace/ETA idea is nice to have only.
+
+### 8. "Since your last upload" recap, with gold and played-time trends (idea)
+- **Idea:** compare each upload's snapshot with the previous one: levels gained, quests handed in, gold earned or spent, hours played, new places; and charts of gold and total played time across uploads.
+- **Data:** every upload is already stored as a snapshot (`snapshot` table keyed by character and `takenAt`, `state.money` in copper, `time.played` in seconds), so no addon change. Resolution is per upload, not per minute.
+- **Overlap with the Journey:** the Journey already shows time per level and session lengths from events. The recap and the gold chart add what the Journey does not have (gold, total played, per-upload deltas); a separate played-time chart would mostly repeat the Journey and is optional.
+- **Status:** wanted, unscheduled.
+
+### 9. Exploration and completion view (idea, high priority for the owner)
+- **Idea:** the owner is interested in exploring more than levelling speed. A completion-first view: per zone, how much of its quests you have done ("Dun Morogh: 78%"), what is left, quests you skipped in zones you have visited (framed as things left to discover, not lost XP), places visited, flight paths unlocked, and later a world overview of zones by completion.
+- **Data now:** completed quest ids (complete) against the mirror's quest-to-zone links give solid per-zone completion; zone level range and territory (Alliance, Horde, Contested) come from the Wowhead zones data planned for M2 (item 7), so item 7 and this share the zones file. Quests with no zone, class quests and category "zones" need the same handling as in Next up.
+- **Known gap:** true map exploration (areas uncovered) is NOT captured: the addon records first visits by map and subzone, and subzone text is often empty on this client; flight paths are captured but unverified. To measure real exploration, the addon would need an exploration-discovery API check in game (to verify first), then a collector and schema change. Treat quest-based completion as v1 and exploration capture as a follow-up experiment.
+- **Status:** wanted, to plan.
+
+### 10. Level pace and ETA to the level cap (idea, low priority)
+- Average time per level from the Journey data and "at this pace you reach the cap in about N hours played"; compare alts. Nice to have only.
+- **Status:** later.
+
+### 11. Backup and restore (idea, wanted)
+- **Idea:** export everything the app holds so a move to another computer or a rebuild needs no re-sync of ForeverDB and no new tokens. Everything lives in one SQLite file: characters, snapshots and events, device tokens (stored as hashes, so existing tokens keep working after a restore), settings, and the content mirror.
+- **Proposed shape:** a consistent online copy of the database (better-sqlite3 backup API, safe while the app runs): a "Download backup" button on Settings, a CLI for scheduled use (`node /app/backup.mjs <file>` in the container), and a restore path (CLI first: `node /app/restore.mjs <file>` with the app stopped, then optionally an upload form with a clear warning that it replaces the current data). Option to leave the content mirror out for a smaller file (it can be re-synced), default included to save re-syncing.
+- **Not in the backup (by design):** `.env` secrets (ForeverDB API key, owner password, session secret, Blizzard client) stay in `.env`; the README should say to copy them separately. After a restore the owner's session cookies are invalid if `SESSION_SECRET` changed (just log in again).
+- **Checks needed:** restore must refuse a file from a newer schema than the app, and a file that is not a ForeverTracker database; run migrations after restore for older files; keep the file permissions private; the download is behind the login.
+- **Status:** wanted, small; a good first item for the next pass.
