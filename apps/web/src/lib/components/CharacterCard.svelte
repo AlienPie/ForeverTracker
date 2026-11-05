@@ -26,7 +26,7 @@
 
 <a class="card" href="/c/{encodeURIComponent(card.guid)}">
   <Seal level={card.level} classToken={card.class} />
-  <h3>{card.name}</h3>
+  <h3>{card.name}{#if card.surname}{" "}<span class="surname">{card.surname}</span>{/if}</h3>
   <div class="cls">{who}</div>
   <XpBar pct={card.xpPct} level={card.level} />
   <div class="row">

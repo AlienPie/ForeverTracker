@@ -1,6 +1,7 @@
 import { contentRecord, openDb, type Db } from "@ft/db";
 import type { ContentSource } from "@ft/content";
-import { ingestSavedVariables } from "@ft/core";
+import { ingestSavedVariables, type CharacterCard } from "@ft/core";
+import { render } from "svelte/server";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
@@ -10,6 +11,7 @@ const state = vi.hoisted(() => ({
 vi.mock("../src/lib/server/db", () => ({ getDb: () => state.db }));
 vi.mock("../src/lib/server/env", () => ({ env: () => state.e }));
 
+import CharacterCardView from "../src/lib/components/CharacterCard.svelte";
 import { load } from "../src/routes/+page.server";
 import { load as layoutLoad } from "../src/routes/+layout.server";
 import { className, classColor, raceName, NEUTRAL_CLASS_COLOR, sealTextIsDark } from "../src/lib/classes";
@@ -130,6 +132,51 @@ describe("roster page load", () => {
     const data = await runLoad();
     expect(data.roster.characters).toEqual([]);
     expect(data.nextByGuid).toEqual({});
+  });
+});
+
+describe("roster surname", () => {
+  const SURNAMED = "Player-7777-0000C004";
+  const fixture = `ForeverTrackerDB = { schema = 1, characters = {
+    ["${SURNAMED}"] = { snapshot = { takenAt = ${NOW - 60},
+      identity = { name = "Merrowyn", surname = "Ashgrove", class = "DRUID", race = "NightElf", level = 12 },
+      time = { played = 1000 }, state = { zone = "Teldrassil", mapId = 1438, money = 100 },
+      progress = { professions = {}, questsCompleted = {}, questLog = {} } } },
+    ["${NEW}"] = { snapshot = { takenAt = ${NOW - 120},
+      identity = { name = "Elswyth", class = "PRIEST", race = "Human", level = 10 },
+      time = { played = 1000 }, state = { zone = "Dun Morogh", mapId = 1426, money = 100 },
+      progress = { professions = {}, questsCompleted = {}, questLog = {} } } },
+  } }`;
+  const html = async () => {
+    const db = openDb(":memory:");
+    ingestSavedVariables(db, fixture, () => NOW);
+    state.db = db;
+    const data = await runLoad();
+    const by = (guid: string) => data.roster.characters.find((c) => c.guid === guid) as unknown as CharacterCard;
+    const card = (guid: string) =>
+      render(CharacterCardView, { props: { card: by(guid), next: null, contentReady: false, now: NOW } }).body.replace(
+        /<!--.*?-->/g,
+        "",
+      );
+    return { data, by, card };
+  };
+
+  test("load data carries the surname, null when absent", async () => {
+    const { by } = await html();
+    expect(by(SURNAMED).surname).toBe("Ashgrove");
+    expect(by(NEW).surname).toBeNull();
+  });
+
+  test("card heading shows name then a dim surname span", async () => {
+    const { card } = await html();
+    expect(card(SURNAMED)).toContain('<h3>Merrowyn <span class="surname">Ashgrove</span></h3>');
+  });
+
+  test("no surname: plain heading, no stray space or empty element", async () => {
+    const { card } = await html();
+    const body = card(NEW);
+    expect(body).toContain("<h3>Elswyth</h3>");
+    expect(body).not.toContain('class="surname"');
   });
 });
 
