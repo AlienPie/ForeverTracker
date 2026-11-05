@@ -1,0 +1,129 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, test } from "vitest";
+import { chainDetail, type QuestLink, type QuestRow } from "../src/index";
+
+const CLASS = JSON.parse(readFileSync(new URL("./fixtures/quests-class.json", import.meta.url), "utf8")) as QuestRow[];
+
+const link = (questId: number, relation = "Complete first"): QuestLink => ({ questId, name: `Quest ${questId}`, relation });
+
+/** Tiny synthetic quest; names are invented. */
+function q(id: number, level: number, previous: number[] = [], next: number[] = []): QuestRow {
+  return {
+    id,
+    name: `Quest ${id}`,
+    level,
+    zone: { n: "Elwynn Forest", slug: "elwynn-forest", m: 1429 },
+    chain: { previous: previous.map((p) => link(p)), next: next.map((n) => link(n)), questLine: null },
+    starts: { type: "npc", id: 1, name: `Giver ${id}`, location: { uiMapId: 1429, zone: "Elwynn Forest", x: 1, y: 1 } },
+    ends: null,
+  };
+}
+
+/**
+ * Branching chain:
+ *   601 -> 602
+ *   601 -> 603 -> 604
+ *   605 needs both 602 and 604
+ */
+const BRANCH = [
+  q(605, 5, [602, 604]),
+  q(604, 3, [603], [605]),
+  q(603, 2, [601], [604]),
+  q(602, 2, [601], [605]),
+  q(601, 1, [], [602, 603]),
+];
+
+describe("chainDetail", () => {
+  test("unknown quest id gives null", () => {
+    expect(chainDetail(BRANCH, 999, new Set(), new Set())).toBeNull();
+    expect(chainDetail([], 601, new Set(), new Set())).toBeNull();
+  });
+
+  test("members in chain order with done / in-log / available / locked", () => {
+    // 601 done, 602 in log, 603 available (601 done), 604 locked (603 not done), 605 locked.
+    const d = chainDetail(BRANCH, 604, new Set([601]), new Set([602]));
+    expect(d).not.toBeNull();
+    expect(d!.chain).toBe(601);
+    expect(d!.name).toBe("Quest 601");
+    expect(d!.done).toBe(1);
+    expect(d!.total).toBe(5);
+    expect(d!.members.map((m) => [m.questId, m.step, m.state])).toEqual([
+      [601, 1, "done"],
+      [602, 2, "in-log"],
+      [603, 3, "available"],
+      [604, 4, "locked"],
+      [605, 5, "locked"],
+    ]);
+    expect(d!.members[0]).toMatchObject({ name: "Quest 601", level: 1, zone: "Elwynn Forest", giver: "Giver 601" });
+  });
+
+  test("available needs every prerequisite done, not just in the log", () => {
+    // 605 needs 602 and 604. 602 done, 604 in log: 605 is still locked.
+    const d = chainDetail(BRANCH, 601, new Set([601, 602, 603]), new Set([604]))!;
+    expect(d.members.map((m) => m.state)).toEqual(["done", "done", "done", "in-log", "locked"]);
+    // Both done: 605 is available.
+    const e = chainDetail(BRANCH, 601, new Set([601, 602, 603, 604]), new Set())!;
+    expect(e.members.at(-1)!.state).toBe("available");
+    expect(e.done).toBe(4);
+  });
+
+  test("any member id gives the same chain, and the order matches chainProgress (root first)", () => {
+    const a = chainDetail(BRANCH, 601, new Set(), new Set())!;
+    const b = chainDetail(BRANCH, 605, new Set(), new Set())!;
+    expect(b).toEqual(a);
+    expect(a.members.map((m) => m.state)).toEqual(["available", "locked", "locked", "locked", "locked"]);
+  });
+
+  test("a quest with no chain is a chain of one", () => {
+    const d = chainDetail([q(700, 4)], 700, new Set(), new Set())!;
+    expect(d).toMatchObject({ chain: 700, done: 0, total: 1 });
+    expect(d.members).toHaveLength(1);
+    expect(d.members[0]!.state).toBe("available");
+  });
+
+  test("class filtering applies (real Dwarven Outfitters runes)", () => {
+    const priest = chainDetail(CLASS, 179, new Set([179]), new Set(), "PRIEST")!;
+    expect(priest.members.map((m) => [m.questId, m.name, m.state])).toEqual([
+      [179, "Dwarven Outfitters", "done"],
+      [3110, "Hallowed Rune", "available"],
+    ]);
+    // Class quests use their giver's place, not the class name, as the zone.
+    expect(priest.members[1]).toMatchObject({ zone: "Dun Morogh", giver: "Sten Stoutarm", level: 1 });
+    // Another class's rune is not a chain the priest can open.
+    expect(chainDetail(CLASS, 3106, new Set(), new Set(), "PRIEST")).toBeNull();
+    // Unknown class: no class quest at all.
+    expect(chainDetail(CLASS, 3110, new Set(), new Set())).toBeNull();
+    expect(chainDetail(CLASS, 179, new Set(), new Set())!.total).toBe(1);
+  });
+
+  test("a cycle does not hang and lists every member once", () => {
+    const cyc = [q(801, 1, [803], [802]), q(802, 2, [801], [803]), q(803, 3, [802], [801])];
+    const d = chainDetail(cyc, 802, new Set(), new Set())!;
+    expect(d.members.map((m) => m.questId).sort()).toEqual([801, 802, 803]);
+    expect(d.members.every((m) => m.state === "locked")).toBe(true);
+  });
+
+  test("odd link values and missing fields do not throw", () => {
+    const odd = [
+      { ...q(901, 1), starts: null, zone: null, chain: { previous: [{ questId: 902 }, null, "x"], next: [{ questId: 902, relation: 5 }], questLine: null } },
+      { ...q(902, 2), starts: { name: 7 }, chain: { previous: [{ questId: 901, relation: "Chain link" }], next: "nope", questLine: null } },
+    ] as unknown as QuestRow[];
+    const d = chainDetail(odd, 901, new Set([901]), new Set())!;
+    expect(d.members.map((m) => [m.questId, m.state, m.zone, m.giver])).toEqual([
+      [901, "done", null, null],
+      [902, "available", "Elwynn Forest", null],
+    ]);
+  });
+
+  test("4000 quests finish quickly", () => {
+    const quests: QuestRow[] = [];
+    for (let s = 0; s < 800; s++) for (let i = 0; i < 5; i++) {
+      const id = 10000 + s * 10 + i;
+      quests.push(q(id, 10 + i, i > 0 ? [id - 1] : [], i < 4 ? [id + 1] : []));
+    }
+    const t = performance.now();
+    const d = chainDetail(quests, 15002, new Set([15000]), new Set());
+    expect(performance.now() - t).toBeLessThan(2000);
+    expect(d!.members.map((m) => m.state)).toEqual(["done", "available", "locked", "locked", "locked"]);
+  });
+});

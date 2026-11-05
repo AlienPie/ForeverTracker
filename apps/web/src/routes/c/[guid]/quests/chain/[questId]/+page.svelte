@@ -1,0 +1,57 @@
+<script lang="ts">
+  import { page } from "$app/state";
+  import ContentBanner from "../../../../../../lib/components/ContentBanner.svelte";
+  import ItemLink from "../../../../../../lib/components/ItemLink.svelte";
+  import type { ChainPageData } from "./+page.server";
+
+  let { data }: { data: ChainPageData } = $props();
+
+  const back = $derived(`/c/${encodeURIComponent(page.params.guid ?? "")}/quests`);
+  const STATE: Record<string, string> = {
+    done: "done",
+    "in-log": "in your log",
+    available: "available now",
+    locked: "locked",
+  };
+</script>
+
+<svelte:head>{#if data.chain}<title>{data.chain.name}, quest chain, ForeverTracker</title>{/if}</svelte:head>
+
+<p class="backlink"><a href={back}>&larr; Back to quests</a></p>
+
+<section class="panel chainpage" aria-labelledby="cn">
+  {#if !data.chain}
+    <h2 id="cn">Quest chain</h2>
+    <p class="sub">No chain to show yet: chains are built from the quest mirror, which is empty.</p>
+    <ContentBanner contentMode={data.contentMode} />
+  {:else}
+    {@const c = data.chain}
+    <h2 id="cn">{c.name}</h2>
+    <p class="sub">
+      {c.done} of {c.total} done{#if data.current !== null}, now at step {c.members.find((m) => m.questId === data.current)?.step} of {c.total}{/if}.
+    </p>
+    <div class="pips" aria-hidden="true">
+      {#each c.members as m (m.questId)}<i class:done={m.state === "done"} class:now={m.questId === data.current}></i>{/each}
+    </div>
+    <ol class="steps">
+      {#each c.members as m (m.questId)}
+        <li class="step st-{m.state}" class:current={m.questId === data.current} aria-current={m.questId === data.current ? "step" : undefined}>
+          <span class="num" aria-hidden="true">{m.step}</span>
+          <div class="body">
+            <h3><span class="sr-only">Step {m.step}: </span><ItemLink kind="quest" id={m.questId} name={m.name} /></h3>
+            <div class="meta">
+              <span class="tag state">{STATE[m.state] ?? m.state}</span>
+              {#if m.questId === data.current}<span class="tag cont">current step</span>{/if}
+              {#if m.zone}<span>{m.zone}</span>{/if}
+              {#if m.giver}<span>from {m.giver}</span>{/if}
+            </div>
+          </div>
+          <span class="lvl">level {m.level}</span>
+        </li>
+      {/each}
+    </ol>
+    <p class="sub foot">
+      Order and prerequisites come from ForeverDB. "Available now" means every earlier quest it needs is done.
+    </p>
+  {/if}
+</section>

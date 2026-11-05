@@ -37,30 +37,28 @@ export function prerequisites(q: QuestRow): { questId: number; name: string | nu
 
 const byLevelThenId = (a: QuestRow, b: QuestRow) => a.level - b.level || a.id - b.id;
 
+/** A quest with this many direct successors or more in its chain is a hub (see chainProgress). */
+const HUB_SUCCESSORS = 3;
+
+/** Chains derived once from a quest list: see `chainGraph`. */
+export type ChainGraph = {
+  /** Quests the class may do, by id. */
+  byId: Map<number, QuestRow>;
+  /** Direct successors (predecessor -> successors), within `byId` only. */
+  succ: Map<number, Set<number>>;
+  /** Components, keyed by an arbitrary representative id. */
+  groups: Map<number, QuestRow[]>;
+  /** Representative id of the component holding `id` (only for ids in `byId`). */
+  groupOf: (id: number) => number;
+};
+
 /**
- * Progress through quest chains derived from the quests passed in.
- *
  * Chains are connected components over SEQUENCE links (`previous` and `next`, either side may list
- * the link) between quests that are both in `quests`; single unlinked quests are not chains.
- * Members are ordered topologically (predecessor before successor, ties by level then id; any cycle
- * remainder appended by level then id). The first member in that order is the root, which names
- * and identifies the chain. `done` counts completed members; `currentIndex` is the position of the
- * first member not completed.
- *
- * Class quests (`zone.n` is a class name) for any class other than `classToken` (snapshot token,
- * e.g. "PRIEST") are left out before linking, so a shared starter quest such as "Dwarven
- * Outfitters" does not pull every class's rune into one chain. When `classToken` is null or
- * omitted the class is unknown and every class quest is left out.
- *
- * Only chains the character has started (at least one member completed or in the log) and not
- * finished are reported, so `complete` is always false in v1 output. Ordered by root level, then id.
+ * the link) between quests that are both in `quests`. Class quests for any class other than
+ * `classToken` (or every class quest when it is null) are left out before linking. One pass over
+ * the quests; shared by `chainProgress` and `chainDetail`.
  */
-export function chainProgress(
-  quests: QuestRow[],
-  completed: Set<number>,
-  inLog: Set<number>,
-  classToken?: string | null,
-): ChainProgress[] {
+export function chainGraph(quests: QuestRow[], classToken?: string | null): ChainGraph {
   const byId = new Map<number, QuestRow>();
   for (const q of quests) if (classAllows(q, classToken)) byId.set(q.id, q);
 
@@ -100,19 +98,51 @@ export function chainProgress(
     if (g) g.push(q);
     else groups.set(r, [q]);
   }
+  return { byId, succ, groups, groupOf: find };
+}
 
+/** Whether `id` is a hub: HUB_SUCCESSORS (3) or more direct successors in its chain. */
+export const isHub = (g: ChainGraph, id: number): boolean => (g.succ.get(id)?.size ?? 0) >= HUB_SUCCESSORS;
+
+/**
+ * Progress through quest chains derived from the quests passed in (see `chainGraph`; single
+ * unlinked quests are not chains). Members are ordered topologically (predecessor before
+ * successor, ties by level then id; any cycle remainder appended by level then id). The first
+ * member in that order is the root, which names and identifies the chain. `done` counts completed
+ * members; `currentIndex` is the position of the first member not completed.
+ *
+ * Class quests (`zone.n` is a class name) for any class other than `classToken` (snapshot token,
+ * e.g. "PRIEST") are left out before linking, so a shared starter quest such as "Dwarven
+ * Outfitters" does not pull every class's rune into one chain. When `classToken` is null or
+ * omitted the class is unknown and every class quest is left out.
+ *
+ * Only chains the character is on and has not finished are reported: a member is in the log, or
+ * a completed member is not a hub. A hub is a quest with 3 or more direct successors in its chain
+ * (a shared race or faction starter such as "Dwarven Outfitters"); a chain whose only progress is
+ * a completed hub is not listed. `complete` is always false in v1 output. Ordered by root level,
+ * then id.
+ */
+export function chainProgress(
+  quests: QuestRow[],
+  completed: Set<number>,
+  inLog: Set<number>,
+  classToken?: string | null,
+): ChainProgress[] {
+  const g = chainGraph(quests, classToken);
   const out: ChainProgress[] = [];
-  for (const members of groups.values()) {
+  for (const members of g.groups.values()) {
     if (members.length < 2) continue;
     let done = 0;
-    let started = false;
+    let on = false;
     for (const m of members) {
-      if (completed.has(m.id)) done++;
-      if (completed.has(m.id) || inLog.has(m.id)) started = true;
+      if (completed.has(m.id)) {
+        done++;
+        if (!isHub(g, m.id)) on = true;
+      } else if (inLog.has(m.id)) on = true;
     }
-    if (!started || done === members.length) continue;
+    if (!on || done === members.length) continue;
 
-    const order = topoOrder(members, succ);
+    const order = topoOrder(members, g.succ);
     const root = order[0]!;
     const idx = order.findIndex((m) => !completed.has(m.id));
     out.push({
@@ -124,11 +154,11 @@ export function chainProgress(
       complete: done === members.length,
     });
   }
-  return out.sort((a, b) => byId.get(a.chain)!.level - byId.get(b.chain)!.level || a.chain - b.chain);
+  return out.sort((a, b) => g.byId.get(a.chain)!.level - g.byId.get(b.chain)!.level || a.chain - b.chain);
 }
 
-/** Kahn's algorithm within one component; ready set kept sorted by level then id (components are small). */
-function topoOrder(members: QuestRow[], succ: Map<number, Set<number>>): QuestRow[] {
+/** Chain order: Kahn's algorithm within one component; ready set kept sorted by level then id (components are small). */
+export function topoOrder(members: QuestRow[], succ: Map<number, Set<number>>): QuestRow[] {
   const indeg = new Map<number, number>();
   for (const m of members) indeg.set(m.id, 0);
   for (const m of members) for (const s of succ.get(m.id) ?? []) indeg.set(s, (indeg.get(s) ?? 0) + 1);

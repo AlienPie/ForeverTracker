@@ -22,4 +22,10 @@ export {
 export type { ChainProgress, NextUpInput, Suggestion } from "./advice/types";
 export { nextUp } from "./advice/next-up";
 export { chainProgress } from "./advice/chains";
+export {
+  chainDetail,
+  type ChainDetail,
+  type ChainMember,
+  type ChainMemberState,
+} from "./advice/chain-detail";
 export { professionOfQuest } from "./advice/professions";

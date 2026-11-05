@@ -153,3 +153,25 @@ footer.site{border-top:1px solid var(--edge);padding:18px 0;color:var(--text-dim
 @media(max-width:560px){.grid thead{position:absolute;left:-9999px}.grid,.grid tbody,.grid tr,.grid td,.grid tbody th{display:block}
   .grid tr{padding:8px 0;border-top:1px solid #0002}.grid th,.grid td{border:0;padding:1px 0}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* quest chain page */
+.backlink{margin:20px 0 0;font-size:15px}.backlink a{color:var(--gilt)}
+.chainpage{margin:14px 0 40px;max-width:820px}
+.chainpage .pips{margin:0 0 14px}.chainpage .pips i{background:#0001;border-color:#0003}
+.chainpage .pips i.done{background:var(--gilt-dim);border-color:var(--gilt-dim)}.chainpage .pips i.now{background:var(--gilt);border-color:var(--ink-soft)}
+.steps{list-style:none;margin:0;padding:0}
+.step{display:grid;grid-template-columns:2em minmax(0,1fr) auto;gap:2px 12px;align-items:baseline;padding:11px 8px;border-top:1px solid #0003}
+.step:first-child{border-top:0}
+.step .num{font:italic 20px var(--serif);color:var(--ink-soft);text-align:right}
+.step h3{font-size:17px;color:var(--ink);overflow-wrap:anywhere}
+.step .meta{display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline;margin-top:2px;font-size:14px;color:var(--ink-soft)}
+.step .meta .tag{margin-right:0}
+.step .lvl{font:italic 15px var(--serif);color:var(--ink-soft);white-space:nowrap}
+.step.st-done h3{color:var(--ink-soft)}.step.st-done .num{color:var(--gilt-dim)}
+.step.st-done .tag.state{background:var(--gilt-dim);color:var(--cellar)}
+.step.st-in-log .tag.state{background:var(--ink);color:var(--vellum)}
+.step.st-available .tag.state{background:transparent;border:1px solid var(--ink);padding:0 6px}
+.step.st-locked{color:var(--ink-soft)}.step.st-locked h3{font-weight:400}
+.step.current{background:#c8a14a33;border-left:3px solid var(--gilt);padding-left:5px}
+.chain .top a{text-decoration:none}.chain .top a:hover{text-decoration:underline}
+.quest .open{font-size:14px;margin-left:6px;white-space:nowrap}
+@media(max-width:560px){.step{grid-template-columns:1.6em minmax(0,1fr);padding:10px 4px}.step .lvl{grid-column:2}.chainpage{padding:16px 14px}}

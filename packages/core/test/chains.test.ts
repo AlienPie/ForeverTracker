@@ -86,6 +86,42 @@ describe("chainProgress", () => {
     expect(chainProgress(CLASS, new Set([179]), new Set())).toEqual([]);
   });
 
+  test("a chain whose only progress is a hub is not listed (real Dwarven Outfitters, 179)", () => {
+    // Real mirror rows (trimmed): 170 and 233 follow 179 for every class, so with the class rune
+    // 179 has 3 direct successors in a Priest's chain: a hub, the shared Coldridge Valley starter.
+    const coldridge = (id: number, name: string, level: number): QuestRow => ({
+      id,
+      name,
+      level,
+      zone: { n: "Dun Morogh", slug: "dun-morogh", m: 1426 },
+      chain: { previous: [{ questId: 179, name: "Dwarven Outfitters", relation: "Complete first" }], next: [], questLine: null },
+      starts: null,
+      ends: null,
+    });
+    const quests = [...CLASS, coldridge(170, "A New Threat", 2), coldridge(233, "Coldridge Valley Mail Delivery", 3)];
+    // Only the hub done: not listed.
+    expect(chainProgress(quests, new Set([179]), new Set(), "PRIEST")).toEqual([]);
+    // Hub done and a member in the log: listed.
+    expect(chainProgress(quests, new Set([179]), new Set([233]), "PRIEST")).toEqual([
+      { chain: 179, name: "Dwarven Outfitters", done: 1, total: 4, currentIndex: 1, complete: false },
+    ]);
+    // Hub and a non-hub member done: listed with both counted.
+    expect(chainProgress(quests, new Set([179, 3110]), new Set(), "PRIEST")).toEqual([
+      { chain: 179, name: "Dwarven Outfitters", done: 2, total: 4, currentIndex: 2, complete: false },
+    ]);
+  });
+
+  test("a hub in the log still lists its chain; a non-hub member done lists it", () => {
+    // 601 -> 602, 603, 604 (hub), 602 -> 605.
+    const quests = [q(601, 1, [], [602, 603, 604]), q(602, 2, [601], [605]), q(603, 2, [601]), q(604, 2, [601]), q(605, 3, [602])];
+    expect(chainProgress(quests, new Set([601]), new Set())).toEqual([]);
+    expect(chainProgress(quests, new Set(), new Set([601]))).toMatchObject([{ chain: 601, done: 0, total: 5 }]);
+    expect(chainProgress(quests, new Set([601, 602]), new Set())).toMatchObject([{ chain: 601, done: 2, total: 5 }]);
+    // Two successors is not a hub: a plain first step done still lists the chain.
+    const two = [q(701, 1, [], [702, 703]), q(702, 2, [701]), q(703, 2, [701])];
+    expect(chainProgress(two, new Set([701]), new Set())).toMatchObject([{ chain: 701, done: 1, total: 3 }]);
+  });
+
   test("4000 quests finish quickly", () => {
     const quests: QuestRow[] = [];
     for (let s = 0; s < 800; s++) quests.push(...line(10000 + s * 10, 5));

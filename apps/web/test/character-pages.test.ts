@@ -13,6 +13,7 @@ vi.mock("../src/lib/server/env", () => ({ env: () => state.e }));
 import { load as layoutLoad } from "../src/routes/c/[guid]/+layout.server";
 import { load as indexLoad } from "../src/routes/c/[guid]/+page.server";
 import { load as questsLoad } from "../src/routes/c/[guid]/quests/+page.server";
+import { load as chainLoad } from "../src/routes/c/[guid]/quests/chain/[questId]/+page.server";
 import { load as journeyLoad } from "../src/routes/c/[guid]/journey/+page.server";
 import { load as talentsLoad } from "../src/routes/c/[guid]/talents/+page.server";
 import { load as professionsLoad } from "../src/routes/c/[guid]/professions/+page.server";
@@ -146,8 +147,8 @@ describe("character layout", () => {
 type QuestsData = {
   contentReady: boolean;
   contentMode: string;
-  suggestions: { kind: string; title: string; level: number; reason: string }[];
-  chains: { name: string; done: number; total: number; pips: string[] }[];
+  suggestions: { kind: string; title: string; questId: number | null; level: number; reason: string }[];
+  chains: { chain: number; name: string; done: number; total: number; pips: string[] }[];
   inProgress: number;
   completed: number;
 };
@@ -235,6 +236,89 @@ describe("quests tab", () => {
     const data = (await questsLoad(ev("Player-7777-0000D003"))) as QuestsData;
     expect(data.contentReady).toBe(true);
     expect(data.suggestions).toEqual([]);
+  });
+});
+
+type ChainData = {
+  contentReady: boolean;
+  contentMode: string;
+  chain: {
+    chain: number;
+    name: string;
+    done: number;
+    total: number;
+    members: { questId: number; name: string; level: number; zone: string | null; giver: string | null; state: string; step: number }[];
+  } | null;
+  current: number | null;
+};
+const chainEv = (guid: string, questId: string) => ({ params: { guid, questId } }) as never;
+
+describe("chain page", () => {
+  test("unknown guid is a 404", async () => {
+    state.db = seeded(true);
+    await expect(Promise.resolve().then(() => chainLoad(chainEv(UNKNOWN, "9101")))).rejects.toMatchObject({ status: 404 });
+  });
+
+  test("unknown, invalid or other-class quest ids are a 404", async () => {
+    state.db = seeded(true);
+    // 9302 is a Priest rune: not a chain the Shaman can open.
+    for (const id of ["424242", "abc", "0", "-3", "1.5", "9101x", "", "99999999999999999999", "9302"]) {
+      await expect(Promise.resolve().then(() => chainLoad(chainEv(HERO, id))), id).rejects.toMatchObject({ status: 404 });
+    }
+  });
+
+  test("a known member gives the whole chain in order, with states and the current step", async () => {
+    state.db = seeded(true);
+    const data = (await chainLoad(chainEv(HERO, "9103"))) as ChainData;
+    expect(data.contentReady).toBe(true);
+    expect(data.chain).toMatchObject({ chain: 9101, name: "First Step", done: 1, total: 4 });
+    expect(data.chain!.members.map((m) => [m.step, m.questId, m.state])).toEqual([
+      [1, 9101, "done"],
+      [2, 9301, "available"],
+      [3, 9102, "available"],
+      [4, 9103, "locked"],
+    ]);
+    expect(data.chain!.members[2]).toMatchObject({ name: "Second Step", level: 11, zone: "Dun Morogh", giver: null });
+    expect(data.current).toBe(9301);
+  });
+
+  test("the current step is the quest in the log when there is one", async () => {
+    state.db = seeded(true);
+    const db = state.db as Db;
+    const WALKER = "Player-7777-0000D005";
+    ingestSavedVariables(
+      db,
+      `ForeverTrackerDB = { schema = 1, characters = { ["${WALKER}"] = { snapshot = { takenAt = ${NOW},
+        identity = { name = "Odrin", class = "WARRIOR", race = "Dwarf", level = 11 },
+        progress = { professions = {}, questsCompleted = { 9101 }, questLog = { { id = 9102 } } } } } } }`,
+      () => NOW,
+    );
+    const data = (await chainLoad(chainEv(WALKER, "9101"))) as ChainData;
+    expect(data.chain!.members.map((m) => [m.questId, m.state])).toEqual([
+      [9101, "done"],
+      [9102, "in-log"],
+      [9103, "locked"],
+    ]);
+    expect(data.current).toBe(9102);
+  });
+
+  test("empty catalog: no 404, content not ready, no chain", async () => {
+    state.db = seeded(false);
+    const data = (await chainLoad(chainEv(HERO, "9101"))) as ChainData;
+    expect(data).toMatchObject({ contentReady: false, contentMode: "mirror", chain: null, current: null });
+  });
+
+  test("the quests tab links: each chain carries its root quest id, chain suggestions their quest id", async () => {
+    state.db = seeded(true);
+    const data = (await questsLoad(ev(HERO))) as QuestsData;
+    expect(data.chains.map((c) => c.chain)).toEqual([9101]);
+    const chainKind = data.suggestions.filter((s) => s.kind === "chain");
+    expect(chainKind.map((s) => s.questId)).toEqual([9301, 9102]);
+    // Every link target opens a chain page.
+    for (const id of [9101, 9301, 9102]) {
+      const page = (await chainLoad(chainEv(HERO, String(id)))) as ChainData;
+      expect(page.chain!.chain).toBe(9101);
+    }
   });
 });
 

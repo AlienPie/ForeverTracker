@@ -21,7 +21,10 @@
     { slug: "talents", label: "Talents" },
     { slug: "professions", label: "Professions" },
   ];
-  const active = $derived(tabs.find((t) => page.url.pathname.endsWith(`/${t.slug}`)) ?? null);
+  // Path is /c/<guid>/<tab>[/...]: a tab stays marked on its sub-pages (a quest chain under Quests).
+  const segments = $derived(page.url.pathname.split("/"));
+  const active = $derived(tabs.find((t) => segments[3] === t.slug) ?? null);
+  const onTabRoot = $derived(segments.length === 4);
 </script>
 
 <svelte:head><title>{c.name}{active ? `, ${active.label}` : ""}, ForeverTracker</title></svelte:head>
@@ -50,7 +53,7 @@
 
 <nav class="tabs" aria-label="Character">
   {#each tabs as t (t.slug)}
-    <a href="{base}/{t.slug}" aria-current={active?.slug === t.slug ? "page" : undefined}>{t.label}</a>
+    <a href="{base}/{t.slug}" aria-current={active?.slug === t.slug ? (onTabRoot ? "page" : "true") : undefined}>{t.label}</a>
   {/each}
 </nav>
 
