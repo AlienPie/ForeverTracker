@@ -30,6 +30,8 @@ export type CharacterView = CharacterCard & {
   snapshot: Snapshot | null;
   questLogIds: number[];
   completedIds: number[];
+  /** uiMapId of the character's current map from `state.mapId`; null when absent. */
+  mapId: number | null;
   visitedMaps: VisitedMap[];
   talents: { unspent: number } | null;
   events: { t: number; kind: string; data: unknown }[];
@@ -216,6 +218,7 @@ function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number)
       snapshot: snap as Snapshot | null,
       questLogIds: questLogIds(progress),
       completedIds: done,
+      mapId: nonNegInt(state?.mapId),
       visitedMaps: visitedMaps(snap, extras),
       talents: talents(progress),
     },

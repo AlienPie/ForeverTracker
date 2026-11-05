@@ -1,0 +1,45 @@
+import type { ServerLoad } from "@sveltejs/kit";
+import { getCharacter, getRoster, nextUp, type Roster, type Suggestion } from "@ft/core";
+import { getQuestCatalog } from "../lib/server/content";
+import { getDb } from "../lib/server/db";
+
+export type RosterPageData = {
+  roster: Roster;
+  /** First "next up" suggestion per character guid; null when none or content is not ready. */
+  nextByGuid: Record<string, Suggestion | null>;
+  /** The quest catalog has at least one quest. */
+  contentReady: boolean;
+  /** Server clock (unix seconds) the sync labels are computed against. */
+  now: number;
+};
+
+export const load: ServerLoad = async (): Promise<RosterPageData> => {
+  const db = getDb();
+  const now = Math.floor(Date.now() / 1000);
+  const roster = getRoster(db, now);
+  const catalog = await getQuestCatalog();
+  const contentReady = catalog.quests.length > 0;
+
+  const nextByGuid: Record<string, Suggestion | null> = {};
+  for (const card of roster.characters) {
+    nextByGuid[card.guid] = null;
+    if (!contentReady || card.level === null) continue;
+    const view = getCharacter(db, card.guid, now);
+    if (!view) continue;
+    const [first] = nextUp(
+      {
+        level: card.level,
+        zone: view.zone,
+        mapId: view.mapId,
+        completed: new Set(view.completedIds),
+        inLog: new Set(view.questLogIds),
+        quests: catalog.quests,
+        levelCap: catalog.levelCap,
+        professions: view.professions,
+      },
+      1,
+    );
+    nextByGuid[card.guid] = first ?? null;
+  }
+  return { roster, nextByGuid, contentReady, now };
+};

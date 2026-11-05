@@ -75,6 +75,7 @@ describe("getRoster / getCharacter", () => {
     expect(c.questsCompleted).toBe(5);
     expect(c.completedIds).toEqual([1, 2, 3, 4, 5]);
     expect(c.questLogIds).toEqual([575, 288]);
+    expect(c.mapId).toBe(1437);
     expect(c.talents).toEqual({ unspent: 2 });
     expect(c.unsupported).toBe(false);
     expect(c.snapshot?.takenAt).toBe(1799990000);
@@ -123,6 +124,7 @@ describe("getRoster / getCharacter", () => {
     const c = getCharacter(db, "Player-9-1", NOW)!;
     expect(c).not.toBeNull();
     expect(typeof c.name).toBe("string");
+    expect(c.mapId).toBeNull();
     expect(c.surname).toBeNull();
     expect(c.class).toBeNull();
     expect(c.race).toBeNull();
