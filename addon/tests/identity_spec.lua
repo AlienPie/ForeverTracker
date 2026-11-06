@@ -16,6 +16,20 @@ describe("identity collector", function()
     assert.are.equal("Dawnbringer", id.surname)
   end)
 
+  it("reads the surname from UnitName's second return", function()
+    local FT = stubs.load({ UnitName = function() return "Thalindra", "Dawnbringer" end })
+    local id = FT.takeSnapshot().identity
+    assert.are.equal("Thalindra", id.name)
+    assert.are.equal("Dawnbringer", id.surname)
+  end)
+
+  it("splits a space-separated full name", function()
+    local FT = stubs.load({ UnitName = function() return "Thalindra Dawnbringer" end })
+    local id = FT.takeSnapshot().identity
+    assert.are.equal("Thalindra", id.name)
+    assert.are.equal("Dawnbringer", id.surname)
+  end)
+
   it("splits only on the first dash", function()
     local FT = stubs.load({ UnitName = function() return "A-B-C" end })
     local id = FT.takeSnapshot().identity
