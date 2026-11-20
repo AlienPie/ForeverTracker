@@ -76,6 +76,8 @@ The origin check stays on: a POST whose `Origin` is another site is still refuse
 
 Sign in at `/` with the owner password. **Roster** lists your characters with level, play time, money and a "next up" hint. Cards show the character's full name (surname included). Each character opens to four tabs: **Journey** (play sessions with a summary and the events of each, a "Time per level" strip and "Your route" through the places visited), **Quests** (next-up suggestions, quest chains you are on, each opening to its own chain page, and the quest log lists of in-progress and completed quests with paging and search), **Talents** and **Professions**. **Upload** takes a `ForeverTracker.lua` file in the browser (no token needed), and **Settings** creates and revokes device tokens and shows the state of the content mirror. Sync the ForeverDB content once (see "Sync ForeverDB content") so quest and zone names and the level cap are available.
 
+To add class, race and profession quest tags and zone level ranges, collect them by hand from Wowhead as described in [docs/wowhead-data-guide.md](docs/wowhead-data-guide.md).
+
 ## Sync ForeverDB content
 
 Quest and zone names, quest chains and the level cap come from a local mirror of ForeverDB.net. Fill it once after the first start, and again after a game patch. It needs `FOREVERDB_API_KEY` (about 100 requests, about a minute, resumable if interrupted).
@@ -164,3 +166,5 @@ Environment variables: only the container's `--env-file` and variables exported 
 ## Credits
 
 Quest IDs bundled in the addon come from ForeverDB.net (https://foreverdb.net).
+
+Quest tags and zone data curated from Wowhead (https://www.wowhead.com) by the maintainer.
