@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock("../src/lib/server/db", () => ({ getDb: () => state.db }));
 vi.mock("../src/lib/server/env", async (orig) => ({ ...(await orig<object>()), env: () => state.e }));
+vi.mock("$app/forms", () => ({ enhance: () => ({ destroy() {} }) }));
 vi.mock("$app/state", () => ({ page: { params: { guid: "Player-7777-0000E001" }, data: {} } }));
 
 import { resetQuestCatalog } from "../src/lib/server/content";

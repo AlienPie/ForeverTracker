@@ -12,10 +12,11 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock("../src/lib/server/db", () => ({ getDb: () => state.db }));
 vi.mock("../src/lib/server/env", async (orig) => ({ ...(await orig<object>()), env: () => state.e }));
+vi.mock("$app/forms", () => ({ enhance: () => ({ destroy() {} }) }));
 vi.mock("$app/state", () => ({ page: { params: { guid: "Player-7777-0000F001" }, data: {} } }));
 
 import { resetQuestCatalog } from "../src/lib/server/content";
-import { load as chainLoad } from "../src/routes/c/[guid]/quests/chain/[questId]/+page.server";
+import { actions as chainActions, load as chainLoad } from "../src/routes/c/[guid]/quests/chain/[questId]/+page.server";
 import ChainPage from "../src/routes/c/[guid]/quests/chain/[questId]/+page.svelte";
 
 const NOW = 1_800_000_000;
@@ -77,5 +78,25 @@ describe("chain page with a skipped step", () => {
     expect(html).toContain("st-skipped");
     expect(html).toContain("skipped, you completed what follows");
     expect(html).not.toContain("available now");
+  });
+
+  test("marking a quest by hand adds the label and a remove button; unmarking clears it", async () => {
+    const post = (name: "mark" | "unmark", id: string) =>
+      (chainActions[name] as (e: never) => Promise<unknown>)({
+        params: { guid: GUID },
+        request: new Request("http://localhost/x", { method: "POST", body: new URLSearchParams({ questId: id }) }),
+      } as never);
+    const show = async () => {
+      const data = await chainLoad({ params: { guid: GUID, questId: "315" } } as never);
+      return render(ChainPage, { props: { data: data as never } }).body.replace(/<!--.*?-->/g, "");
+    };
+    expect(await show()).toContain("Mark as completed");
+    await post("mark", "415");
+    const marked = await show();
+    expect(marked).toContain("marked by you");
+    expect(marked).toContain("Remove mark");
+    await post("unmark", "415");
+    expect(await show()).not.toContain("marked by you");
+    expect((await post("mark", "999999")) as { status: number }).toMatchObject({ status: 404 });
   });
 });

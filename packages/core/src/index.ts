@@ -4,6 +4,8 @@ export { LuaParseError } from "@ft/savedvars";
 export {
   DEFAULT_EVENT_LIMIT,
   getCharacter,
+  markQuestCompleted,
+  unmarkQuestCompleted,
   type CharacterCard,
   type CharacterView,
   type GetCharacterOptions,

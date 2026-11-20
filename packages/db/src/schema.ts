@@ -66,3 +66,14 @@ export const deviceToken = sqliteTable("device_token", {
   createdAt: integer("created_at").notNull(),
   revokedAt: integer("revoked_at"),
 });
+
+/** Quests the owner marked completed by hand; the game's own list wins, so a row the game now reports is just ignored. */
+export const manualCompletion = sqliteTable(
+  "manual_completion",
+  {
+    guid: text("guid").notNull(),
+    questId: integer("quest_id").notNull(),
+    markedAt: integer("marked_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.guid, t.questId] })],
+);

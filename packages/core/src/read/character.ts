@@ -1,5 +1,5 @@
-import { character, characterEvent, snapshot, type Db } from "@ft/db";
-import { asc, count, desc, eq } from "drizzle-orm";
+import { character, characterEvent, manualCompletion, snapshot, type Db } from "@ft/db";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import type { Snapshot } from "../snapshot/types";
 import { staleness } from "./format";
 
@@ -29,7 +29,10 @@ export type CharacterCard = {
 export type CharacterView = CharacterCard & {
   snapshot: Snapshot | null;
   questLogIds: number[];
+  /** The game's completed quests plus the ones the owner marked by hand. */
   completedIds: number[];
+  /** Marked by hand and not (yet) reported by the game, so the ones to label "marked by you". */
+  manualIds: number[];
   /** uiMapId of the character's current map from `state.mapId`; null when absent. */
   mapId: number | null;
   visitedMaps: VisitedMap[];
@@ -185,7 +188,7 @@ function visitedMaps(snap: Obj | null, extras: Obj | null): VisitedMap[] {
 type Parsed = { card: CharacterCard; view: Omit<CharacterView, keyof CharacterCard | "events" | "eventsTotal"> };
 
 /** Pure: build the card and view fields from stored rows. Never throws on odd data. */
-function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number): Parsed {
+function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number, marked: number[] = []): Parsed {
   const unsupported = snapRow?.unsupported === true;
   // Unsupported schemas are stored but never interpreted (addon contract).
   const raw = snapRow && !unsupported ? parseJson(snapRow.raw) : null;
@@ -201,7 +204,10 @@ function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number)
   const progress = section(snap?.progress);
 
   const takenAt = snapRow?.takenAt ?? row.latestTakenAt;
-  const done = completedIds(progress);
+  const game = completedIds(progress);
+  const gameSet = new Set(game);
+  const manualIds = marked.filter((id) => !gameSet.has(id)).sort((a, b) => a - b);
+  const done = manualIds.length === 0 ? game : [...game, ...manualIds].sort((a, b) => a - b);
 
   const card: CharacterCard = {
     guid: row.guid,
@@ -233,6 +239,7 @@ function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number)
       snapshot: snap as Snapshot | null,
       questLogIds: questLogIds(progress),
       completedIds: done,
+      manualIds,
       mapId: nonNegInt(state?.mapId),
       visitedMaps: visitedMaps(snap, extras),
       talents: talents(progress),
@@ -246,7 +253,24 @@ function newestSnapshot(db: Db, guid: string): SnapshotRow | undefined {
 
 /** Card for one stored character row (used by the roster). */
 export function cardFor(db: Db, row: CharacterRow, now: number): CharacterCard {
-  return build(row, newestSnapshot(db, row.guid), now).card;
+  return build(row, newestSnapshot(db, row.guid), now, manualIdsFor(db, row.guid)).card;
+}
+
+function manualIdsFor(db: Db, guid: string): number[] {
+  return db.select({ id: manualCompletion.questId }).from(manualCompletion).where(eq(manualCompletion.guid, guid)).all().map((r) => r.id);
+}
+
+/** Marks a quest completed by hand for a stored character; false for an unknown character or a bad id. */
+export function markQuestCompleted(db: Db, guid: string, questId: number, now: number = nowSeconds()): boolean {
+  if (!Number.isSafeInteger(questId) || questId <= 0) return false;
+  if (!db.select().from(character).where(eq(character.guid, guid)).get()) return false;
+  db.insert(manualCompletion).values({ guid, questId, markedAt: now }).onConflictDoNothing().run();
+  return true;
+}
+
+/** Removes a manual mark (a no-op when there is none). */
+export function unmarkQuestCompleted(db: Db, guid: string, questId: number): void {
+  db.delete(manualCompletion).where(and(eq(manualCompletion.guid, guid), eq(manualCompletion.questId, questId))).run();
 }
 
 /** The newest `limit` events, newest first, and the stored total (counted only when the cap is hit). */
@@ -279,7 +303,7 @@ export function getCharacter(
 ): CharacterView | null {
   const row = db.select().from(character).where(eq(character.guid, guid)).get();
   if (!row) return null;
-  const { card, view } = build(row, newestSnapshot(db, guid), now);
+  const { card, view } = build(row, newestSnapshot(db, guid), now, manualIdsFor(db, guid));
   const limit = opts.events ?? DEFAULT_EVENT_LIMIT;
   const ev =
     limit === false

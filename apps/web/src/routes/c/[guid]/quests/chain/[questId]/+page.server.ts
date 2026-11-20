@@ -1,7 +1,8 @@
-import { error, type ServerLoad } from "@sveltejs/kit";
+import { error, fail, type Actions, type ServerLoad } from "@sveltejs/kit";
 import type { ContentMode } from "@ft/content";
-import { chainDetail, type ChainDetail } from "@ft/core";
+import { chainDetail, markQuestCompleted, unmarkQuestCompleted, type ChainDetail } from "@ft/core";
 import { characterOr404 } from "../../../../../../lib/server/character";
+import { getDb } from "../../../../../../lib/server/db";
 import { env } from "../../../../../../lib/server/env";
 import { buildUsable, unavailableReason, type UnavailableReason } from "../../../../../../lib/server/usable";
 import { getQuestCatalogSafe } from "../../../../../../lib/server/safe-catalog";
@@ -16,6 +17,8 @@ export type ChainPageData = {
   current: number | null;
   /** Why each "unavailable" step cannot be taken, by quest id. */
   reasons: Record<number, UnavailableReason>;
+  /** Quests marked completed by hand that the game does not list as done. */
+  manual: number[];
 };
 
 /** A positive safe integer written in plain digits, or null. */
@@ -45,7 +48,7 @@ export const load: ServerLoad = async ({ params }): Promise<ChainPageData> => {
   const catalog = await getQuestCatalogSafe();
   const contentMode = env().contentMode;
   // No catalog yet: show the content-sync guidance instead of a 404 for every chain.
-  if (catalog.quests.length === 0) return { contentReady: false, contentMode, chain: null, current: null, reasons: {} };
+  if (catalog.quests.length === 0) return { contentReady: false, contentMode, chain: null, current: null, reasons: {}, manual: view.manualIds };
 
   const completed = new Set(view.completedIds);
   const inLog = new Set(view.questLogIds);
@@ -75,5 +78,27 @@ export const load: ServerLoad = async ({ params }): Promise<ChainPageData> => {
     chain,
     current: currentStep(chain),
     reasons,
+    manual: view.manualIds,
   };
+};
+
+/** Marks or unmarks one quest; the game's own list still wins when it reports the quest. */
+async function toggle(guid: string | undefined, request: Request, on: boolean) {
+  characterOr404(guid, undefined, { events: false });
+  const raw = (await request.formData()).get("questId");
+  const id = typeof raw === "string" ? questIdParam(raw) : null;
+  if (id === null) return fail(400, { message: "Not a quest id" });
+  if (on) {
+    const catalog = await getQuestCatalogSafe();
+    if (!catalog.quests.some((q) => q.id === id)) return fail(404, { message: "Quest not found" });
+    markQuestCompleted(getDb(), guid!, id);
+  } else {
+    unmarkQuestCompleted(getDb(), guid!, id);
+  }
+  return { ok: true };
+}
+
+export const actions: Actions = {
+  mark: ({ params, request }) => toggle(params.guid, request, true),
+  unmark: ({ params, request }) => toggle(params.guid, request, false),
 };

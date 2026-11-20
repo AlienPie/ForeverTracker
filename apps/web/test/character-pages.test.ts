@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
 vi.mock("../src/lib/server/db", () => ({ getDb: () => state.db }));
 vi.mock("../src/lib/server/env", () => ({ env: () => state.e }));
 // The chain page reads the guid for its back link; outside SvelteKit there is no $app/state.
+vi.mock("$app/forms", () => ({ enhance: () => ({ destroy() {} }) }));
 vi.mock("$app/state", () => ({ page: { params: { guid: "Player-7777-0000D006" }, data: {} } }));
 
 import { load as layoutLoad } from "../src/routes/c/[guid]/+layout.server";

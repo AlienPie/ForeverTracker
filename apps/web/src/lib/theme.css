@@ -249,3 +249,5 @@ details[open].session h3::before{content:"\25BE\00a0"}
 .zbody{padding:0 0 12px 14px}.zbody h4{font-size:14px;margin:10px 0 2px;color:var(--ink-soft)}
 .zquests{list-style:none;margin:0;padding:0}.zquests li{padding:3px 0}
 .zquests .lvl{font:italic 14px var(--serif);color:var(--ink-soft);margin-left:6px}
+
+.inline{display:inline;margin:0}.linkbtn{font:inherit;font-size:14px;background:none;border:0;padding:0;color:var(--ink-soft);text-decoration:underline;cursor:pointer}.linkbtn:hover{color:var(--ink)}.linkbtn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}

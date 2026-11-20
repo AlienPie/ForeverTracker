@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { character, characterEvent, openDb, snapshot } from "@ft/db";
 import { describe, expect, test } from "vitest";
-import { formatMoney, formatPlayed, getCharacter, getRoster, ingestSavedVariables, staleness } from "../src/index";
+import { formatMoney, formatPlayed, getCharacter, getRoster, ingestSavedVariables, markQuestCompleted, staleness, unmarkQuestCompleted } from "../src/index";
 
 const ROSTER = readFileSync(new URL("./fixtures/Roster.lua", import.meta.url), "utf8");
 const M = "Player-4321-00000A01";
@@ -291,5 +291,35 @@ describe("getRoster / getCharacter", () => {
 
   test("(h) getCharacter with an unknown guid returns null", () => {
     expect(getCharacter(load(ROSTER), "Player-0-nope", NOW)).toBeNull();
+  });
+});
+
+describe("manual completion", () => {
+  const ids = (g: string, db = load(ROSTER)) => ({ db, v: getCharacter(db, g, NOW)! });
+
+  test("merges with the game's list, and the game wins when it reports the quest", () => {
+    const { db, v } = ids(M);
+    const game = v.completedIds;
+    const extra = Math.max(...game, 0) + 1000;
+    expect(markQuestCompleted(db, M, extra, NOW)).toBe(true);
+    expect(markQuestCompleted(db, M, extra, NOW)).toBe(true); // idempotent
+    const a = getCharacter(db, M, NOW)!;
+    expect(a.completedIds).toContain(extra);
+    expect(a.manualIds).toEqual([extra]);
+    expect(a.questsCompleted).toBe(game.length + 1);
+    if (game.length > 0) {
+      markQuestCompleted(db, M, game[0]!, NOW);
+      expect(getCharacter(db, M, NOW)!.manualIds).toEqual([extra]); // game-reported mark shows no label
+    }
+    unmarkQuestCompleted(db, M, extra);
+    const b = getCharacter(db, M, NOW)!;
+    expect(b.completedIds).not.toContain(extra);
+    expect(b.manualIds).toEqual([]);
+  });
+
+  test("refuses a bad id or an unknown character", () => {
+    const db = load(ROSTER);
+    expect(markQuestCompleted(db, M, 0)).toBe(false);
+    expect(markQuestCompleted(db, "Player-0-0", 5)).toBe(false);
   });
 });

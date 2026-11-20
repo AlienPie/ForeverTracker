@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { enhance } from "$app/forms";
   import { page } from "$app/state";
   import ContentBanner from "../../../../../../lib/components/ContentBanner.svelte";
   import ItemLink from "../../../../../../lib/components/ItemLink.svelte";
@@ -55,6 +56,12 @@
             <div class="meta">
               <span class="tag state">{m.otherRoute ? "completed, but not through this chain" : m.state === "unavailable" ? (WHY[data.reasons?.[m.questId] ?? ""] ?? STATE.unavailable) : (STATE[m.state] ?? m.state)}</span>
               {#if m.questId === data.current}<span class="tag cont">current step</span>{/if}
+              {#if data.manual.includes(m.questId)}
+                <span class="tag">marked by you</span>
+                <form method="POST" action="?/unmark" use:enhance class="inline"><input type="hidden" name="questId" value={m.questId} /><button type="submit" class="linkbtn">Remove mark</button></form>
+              {:else if m.state !== "done" && m.state !== "unavailable"}
+                <form method="POST" action="?/mark" use:enhance class="inline"><input type="hidden" name="questId" value={m.questId} /><button type="submit" class="linkbtn">Mark as completed</button></form>
+              {/if}
               {#if m.zone}<span>{m.zone}</span>{/if}
               {#if m.giver}<span>from {m.giver}</span>{/if}
             </div>
