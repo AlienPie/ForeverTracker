@@ -172,12 +172,14 @@ describe("nextUp", () => {
   test("4000 quests finish quickly", () => {
     const quests: QuestRow[] = [];
     for (let i = 1; i <= 4000; i++) quests.push(q(i, (i % 60) + 1, `Zone ${i % 40}`, i % 5 === 1 ? [] : [link(i - 1)], [link(i + 1)]));
-    // Every third quest done; the one just before each is skipped, the others stay open.
-    const completed = new Set(Array.from({ length: 1333 }, (_, i) => 3 * (i + 1)));
+    // The first 2000 quests done except 1000..1010: those are skipped (transitively) and pass through
+    // for validity one layer at a time, the worst case for the fixpoint; 2001 continues the chain.
+    const completed = new Set(Array.from({ length: 2000 }, (_, i) => i + 1).filter((i) => i < 1000 || i > 1010));
     const t = performance.now();
-    const out = nextUp(input({ level: 30, zone: "Zone 8", quests, completed }));
+    const out = nextUp(input({ level: 30, zone: "Zone 7", quests, completed }));
     expect(performance.now() - t).toBeLessThan(2000);
     expect(out.length).toBeGreaterThan(0);
+    expect(out[0]!.questId).toBe(2001);
   });
 });
 

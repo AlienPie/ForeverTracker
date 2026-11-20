@@ -123,3 +123,37 @@ export function validCompleted(quests: QuestRow[], completed: Set<number>, idx =
   for (const id of completed) if (!known.has(id)) valid.add(id);
   return valid;
 }
+
+/**
+ * `validCompleted` where SKIPPED quests (see `skippedMembers`) pass through: a skipped quest that has
+ * at least one prerequisite already valid counts as a way through, so a quest completed after it is
+ * still reached from the chain's start. A skipped quest with no valid predecessor (a skipped root, or
+ * one never reached) does NOT pass through, so "a quest completed without the start of its chain is
+ * not tracked" still holds. Iterates to a fixed point (skipped quests added one layer at a time). The
+ * result holds only ids in `completed`: passed-through quests are never reported as done.
+ */
+export function validCompletedWithSkips(
+  quests: QuestRow[],
+  completed: Set<number>,
+  skipped: Set<number>,
+  idx = prerequisiteIndex(quests),
+): Set<number> {
+  if (skipped.size === 0) return validCompleted(quests, completed, idx);
+  const through = new Set<number>();
+  let valid: Set<number>;
+  for (;;) {
+    valid = validCompleted(quests, through.size === 0 ? completed : new Set([...completed, ...through]), idx);
+    let grew = false;
+    for (const s of skipped) {
+      if (through.has(s)) continue;
+      if ((idx.pre.get(s) ?? []).some((p) => valid.has(p))) {
+        through.add(s);
+        grew = true;
+      }
+    }
+    if (!grew) break;
+  }
+  const out = new Set<number>();
+  for (const id of valid) if (completed.has(id)) out.add(id);
+  return out;
+}

@@ -44,14 +44,14 @@
       </p>
     {/if}
     <div class="pips" aria-hidden="true">
-      {#each c.members as m (m.questId)}<i class:done={m.state === "done" && !m.otherRoute} class:other={m.otherRoute} class:now={m.questId === data.current}></i>{/each}
+      {#each c.members as m (m.questId)}<i class:done={m.state === "done" && !m.otherRoute} class:other={m.otherRoute} class:skipped={m.state === "skipped"} class:now={m.questId === data.current}></i>{/each}
     </div>
     <ol class="steps">
       {#each c.members as m (m.questId)}
         <li class="step st-{m.state}" class:other={m.otherRoute} class:current={m.questId === data.current} aria-current={m.questId === data.current ? "step" : undefined}>
-          <span class="num" aria-hidden="true">{m.step}</span>
+          <span class="num" aria-hidden="true">{m.step ?? ""}</span>
           <div class="body">
-            <h3><span class="sr-only">Step {m.step}: </span><ItemLink kind="quest" id={m.questId} name={m.name} /></h3>
+            <h3>{#if m.step !== null}<span class="sr-only">Step {m.step}: </span>{/if}<ItemLink kind="quest" id={m.questId} name={m.name} /></h3>
             <div class="meta">
               <span class="tag state">{m.otherRoute ? "completed, but not through this chain" : m.state === "unavailable" ? (WHY[data.reasons?.[m.questId] ?? ""] ?? STATE.unavailable) : (STATE[m.state] ?? m.state)}</span>
               {#if m.questId === data.current}<span class="tag cont">current step</span>{/if}

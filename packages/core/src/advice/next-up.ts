@@ -1,5 +1,5 @@
-import { isAvailable, prerequisiteIndex, validCompleted } from "./chain-validity";
-import { chainGraph, isSkipped, prerequisites } from "./chains";
+import { isAvailable, prerequisiteIndex, validCompletedWithSkips } from "./chain-validity";
+import { chainGraph, prerequisites, skippedMembers } from "./chains";
 import { classAllowsTagged, questClass, raceAllows } from "./classes";
 import type { QuestRow } from "./content";
 import { learnedNames, professionOfQuestTagged, professionVerdict, slotsUsed } from "./professions";
@@ -78,8 +78,8 @@ function areaOf(q: QuestRow, zone: string | null, mapId: number | null): string 
  *    `areaOf`), and `level - 3 <= quest.level <= level`.
  * 3. next-level: as area but `quest.level === level + 1` (low confidence).
  *
- * A quest bypassed by the chain "skipped" rule (see `isSkipped`: not completed, not in the log, with
- * successors that are all completed) is never suggested.
+ * A quest bypassed by the chain "skipped" rule (see `skippedMembers`: not completed, not in the log, with
+ * successors that are all completed or skipped) is never suggested.
  *
  * Ordered by rule rank, then quest level, then id (free-slot profession picks last, see below).
  * Class quests say "<Class> class quest" in the reason.
@@ -111,12 +111,14 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
   const learned = gated ? learnedNames(input.professions) : new Set<string>();
   const used = gated ? slotsUsed(learned, catalog) : 0;
   const idx = prerequisiteIndex(input.quests);
-  const valid = validCompleted(input.quests, completed, idx);
+  // "Skipped" quests (see `skippedMembers`): only worth computing when something is completed.
+  const skipped =
+    completed.size > 0
+      ? skippedMembers(input.quests, chainGraph(input.quests, input.classToken).succ, completed, inLog)
+      : new Set<number>();
+  const valid = validCompletedWithSkips(input.quests, completed, skipped, idx);
   const nameOf = new Map<number, string>();
   for (const q of input.quests) nameOf.set(q.id, q.name);
-
-  // Succession graph for the "skipped" rule, built on first need and only when something is completed.
-  let succ: Map<number, Set<number>> | null = null;
 
   const picked: { rule: Rule; q: QuestRow; reason: string; profession: boolean; freeSlot: boolean }[] = [];
   for (const q of input.quests) {
@@ -125,10 +127,7 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
     if (!classAllowsTagged(q, input.classToken, tags)) continue;
     if (tags && !raceAllows(tags.racesOf(q.id), input.raceToken)) continue;
 
-    if (completed.size > 0) {
-      succ ??= chainGraph(input.quests, input.classToken).succ;
-      if (isSkipped(q.id, succ, completed, inLog)) continue;
-    }
+    if (skipped.has(q.id)) continue;
 
     const prof = gated ? professionOfQuestTagged(q, catalog, tags) : null;
     const verdict = prof ? professionVerdict(prof, learned, used) : null;

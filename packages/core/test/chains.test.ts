@@ -154,10 +154,9 @@ describe("chainProgress", () => {
     expect(chainProgress(line(201, 3), new Set([202]), new Set())).toEqual([]);
     // Last quest only: not on the chain either.
     expect(chainProgress(line(201, 3), new Set([203]), new Set())).toEqual([]);
-    // Root and last: only the root counts; the middle quest is skipped (what follows it is done).
-    expect(chainProgress(line(201, 3), new Set([201, 203]), new Set())).toEqual([
-      { chain: 201, name: "Quest 201", done: 1, total: 2, currentIndex: 1, complete: false },
-    ]);
+    // Root and last: the middle quest is skipped (what follows it is done) and passes through, so
+    // 201 and 203 both count: 2 of 2, a finished chain, not listed.
+    expect(chainProgress(line(201, 3), new Set([201, 203]), new Set())).toEqual([]);
     // In the log still lists the chain, counting only valid progress.
     expect(chainProgress(line(201, 3), new Set([203]), new Set([201]))).toEqual([
       { chain: 201, name: "Quest 201", done: 0, total: 2, currentIndex: 0, complete: false },
@@ -171,8 +170,10 @@ describe("chainProgress", () => {
     expect(chainProgress(ALT, new Set([1522, 1524]), new Set(), "SHAMAN")).toEqual([
       { chain: 1522, name: "Call of Fire", done: 2, total: 3, currentIndex: 2, complete: false },
     ]);
-    // Horde Wasteland route: 1004, 1123, 1124 all count.
-    expect(chainProgress(ALT, new Set([1004, 1123, 1124]), new Set())).toMatchObject([{ chain: 1000, done: 3 }]);
+    // Horde Wasteland route: 1004, 1123, 1124 all count; the other starter 1000 is skipped (1123 is done), so the chain is finished and not listed.
+    expect(chainProgress(ALT, new Set([1004, 1123, 1124]), new Set())).toEqual([]);
+    // Only 1004 and 1123 done: 1000 skipped, 1124 next.
+    expect(chainProgress(ALT, new Set([1004, 1123]), new Set())).toMatchObject([{ chain: 1000, done: 2, currentIndex: 2 }]);
   });
 
   describe("real Camping 101 rows in the four starting regions", () => {

@@ -1,4 +1,4 @@
-import { PREREQUISITE, validCompleted } from "./chain-validity";
+import { PREREQUISITE, prerequisiteIndex, validCompletedWithSkips } from "./chain-validity";
 import { classAllows } from "./classes";
 import type { QuestRow } from "./content";
 import type { ChainProgress } from "./types";
@@ -149,9 +149,10 @@ export const isHub = (g: ChainGraph, id: number): boolean => g.hubs.has(id);
  * `currentIndex` and `complete` (and of the "on it" test), but still takes part in the graph, hub
  * detection and ordering. A chain with no usable member is not listed.
  *
- * A SKIPPED member (see `isSkipped`: not completed, not in the log, and every successor completed) is
- * treated like an unusable one: left out of `done`, `total`, `currentIndex`, `complete` and the "on it"
- * test. A chain whose members are all unusable or skipped is not listed.
+ * A SKIPPED member (see `skippedMembers`: not completed, not in the log, and every successor completed
+ * or skipped) is treated like an unusable one: left out of `done`, `total`, `currentIndex`, `complete`
+ * and the "on it" test, and it passes through for validity when it has a valid predecessor (see
+ * `validCompletedWithSkips`). A chain whose members are all unusable or skipped is not listed.
  *
  * Only chains the character is on and has not finished are reported: a member is in the log, or
  * a valid completed member is not a hub. A hub is a quest with 3 or more direct successors among all
@@ -167,11 +168,11 @@ export function chainProgress(
   usable?: (q: QuestRow) => boolean,
 ): ChainProgress[] {
   const g = chainGraph(quests, classToken);
-  const valid = validCompleted(quests, completed);
+  const skipped = skippedMembers(g.byId.values(), g.succ, completed, inLog);
+  const valid = validCompletedWithSkips(quests, completed, skipped, prerequisiteIndex(quests));
   const out: ChainProgress[] = [];
   for (const members of g.groups.values()) {
     if (members.length < 2) continue;
-    const skipped = skippedMembers(members, g.succ, completed, inLog);
     const counted = members.filter((m) => (!usable || usable(m)) && !skipped.has(m.id));
     if (counted.length === 0) continue;
     let done = 0;
@@ -201,28 +202,58 @@ export function chainProgress(
 }
 
 /**
- * Whether the quest `id` was bypassed: not completed, not in the log, with at least one successor
- * in `succ`, and every successor completed (plain completion). A leaf is never skipped. Example:
- * alternative route 315 or 415 into 413; a player who did 315, 413 and 414 never needs 415.
+ * The SKIPPED members among `members`: not completed, not in the log, with at least one successor
+ * in `succ` (SEQUENCE links, so "Quest line" counts as well as the prerequisite relations), and every
+ * successor completed (plain completion) or itself skipped. Transitive: with 1 -> 2 -> 3 -> 4 and 1
+ * and 4 done, 2 and 3 are both skipped. The least fixed point, grown from the empty set, so cycles
+ * terminate; a leaf is never skipped. Example: alternative routes 315 or 415 into 413; a player who
+ * did 315, 413 and 414 never needs 415. Successors outside `members` are ignored. O(members + links).
  */
-export function isSkipped(id: number, succ: Map<number, Set<number>>, completed: Set<number>, inLog: Set<number>): boolean {
-  if (completed.has(id) || inLog.has(id)) return false;
-  const s = succ.get(id);
-  if (!s || s.size === 0) return false;
-  for (const n of s) if (!completed.has(n)) return false;
-  return true;
-}
-
-/** The members of one chain that are skipped (see `isSkipped`). */
 export function skippedMembers(
-  members: QuestRow[],
+  members: Iterable<QuestRow>,
   succ: Map<number, Set<number>>,
   completed: Set<number>,
   inLog: Set<number>,
 ): Set<number> {
-  const out = new Set<number>();
-  for (const m of members) if (isSkipped(m.id, succ, completed, inLog)) out.add(m.id);
-  return out;
+  const skipped = new Set<number>();
+  if (completed.size === 0) return skipped;
+  const ids = new Set<number>();
+  for (const m of members) ids.add(m.id);
+  // remaining[x]: successors of x neither completed nor skipped yet; preds: who lists x as a successor.
+  const remaining = new Map<number, number>();
+  const preds = new Map<number, number[]>();
+  const queue: number[] = [];
+  for (const id of ids) {
+    if (completed.has(id) || inLog.has(id)) continue;
+    const s = succ.get(id);
+    if (!s) continue;
+    let open = 0;
+    let any = false;
+    for (const n of s) {
+      if (!ids.has(n)) continue;
+      any = true;
+      if (!completed.has(n)) {
+        open++;
+        const p = preds.get(n);
+        if (p) p.push(id);
+        else preds.set(n, [id]);
+      }
+    }
+    if (!any) continue;
+    remaining.set(id, open);
+    if (open === 0) queue.push(id);
+  }
+  while (queue.length > 0) {
+    const id = queue.pop()!;
+    if (skipped.has(id)) continue;
+    skipped.add(id);
+    for (const p of preds.get(id) ?? []) {
+      const r = remaining.get(p)! - 1;
+      remaining.set(p, r);
+      if (r === 0) queue.push(p);
+    }
+  }
+  return skipped;
 }
 
 /** Chain order: Kahn's algorithm within one component; ready set kept sorted by level then id (components are small). */

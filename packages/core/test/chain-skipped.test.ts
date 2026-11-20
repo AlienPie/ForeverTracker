@@ -105,3 +105,71 @@ describe("nextUp and skipped steps", () => {
     expect(nextUp(input({ completed: set(315) })).map((s) => s.questId)).toContain(415);
   });
 });
+
+describe("skipped steps are transitive and pass through for validity", () => {
+  // Linear 1 -> 2 -> 3 -> 4.
+  const LINE = [q(1, 5, [], [2]), q(2, 6, [1], [3]), q(3, 7, [2], [4]), q(4, 8, [3])];
+  const info = (completed: Set<number>, inLog = set()) => {
+    const d = chainDetail(LINE, 1, completed, inLog)!;
+    return { states: states(d), done: d.done, total: d.total, other: d.otherRoute, d };
+  };
+
+  test("{1,3}: 2 skipped, 2 of 3 done, current at 4, nextUp continues the chain with 4", () => {
+    const r = info(set(1, 3));
+    expect(r.states).toEqual({ 1: "done", 2: "skipped", 3: "done", 4: "available" });
+    expect(r).toMatchObject({ done: 2, total: 3, other: 0 });
+    expect(chainProgress(LINE, set(1, 3), set())).toMatchObject([{ done: 2, total: 3, currentIndex: 2, complete: false }]);
+    const out = nextUp({ level: 8, zone: "Elwynn Forest", completed: set(1, 3), inLog: set(), quests: LINE, levelCap: 60, professions: [] });
+    expect(out.map((s) => [s.questId, s.kind])).toEqual([[4, "chain"]]);
+    expect(out[0]!.reason).toContain("Continues the chain after");
+  });
+
+  test("{1,4}: 2 and 3 both skipped, 2 of 2, complete, not listed, nothing suggested", () => {
+    const r = info(set(1, 4));
+    expect(r.states).toEqual({ 1: "done", 2: "skipped", 3: "skipped", 4: "done" });
+    expect(r).toMatchObject({ done: 2, total: 2, other: 0 });
+    expect(chainProgress(LINE, set(1, 4), set())).toEqual([]);
+    const out = nextUp({ level: 8, zone: "Elwynn Forest", completed: set(1, 4), inLog: set(), quests: LINE, levelCap: 60, professions: [] });
+    expect(out).toEqual([]);
+  });
+
+  test("{3} only: 1 and 2 skipped but no way through, 3 stays not-through-this-chain", () => {
+    const r = info(set(3));
+    expect(r.states).toEqual({ 1: "skipped", 2: "skipped", 3: "done", 4: "available" });
+    expect(r).toMatchObject({ done: 0, total: 2, other: 1 });
+    expect(r.d.members.find((m) => m.questId === 3)!.otherRoute).toBe(true);
+  });
+
+  test("Perfect Stout results are unchanged", () => {
+    expect(chainDetail(STOUT, 413, set(315, 413, 414), set())).toMatchObject({ done: 3, total: 3 });
+    expect(states(chainDetail(STOUT, 413, set(315), set()))).toMatchObject({ 415: "available", 413: "available" });
+  });
+});
+
+describe("step numbers count only counted members", () => {
+  test("Stout, 315 and 413 done, 414 in log: 414 is step 3 of 3; skipped 415 has no step", () => {
+    const d = chainDetail(STOUT, 413, set(315, 413), set(414))!;
+    expect(d.members.map((m) => [m.questId, m.state, m.step])).toEqual([
+      [315, "done", 1],
+      [415, "skipped", null],
+      [413, "done", 2],
+      [414, "in-log", 3],
+    ]);
+    const e = chainDetail(STOUT, 413, set(315, 413, 414), set())!;
+    expect(e.members.map((m) => [m.questId, m.step])).toEqual([[315, 1], [415, null], [413, 2], [414, 3]]);
+    expect(e.total).toBe(3);
+  });
+
+  test("skipped before the current step does not shift it past the total", () => {
+    // 1 -> 2 -> 3 -> 4 with {1,3} done and 4 in the log: 4 is step 3 of 3.
+    const line = [q(1, 5, [], [2]), q(2, 6, [1], [3]), q(3, 7, [2], [4]), q(4, 8, [3])];
+    const d = chainDetail(line, 1, set(1, 3), set(4))!;
+    expect(d.members.map((m) => [m.questId, m.step])).toEqual([[1, 1], [2, null], [3, 2], [4, 3]]);
+    expect(d.total).toBe(3);
+  });
+
+  test("an unavailable member also gets no step number", () => {
+    const d = chainDetail(STOUT, 413, set(), set(), null, (m) => m.id !== 415)!;
+    expect(d.members.map((m) => [m.questId, m.step])).toEqual([[315, 1], [415, null], [413, 2], [414, 3]]);
+  });
+});

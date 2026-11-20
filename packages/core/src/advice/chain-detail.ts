@@ -1,4 +1,4 @@
-import { isAvailable, prerequisiteIndex, validCompleted } from "./chain-validity";
+import { isAvailable, prerequisiteIndex, validCompletedWithSkips } from "./chain-validity";
 import { chainGraph, skippedMembers, topoOrder } from "./chains";
 import { questClass } from "./classes";
 import type { QuestRow } from "./content";
@@ -20,8 +20,8 @@ export type ChainMember = {
    * starting region. Such a member is not counted in `done`.
    */
   otherRoute: boolean;
-  /** 1-based position in chain order. */
-  step: number;
+  /** 1-based position among the counted members (chain order); null for "unavailable" and "skipped" members. */
+  step: number | null;
 };
 
 export type ChainDetail = {
@@ -65,8 +65,9 @@ function zoneName(q: QuestRow): string | null {
  * cannot take) gets state "unavailable" and is excluded from `total`, `done` and `otherRoute`; it
  * stays in `members` and in the chain graph.
  * A member that is not completed and not in the log, with at least one successor in the chain all of
- * which are completed (plain completion), is "skipped" (an alternative route that was bypassed, see
- * `isSkipped`) and, like "unavailable", excluded from `total`; "unavailable" wins over it.
+ * which are completed or skipped (plain completion; an alternative route that was bypassed, see
+ * `skippedMembers`) is "skipped" and, like "unavailable", excluded from `total`; "unavailable" wins over it. A skipped member with a valid predecessor counts as a way
+ * through for `done` / `otherRoute` (see `validCompletedWithSkips`). `step` numbers only the counted members.
  * Pure; builds the chain graph, the prerequisite index and the valid set once.
  */
 export function chainDetail(
@@ -82,13 +83,13 @@ export function chainDetail(
   const order = topoOrder(g.groups.get(g.groupOf(questId))!, g.succ);
   const root = order[0]!;
   const idx = prerequisiteIndex(quests);
-  const valid = validCompleted(quests, completed, idx);
   const skipped = skippedMembers(order, g.succ, completed, inLog);
+  const valid = validCompletedWithSkips(quests, completed, skipped, idx);
 
   let done = 0;
   let otherRoute = 0;
   let total = 0;
-  const members = order.map((q, i): ChainMember => {
+  const members = order.map((q): ChainMember => {
     let state: ChainMemberState;
     let other = false;
     if (usable && !usable(q)) state = "unavailable";
@@ -102,7 +103,8 @@ export function chainDetail(
     } else if (inLog.has(q.id)) state = "in-log";
     else if (skipped.has(q.id)) state = "skipped";
     else state = isAvailable(idx, q.id, (p) => completed.has(p)) ? "available" : "locked";
-    if (state !== "unavailable" && state !== "skipped") total++;
+    const counted = state !== "unavailable" && state !== "skipped";
+    if (counted) total++;
     return {
       questId: q.id,
       name: q.name,
@@ -111,7 +113,7 @@ export function chainDetail(
       giver: str(obj(q.starts)?.name),
       state,
       otherRoute: other,
-      step: i + 1,
+      step: counted ? total : null,
     };
   });
   return { chain: root.id, name: root.name, members, done, otherRoute, total };
