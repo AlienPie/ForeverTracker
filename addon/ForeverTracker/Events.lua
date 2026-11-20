@@ -216,22 +216,50 @@ local function recordTurnIn(questId)
   rec.turnedIn[key] = true
 end
 
+-- Level tracking. PLAYER_LEVEL_UP alone was seen to miss levels on the Forever client (turn-ins in
+-- the same sessions were recorded, level-ups for 18 and 19 were not), so the current level is also
+-- compared with the last known one whenever XP or a quest changes. Levels found that way are logged
+-- with inferred = true at the time they were noticed. At login nothing is logged: levels gained in a
+-- session this addon never saw have no known time.
+local function checkLevel(quiet)
+  local cur = num(try(_G.UnitLevel, "player"))
+  if not cur or cur < 1 then return end
+  local rec = FT.getCharacter(true)
+  if not rec then return end
+  local last = num(rec.lastLevel)
+  if last and cur > last and not quiet then
+    for lvl = last + 1, cur do FT.logEvent("level_up", { level = lvl, inferred = true }) end
+  end
+  if not last or cur > last then rec.lastLevel = cur end
+end
+
 FT.handlers = {
   -- isInitialLogin is true only on a fresh login (not on reloads or zone
   -- changes); /played prints a chat line, so only request it then.
   PLAYER_ENTERING_WORLD = function(isInitialLogin)
     FT.recordVisit()
+    checkLevel(true)
     FT.save()
     startAutosave()
     if isInitialLogin == true then FT.requestPlayed() end
   end,
   PLAYER_LEVEL_UP = function(level)
-    FT.logEvent("level_up", { level = num(level) })
+    local lvl = num(level)
+    local rec = FT.getCharacter(true)
+    local last = rec and num(rec.lastLevel)
+    if lvl and last and lvl <= last then return end -- already noted by checkLevel
+    if lvl and last then
+      for missed = last + 1, lvl - 1 do FT.logEvent("level_up", { level = missed, inferred = true }) end
+    end
+    FT.logEvent("level_up", { level = lvl })
+    if rec and lvl then rec.lastLevel = lvl end
     FT.save()
   end,
+  PLAYER_XP_UPDATE = function() checkLevel(false) end,
   QUEST_TURNED_IN = function(questId)
     FT.logEvent("quest_turned_in", { questId = num(questId) })
     recordTurnIn(questId)
+    checkLevel(false)
     FT.save()
   end,
   ZONE_CHANGED = onZone,

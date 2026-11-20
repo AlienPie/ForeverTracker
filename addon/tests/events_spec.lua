@@ -380,4 +380,32 @@ describe("SKILL_LINES_CHANGED", function()
     assert.is_table(char().snapshot)
     assert.are.equal(1, #char().events)
   end)
+
+  it("logs levels the PLAYER_LEVEL_UP event missed, once, flagged as inferred", function()
+    local level = 17
+    local FT = stubs.load({ UnitLevel = function() return level end })
+    stubs.setDB(nil)
+    FT.handlers.PLAYER_ENTERING_WORLD(true) -- login: records 17 as known, logs nothing
+    level = 20
+    FT.handlers.PLAYER_XP_UPDATE()
+    FT.handlers.PLAYER_XP_UPDATE() -- nothing new
+    FT.handlers.PLAYER_LEVEL_UP(20) -- the late real event is not a duplicate
+    local levels = {}
+    for _, e in ipairs(char().events) do
+      if e.kind == "level_up" then levels[#levels + 1] = e.data.level .. (e.data.inferred and "i" or "") end
+    end
+    assert.are.same({ "18i", "19i", "20i" }, levels)
+  end)
+
+  it("fills the gap when PLAYER_LEVEL_UP arrives for a later level", function()
+    local FT = stubs.load({ UnitLevel = function() return 17 end })
+    stubs.setDB(nil)
+    FT.handlers.PLAYER_ENTERING_WORLD(true)
+    FT.handlers.PLAYER_LEVEL_UP(19)
+    local levels = {}
+    for _, e in ipairs(char().events) do
+      if e.kind == "level_up" then levels[#levels + 1] = e.data.level .. (e.data.inferred and "i" or "") end
+    end
+    assert.are.same({ "18i", "19" }, levels)
+  end)
 end)
