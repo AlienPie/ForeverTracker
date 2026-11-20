@@ -1,0 +1,17 @@
+{
+  "tool": "ft-capture",
+  "version": 1,
+  "url": "https://example.test/forever/zones",
+  "title": "Zones",
+  "capturedAt": "2026-11-21T10:00:00.000Z",
+  "kind": "zones",
+  "value": "",
+  "rows": [],
+  "zoneRows": [
+    { "cells": ["Dun Morogh", "1-10", "Alliance"] },
+    { "cells": ["Gloomdeep Hollow", "20 - 24", "Dungeon"] },
+    { "cells": ["", "5-9", "Horde"] },
+    { "cells": ["Mistfen", "12", "Contested"] }
+  ],
+  "notes": []
+}

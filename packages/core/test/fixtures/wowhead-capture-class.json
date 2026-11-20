@@ -1,0 +1,16 @@
+{
+  "tool": "ft-capture",
+  "version": 1,
+  "url": "https://example.test/forever/quests/classes/shaman",
+  "title": "Shaman quests",
+  "capturedAt": "2026-11-21T10:00:00.000Z",
+  "kind": "class",
+  "value": "Shaman",
+  "rows": [
+    { "questId": 111, "name": "Call of Fire", "level": 4 },
+    { "questId": 222, "name": "Totem Trouble" },
+    { "questId": 333, "name": "Spirit Walk", "level": 10 }
+  ],
+  "zoneRows": [],
+  "notes": []
+}

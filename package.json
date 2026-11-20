@@ -6,6 +6,7 @@
     "test": "vitest run",
     "typecheck": "tsc -b",
     "addon:quest-ids": "tsx tools/gen-addon-quest-ids.ts",
+    "curated:build": "tsx tools/build-curated.ts",
     "content:sync": "tsx packages/content/src/cli/sync.ts",
     "token:create": "pnpm --filter web token:create"
   },
