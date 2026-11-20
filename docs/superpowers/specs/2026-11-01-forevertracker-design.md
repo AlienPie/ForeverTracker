@@ -299,7 +299,12 @@ supplies their own keys. Keys and tokens are never logged.
      no visible effect until the data exists.
   3. **Exploration and completion view, v1:** quest-based completion per zone, what is left, skipped quests in
      visited zones. Real map exploration (areas uncovered, flight paths) is a follow-up behind a short in-game
-     check of the exploration API.
+     check of the exploration API. **Status (2026-11-20): built** (Explore tab per character, per-zone
+     counts from the quest data and the curated zones). Left out of v1: real map exploration, dungeons and
+     raids (the Explore tab lists only curated rows of type zone, plus quest zone names the curated list
+     lacks), and "where to next" (step 4). Completion is plain quest completion, so a completion from
+     another region can mark a quest skipped. `nextUp` does not yet
+     filter by quest `side` (follow-up, not done here). About 380 quests have no zone and are not counted.
   4. "Where to next" levelling areas.
   5. Alt comparison chart (level against date, all characters).
   6. Profession advice, then the talent playground with guide builds.

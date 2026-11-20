@@ -52,6 +52,8 @@ pnpm tsx tools/build-curated.ts
 
 It reads every `.json` file in `data/wowhead-captures/` and writes `data/curated/quest-tags.json` and `data/curated/zones.json`. A file is only rewritten if there is a capture of that sort (tag captures for the tags file, a zones capture for the zones file). With no captures at all it says so and changes nothing. A file that is not a valid capture stops the build and names the file.
 
+For a zones capture the builder finds the table's header row (the row with a Name cell) and reads the columns by their names, so the page's Changes column is ignored. Dungeon, raid and battleground rows are kept in `zones.json` with their type. The Explore tab lists only rows of type zone, plus any quest zone name the curated list lacks.
+
 It also opens the content mirror read-only to check quest IDs. It looks for `forevertracker.sqlite` in `DATA_DIR` (default `data-local` in the repository), so point it at the folder that holds the mirror:
 
 ```sh

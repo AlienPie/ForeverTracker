@@ -140,4 +140,15 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 - The curated directory walk upwards can reach `/data/curated` (the `DATA_DIR` volume) inside the image.
 - Steps shown for unavailable chain members are dimmed at 0.6 opacity, which may be low contrast.
 
-**Next: M2 step 3** (exploration and completion view v1), once the owner has collected the data. Then "where to next" (step 4), the alt comparison chart (step 5), profession advice and the talent playground (step 6). M2 cleanup at the end: sync rate and Retry-After, login rate limit, and session binding with the cookie `secure` flag.
+## State at the end of M2 step 3
+
+**What exists.** Branch `exploration-view`, commits `0bda4ed`..`c04eacc`. Race faction and the quest side filter (`factionOfRace`, `sideAllows` in `packages/core/src/advice/faction.ts`); per-zone quest completion (`placeZones`, `zoneProgress` in `packages/core/src/advice/exploration.ts`); the Explore tab on each character, `/c/<guid>/explore/`, with a zone list, what is left and skipped quests in visited zones. Completion is quest-based only: no map exploration, no dungeons or raids, no "where to next" (step 4).
+
+**Known limits.**
+- Completion is plain quest completion, so a completion from another region can mark a quest skipped.
+- `nextUp` does not yet filter by quest `side` (follow-up, not done).
+- About 380 quests have no zone and are not counted in the Explore tab.
+
+**Owner check.** Rebuild with `podman compose up -d --build --force-recreate`, open a character's Explore tab, and compare a zone count with the same zone on the Quests tab.
+
+**Next: M2 step 4** ("where to next" levelling areas), then the alt comparison chart (step 5), profession advice and the talent playground (step 6). M2 cleanup at the end: sync rate and Retry-After, login rate limit, and session binding with the cookie `secure` flag.
