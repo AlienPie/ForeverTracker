@@ -17,6 +17,12 @@ export type ZoneProgress = PlaceZone & {
   skipped: number;
   /** done + inLog + left. */
   total: number;
+  /**
+   * Completed quests left out of this zone: the zone has no recorded visit and the quest shares its name
+   * with quests in other zones (the per-zone copies of "Camping 101"), so the game's id may well belong to
+   * another copy. Only applied when any visit is recorded at all.
+   */
+  ruledOut: number;
   /** Newest turn-in time (unix seconds) among completed quests of this zone that `completedAt` knows; else null. */
   lastDoneAt: number | null;
   /** Completed quests, by level then id; empty unless visited. */
@@ -124,6 +130,18 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
   );
   const chainActive = (q: QuestRow) => graph.byId.has(q.id) && activeGroups.has(graph.groupOf(q.id));
 
+  // Names that exist in more than one zone: per-zone copies of one quest.
+  const zonesOfName = new Map<string, Set<string>>();
+  for (const [zoneKey, g] of groups) {
+    for (const q of g.quests) {
+      const k = norm(q.name);
+      let set = zonesOfName.get(k);
+      if (!set) zonesOfName.set(k, (set = new Set()));
+      set.add(zoneKey);
+    }
+  }
+  const anyVisit = input.visitedMapIds.size > 0;
+
   let unplaced = 0;
   for (const q of quests) if (!q.zone || typeof q.zone.m !== "number") unplaced++;
 
@@ -135,10 +153,13 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
     const logged: QuestRow[] = [];
     const chained: QuestRow[] = [];
     let log = 0;
+    let ruledOut = 0;
     const left: QuestRow[] = [];
     const skipped: QuestRow[] = [];
     for (const q of g.quests) {
-      if (completed.has(q.id)) {
+      if (completed.has(q.id) && anyVisit && !input.visitedMapIds.has(g.mapId) && (zonesOfName.get(norm(q.name))?.size ?? 0) > 1) {
+        ruledOut++;
+      } else if (completed.has(q.id)) {
         done++;
         finished.push(q);
         const t = input.completedAt?.get(q.id);
@@ -164,6 +185,7 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
       left: left.length,
       skipped: skipped.length,
       total: done + log + left.length,
+      ruledOut,
       lastDoneAt,
       completedQuests: visited ? finished.sort(byLevelThenId).map(zq) : [],
       inProgress: visited

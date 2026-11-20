@@ -156,4 +156,19 @@ describe("zoneProgress visited and fit", () => {
     expect(z.remaining.map((x) => x.id)).toEqual([5]);
     expect(z.left).toBe(3);
   });
+
+  test("a completed per-zone copy of a quest is ruled out of a zone with no recorded visit", () => {
+    const quests = [q(1, 1, "Home", 10), q(2, 1, "Home", 10), q(3, 1, "Far", 20), q(4, 1, "Far", 20)];
+    quests[0]!.name = "Camping 101"; // same name in both zones
+    quests[2]!.name = "Camping 101";
+    const z = (visited: number[], completed: number[]) =>
+      Object.fromEntries(zoneProgress(input({ quests, completed: set(...completed), visitedMapIds: new Set(visited) })).zones.map((x) => [x.name, x]));
+    const a = z([10], [1, 3, 4]); // Far unvisited: copy 3 ruled out, quest 4 (unique name) still counts
+    expect(a.Far).toMatchObject({ done: 1, ruledOut: 1, visited: true });
+    expect(a.Home).toMatchObject({ done: 1, ruledOut: 0 });
+    const b = z([10], [3]); // only the copy done there, no visit: not visited at all
+    expect(b.Far).toMatchObject({ done: 0, ruledOut: 1, visited: false });
+    const c = z([], [3]); // no visits recorded at all: nothing is ruled out
+    expect(c.Far).toMatchObject({ done: 1, ruledOut: 0, visited: true });
+  });
 });

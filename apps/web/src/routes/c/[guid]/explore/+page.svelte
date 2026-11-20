@@ -64,6 +64,12 @@
           {#if z.total > 0}<span class="track zbar" aria-hidden="true"><i style:width="{share(z.done, z.total)}%"></i></span>{/if}
         </summary>
         <div class="zbody">
+          {#if z.ruledOut > 0}
+            <p class="sub">
+              {plural(z.ruledOut, "completed quest is", "completed quests are")} not counted here: {z.ruledOut === 1 ? "it has" : "they have"} the same
+              name as quests in other zones, and the addon has no record of you visiting {z.name}.
+            </p>
+          {/if}
           {#if z.inProgress.length > 0}
             <h4>In progress</h4>
             <ul class="zquests">
