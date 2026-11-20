@@ -20,6 +20,8 @@ export type QuestRow = {
   };
   starts: QuestEndpoint | null;
   ends: QuestEndpoint | null;
+  /** Quest side: "a" (Alliance), "h" (Horde), "both"; absent or other values allow either. */
+  side?: string | null;
 };
 
 const PAGE = 500;

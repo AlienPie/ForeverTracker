@@ -47,6 +47,7 @@ export {
   slotsUsed,
 } from "./advice/professions";
 export { classAllows, classAllowsTagged, raceAllows } from "./advice/classes";
+export { factionOfRace, sideAllows, type Faction } from "./advice/faction";
 export { listQuestLog, type QuestLogPage, type QuestLogRow } from "./advice/quest-log";
 export {
   emptyCurated,
