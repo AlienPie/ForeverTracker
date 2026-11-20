@@ -55,8 +55,14 @@ export function buildCurated(
         tags.push({ questId: row.questId, kind, value });
       }
     } else if (cap.kind === "zones") {
+      let headers: string[] | null = null;
       cap.zoneRows.forEach((row, i) => {
-        const z = parseZoneRow(row.cells ?? []);
+        const cells = row.cells ?? [];
+        if (!headers && cells.some((c) => c.trim().toLowerCase() === "name")) {
+          headers = cells.map((c) => c.trim().toLowerCase());
+          return;
+        }
+        const z = parseZoneRow(cells, headers);
         if (z) zones.push(z);
         else report.push(`zone row ${i + 1} not parsed (no name cell): ${JSON.stringify(row.cells)}`);
       });
@@ -88,7 +94,10 @@ export function buildCurated(
   return { tags: { patch: existing.patch, capturedAt: existing.capturedAt, tags }, zones, report };
 }
 
-function parseZoneRow(cells: string[]): CuratedZone | null {
+function parseZoneRow(allCells: string[], headers: string[] | null = null): CuratedZone | null {
+  // With a header row, drop the columns before Name (the page's Changes column) so the rest parses as before.
+  const nameAt = headers ? headers.indexOf("name") : -1;
+  const cells = nameAt > 0 ? allCells.slice(nameAt) : allCells;
   const name = (cells[0] ?? "").trim();
   if (!name) return null;
   let minLevel: number | null = null;
@@ -106,7 +115,7 @@ function parseZoneRow(cells: string[]): CuratedZone | null {
     } else if (!levelDone && /^\d+$/.test(cell)) {
       minLevel = maxLevel = Number(cell);
       levelDone = true;
-    } else if (/^(Alliance|Horde|Contested)$/i.test(cell)) {
+    } else if (/^(Alliance|Horde|Contested|Sanctuary)$/i.test(cell)) {
       territory = (cell.charAt(0).toUpperCase() + cell.slice(1).toLowerCase()) as CuratedZone["territory"];
     } else if (/dungeon/i.test(cell)) type = "dungeon";
     else if (/raid/i.test(cell)) type = "raid";

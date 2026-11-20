@@ -101,6 +101,25 @@ describe("buildCurated", () => {
     expect(r.tags.tags).toHaveLength(3);
   });
 
+  it("uses the header row of the real zones table, skipping the Changes column", () => {
+    const cap = {
+      ...fixture("wowhead-capture-zones.json"),
+      zoneRows: [
+        { cells: ["Changes", "Name", "Level", "Territory", "Instance type", "Pop."] },
+        { cells: ["UpdatedLevel changed", "Dun Morogh", "1 - 56", "Alliance", "", ""] },
+        { cells: ["Unchanged", "Zul'Farrak", "46 - 56", "Contested", "Dungeon", ""] },
+        { cells: ["New", "City of Doboras", "", "Sanctuary", "Dungeon", ""] },
+      ],
+    };
+    const r = buildCurated([cap], new Set(), existing);
+    expect(r.zones).toEqual([
+      { name: "Dun Morogh", minLevel: 1, maxLevel: 56, territory: "Alliance", type: "zone" },
+      { name: "Zul'Farrak", minLevel: 46, maxLevel: 56, territory: "Contested", type: "dungeon" },
+      { name: "City of Doboras", minLevel: null, maxLevel: null, territory: "Sanctuary", type: "dungeon" },
+    ]);
+    expect(r.report.join("\n")).not.toMatch(/zone row/);
+  });
+
   it("parses zone rows leniently and reports unparseable ones", () => {
     const r = buildCurated([fixture("wowhead-capture-zones.json")], new Set(), existing);
     expect(r.zones[0]).toEqual({ name: "Dun Morogh", minLevel: 1, maxLevel: 10, territory: "Alliance", type: "zone" });

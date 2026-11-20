@@ -1,1 +1,1055 @@
-{ "version": 1, "zones": [] }
+{
+  "version": 1,
+  "zones": [
+    {
+      "name": "Riverglades",
+      "minLevel": 36,
+      "maxLevel": 44,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Shadowfang Keep",
+      "minLevel": 22,
+      "maxLevel": 30,
+      "territory": "Horde",
+      "type": "dungeon"
+    },
+    {
+      "name": "Blackfathom Deeps",
+      "minLevel": 22,
+      "maxLevel": 32,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "The Deadmines",
+      "minLevel": 15,
+      "maxLevel": 25,
+      "territory": "Alliance",
+      "type": "dungeon"
+    },
+    {
+      "name": "Scarlet Monastery",
+      "minLevel": 26,
+      "maxLevel": 45,
+      "territory": "Horde",
+      "type": "dungeon"
+    },
+    {
+      "name": "Razorfen Kraul",
+      "minLevel": 32,
+      "maxLevel": 42,
+      "territory": "Horde",
+      "type": "dungeon"
+    },
+    {
+      "name": "The Drowned City",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Shen'dralas",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Blackmaw Hold",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Desolace",
+      "minLevel": 30,
+      "maxLevel": 39,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Stranglethorn Vale",
+      "minLevel": 30,
+      "maxLevel": 50,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Mount Hyjal",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Excavation Site: Wetlands",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Wailing Caverns",
+      "minLevel": 17,
+      "maxLevel": 27,
+      "territory": "Horde",
+      "type": "dungeon"
+    },
+    {
+      "name": "Wetlands",
+      "minLevel": 20,
+      "maxLevel": 30,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "The Hall of Thanes",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Ashenvale",
+      "minLevel": 19,
+      "maxLevel": 30,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Hillsbrad Foothills",
+      "minLevel": 20,
+      "maxLevel": 31,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Dustwallow Marsh",
+      "minLevel": 36,
+      "maxLevel": 61,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "The Stockade",
+      "minLevel": 22,
+      "maxLevel": 32,
+      "territory": "Alliance",
+      "type": "dungeon"
+    },
+    {
+      "name": "Stonetalon Mountains",
+      "minLevel": 15,
+      "maxLevel": 25,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Krol'dok Stronghold",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Ruins of Lordaeron",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Arathi Highlands",
+      "minLevel": 30,
+      "maxLevel": 40,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Zephras Isle",
+      "minLevel": 1,
+      "maxLevel": 12,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Razorfen Downs",
+      "minLevel": 37,
+      "maxLevel": 47,
+      "territory": "Horde",
+      "type": "dungeon"
+    },
+    {
+      "name": "Gnomeregan",
+      "minLevel": 26,
+      "maxLevel": 36,
+      "territory": "Alliance",
+      "type": "dungeon"
+    },
+    {
+      "name": "The Barrens",
+      "minLevel": 10,
+      "maxLevel": 33,
+      "territory": "Horde",
+      "type": "zone"
+    },
+    {
+      "name": "Uldaman",
+      "minLevel": 42,
+      "maxLevel": 52,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Tanaris",
+      "minLevel": 40,
+      "maxLevel": 50,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Thousand Needles",
+      "minLevel": 6,
+      "maxLevel": 35,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Badlands",
+      "minLevel": 36,
+      "maxLevel": 45,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Duskwood",
+      "minLevel": 10,
+      "maxLevel": 30,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Alcaz Prison",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "The Hinterlands",
+      "minLevel": 41,
+      "maxLevel": 56,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Zul'Farrak",
+      "minLevel": 46,
+      "maxLevel": 56,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Feralas",
+      "minLevel": 41,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "The Temple of Atal'Hakkar",
+      "minLevel": 50,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Ragefire Chasm",
+      "minLevel": 15,
+      "maxLevel": 25,
+      "territory": "Horde",
+      "type": "dungeon"
+    },
+    {
+      "name": "Westfall",
+      "minLevel": 9,
+      "maxLevel": 18,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "The Shaper's Terrace",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Alterac Mountains",
+      "minLevel": 27,
+      "maxLevel": 39,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Azshara",
+      "minLevel": 42,
+      "maxLevel": 55,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Redridge Mountains",
+      "minLevel": 15,
+      "maxLevel": 25,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Loch Modan",
+      "minLevel": 10,
+      "maxLevel": 18,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Maraudon",
+      "minLevel": 42,
+      "maxLevel": 52,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Silverpine Forest",
+      "minLevel": 10,
+      "maxLevel": 20,
+      "territory": "Horde",
+      "type": "zone"
+    },
+    {
+      "name": "Swamp of Sorrows",
+      "minLevel": 36,
+      "maxLevel": 43,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Blackrock Spire",
+      "minLevel": 55,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Blackrock Depths",
+      "minLevel": 52,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "City of Dalaran",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Sanctuary",
+      "type": "dungeon"
+    },
+    {
+      "name": "Darkshore",
+      "minLevel": 11,
+      "maxLevel": 19,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Felwood",
+      "minLevel": 47,
+      "maxLevel": 54,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Dire Maul",
+      "minLevel": 44,
+      "maxLevel": 54,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Stormwind City",
+      "minLevel": 1,
+      "maxLevel": 60,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Searing Gorge",
+      "minLevel": 43,
+      "maxLevel": 56,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Alterac Valley",
+      "minLevel": 20,
+      "maxLevel": 60,
+      "territory": null,
+      "type": "battleground"
+    },
+    {
+      "name": "Western Plaguelands",
+      "minLevel": 46,
+      "maxLevel": 57,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Tirisfal Glades",
+      "minLevel": 1,
+      "maxLevel": 12,
+      "territory": "Horde",
+      "type": "zone"
+    },
+    {
+      "name": "Scholomance",
+      "minLevel": 55,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Stratholme",
+      "minLevel": 48,
+      "maxLevel": 58,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Elwynn Forest",
+      "minLevel": 1,
+      "maxLevel": 10,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "City of Dalaran",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Winterspring",
+      "minLevel": 55,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Moonglade",
+      "minLevel": 15,
+      "maxLevel": 15,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Ironforge",
+      "minLevel": 1,
+      "maxLevel": 60,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Burning Steppes",
+      "minLevel": 50,
+      "maxLevel": 59,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Un'Goro Crater",
+      "minLevel": 48,
+      "maxLevel": 55,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Eastern Plaguelands",
+      "minLevel": 54,
+      "maxLevel": 59,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Blasted Lands",
+      "minLevel": 46,
+      "maxLevel": 63,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Orgrimmar",
+      "minLevel": 1,
+      "maxLevel": 60,
+      "territory": "Horde",
+      "type": "zone"
+    },
+    {
+      "name": "Mulgore",
+      "minLevel": 1,
+      "maxLevel": 10,
+      "territory": "Horde",
+      "type": "zone"
+    },
+    {
+      "name": "Dun Morogh",
+      "minLevel": 1,
+      "maxLevel": 56,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Thunder Bluff",
+      "minLevel": 1,
+      "maxLevel": 60,
+      "territory": "Horde",
+      "type": "zone"
+    },
+    {
+      "name": "Undercity",
+      "minLevel": 1,
+      "maxLevel": 60,
+      "territory": "Horde",
+      "type": "zone"
+    },
+    {
+      "name": "Darnassus",
+      "minLevel": 1,
+      "maxLevel": 60,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Darkspear Islands",
+      "minLevel": 30,
+      "maxLevel": 60,
+      "territory": null,
+      "type": "battleground"
+    },
+    {
+      "name": "Durotar",
+      "minLevel": 1,
+      "maxLevel": 10,
+      "territory": "Horde",
+      "type": "zone"
+    },
+    {
+      "name": "Teldrassil",
+      "minLevel": 1,
+      "maxLevel": 11,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Silithus",
+      "minLevel": 55,
+      "maxLevel": 59,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Deadwind Pass",
+      "minLevel": 50,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Warsong Gulch",
+      "minLevel": 10,
+      "maxLevel": 60,
+      "territory": null,
+      "type": "battleground"
+    },
+    {
+      "name": "Arathi Basin",
+      "minLevel": 20,
+      "maxLevel": 60,
+      "territory": null,
+      "type": "battleground"
+    },
+    {
+      "name": "Molten Core",
+      "minLevel": 60,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Onyxia's Lair",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Zul'Gurub",
+      "minLevel": 60,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Manor Mistmantle",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Mount Hyjal",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Naxxramas",
+      "minLevel": 60,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Blackrock Mountain",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Karazhan Crypts",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Burning Steppes",
+      "minLevel": 54,
+      "maxLevel": 55,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Ahn'Qiraj",
+      "minLevel": 60,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Desolace",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Excavation Site - Bael Modan",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Blackwing Lair",
+      "minLevel": 60,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Deeprun Tram",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Feralas",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Ruins of Ahn'Qiraj",
+      "minLevel": 60,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Duskwood",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Storm Cliffs",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Scarlet Enclave",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Demon Fall Canyon",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Gilneas",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Ashenvale",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Blackrock Spire",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "The Hinterlands",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Felwood",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Elwynn Forest",
+      "minLevel": 1,
+      "maxLevel": 8,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Swamp of Sorrows",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Whelgar's Excavation Site",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Hillsbrad Foothills",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Stranglethorn Vale",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Blackrock Depths",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Stormwind City",
+      "minLevel": 1,
+      "maxLevel": 60,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Shark-Infested Waters",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Battle for Gilneas",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": null,
+      "type": "battleground"
+    },
+    {
+      "name": "Azshara",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "The Burning of Andorhal",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Westfall",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Alliance",
+      "type": "raid"
+    },
+    {
+      "name": "Redridge Mountains",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "The Great Sea",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Shadow Hold",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Hyjal Crater",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Duskwood",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Ruins of Gilneas",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Deadwind Pass",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Crafting",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "The Crystal Vale",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Starfall Village",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "The Tainted Scar",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Blasted Lands",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Warsong Gulch",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Naxxramas",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Eastern Plaguelands",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Elwynn Forest",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Alliance",
+      "type": "dungeon"
+    },
+    {
+      "name": "Elsewhen",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Caverns of Time",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Half-Pint Tavern",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "The Veiled Sea",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "The Scarab Dais",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Tyler's Test Map (Desolace)",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Elwynn Forest",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Alliance",
+      "type": "raid"
+    },
+    {
+      "name": "Test Dungeon",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "dungeon"
+    },
+    {
+      "name": "Emerald Forest",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Temple of Ahn'Qiraj",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "raid"
+    },
+    {
+      "name": "Stormr's Test Map",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Unused",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Contested",
+      "type": "zone"
+    },
+    {
+      "name": "Elwynn Forest (Blue Whelpling Inn Prototype)",
+      "minLevel": null,
+      "maxLevel": null,
+      "territory": "Alliance",
+      "type": "zone"
+    },
+    {
+      "name": "Sunken Temple",
+      "minLevel": 50,
+      "maxLevel": 60,
+      "territory": "Contested",
+      "type": "dungeon"
+    }
+  ]
+}

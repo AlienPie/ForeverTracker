@@ -13,7 +13,7 @@ import {
 
 const SUPPORTED_VERSION = 1;
 const KINDS: readonly string[] = ["class", "race", "profession"];
-const TERRITORIES: readonly string[] = ["Alliance", "Horde", "Contested"];
+const TERRITORIES: readonly string[] = ["Alliance", "Horde", "Contested", "Sanctuary"];
 const ZONE_TYPES: readonly string[] = ["zone", "dungeon", "raid", "battleground"];
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);

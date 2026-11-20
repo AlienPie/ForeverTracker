@@ -4,7 +4,7 @@ export type QuestTag = { questId: number; kind: QuestTagKind; value: string };
 export type CuratedTags = { patch: string | null; capturedAt: string | null; tags: QuestTag[] };
 /** Quest `to` can follow quest `from`. */
 export type QuestLinkOverride = { from: number; to: number; note: string | null };
-export type CuratedTerritory = "Alliance" | "Horde" | "Contested";
+export type CuratedTerritory = "Alliance" | "Horde" | "Contested" | "Sanctuary";
 export type CuratedZoneType = "zone" | "dungeon" | "raid" | "battleground";
 export type CuratedZone = {
   name: string;
