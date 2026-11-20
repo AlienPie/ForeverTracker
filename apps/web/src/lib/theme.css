@@ -167,8 +167,8 @@ footer.site{border-top:1px solid var(--edge);padding:18px 0;color:var(--text-dim
 .chainpage .note{margin:-6px 0 12px;font-size:14px}
 .step.st-in-log .tag.state{background:var(--ink);color:var(--vellum)}
 .step.st-available .tag.state{background:transparent;border:1px solid var(--ink);padding:0 6px}
-.step.st-locked,.step.st-unavailable{color:var(--ink-soft)}.step.st-locked h3,.step.st-unavailable h3{font-weight:400}
-.step.st-unavailable{opacity:.6}.step.st-unavailable h3{font-style:italic}
+.step.st-locked,.step.st-unavailable,.step.st-skipped{color:var(--ink-soft)}.step.st-locked h3,.step.st-unavailable h3,.step.st-skipped h3{font-weight:400}
+.step.st-unavailable,.step.st-skipped{opacity:.6}.step.st-unavailable h3,.step.st-skipped h3{font-style:italic}
 .step.current{background:#c8a14a33;border-left:3px solid var(--gilt);padding-left:5px}
 .chain .top a{text-decoration:none}.chain .top a:hover{text-decoration:underline}
 .quest .open{font-size:14px;margin-left:6px;white-space:nowrap}

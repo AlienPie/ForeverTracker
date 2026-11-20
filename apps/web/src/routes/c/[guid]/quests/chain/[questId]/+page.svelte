@@ -13,6 +13,7 @@
     available: "available now",
     locked: "locked",
     unavailable: "not available to you",
+    skipped: "skipped, you completed what follows",
   };
   const WHY: Record<string, string> = {
     profession: "not for your professions",
@@ -64,6 +65,9 @@
     </ol>
     {#if c.members.some((m) => m.state === "unavailable")}
       <p class="sub note">Dimmed steps are quests your character cannot take, going by Wowhead's class, race and profession tags. They are not counted above.</p>
+    {/if}
+    {#if c.members.some((m) => m.state === "skipped")}
+      <p class="sub note">Dimmed steps marked skipped are not needed: you completed what follows them. They are not counted above.</p>
     {/if}
     <p class="sub foot">
       Order and prerequisites come from ForeverDB. "Available now" means a quest it needs is done (where several are listed, as for

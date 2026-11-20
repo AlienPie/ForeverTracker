@@ -154,13 +154,13 @@ describe("chainProgress", () => {
     expect(chainProgress(line(201, 3), new Set([202]), new Set())).toEqual([]);
     // Last quest only: not on the chain either.
     expect(chainProgress(line(201, 3), new Set([203]), new Set())).toEqual([]);
-    // Root and last: only the root counts, so 1 of 3, current at the second.
+    // Root and last: only the root counts; the middle quest is skipped (what follows it is done).
     expect(chainProgress(line(201, 3), new Set([201, 203]), new Set())).toEqual([
-      { chain: 201, name: "Quest 201", done: 1, total: 3, currentIndex: 1, complete: false },
+      { chain: 201, name: "Quest 201", done: 1, total: 2, currentIndex: 1, complete: false },
     ]);
     // In the log still lists the chain, counting only valid progress.
     expect(chainProgress(line(201, 3), new Set([203]), new Set([201]))).toEqual([
-      { chain: 201, name: "Quest 201", done: 0, total: 3, currentIndex: 0, complete: false },
+      { chain: 201, name: "Quest 201", done: 0, total: 2, currentIndex: 0, complete: false },
     ]);
     // Every member completed through an invalid route is not a finished chain: it is not listed.
     expect(chainProgress(line(201, 3), new Set([202, 203]), new Set())).toEqual([]);
@@ -169,7 +169,7 @@ describe("chainProgress", () => {
   test("alternative prerequisites: a Shaman who did Call of Fire via 1522 counts 1524 (real rows)", () => {
     // Chain order: the four level-10 starters (1522, 1523, 2983, 2984), then 1524, 1525.
     expect(chainProgress(ALT, new Set([1522, 1524]), new Set(), "SHAMAN")).toEqual([
-      { chain: 1522, name: "Call of Fire", done: 2, total: 6, currentIndex: 1, complete: false },
+      { chain: 1522, name: "Call of Fire", done: 2, total: 3, currentIndex: 2, complete: false },
     ]);
     // Horde Wasteland route: 1004, 1123, 1124 all count.
     expect(chainProgress(ALT, new Set([1004, 1123, 1124]), new Set())).toMatchObject([{ chain: 1000, done: 3 }]);

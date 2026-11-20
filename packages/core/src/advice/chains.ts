@@ -149,6 +149,10 @@ export const isHub = (g: ChainGraph, id: number): boolean => g.hubs.has(id);
  * `currentIndex` and `complete` (and of the "on it" test), but still takes part in the graph, hub
  * detection and ordering. A chain with no usable member is not listed.
  *
+ * A SKIPPED member (see `isSkipped`: not completed, not in the log, and every successor completed) is
+ * treated like an unusable one: left out of `done`, `total`, `currentIndex`, `complete` and the "on it"
+ * test. A chain whose members are all unusable or skipped is not listed.
+ *
  * Only chains the character is on and has not finished are reported: a member is in the log, or
  * a valid completed member is not a hub. A hub is a quest with 3 or more direct successors among all
  * quests passed in, class quests included (a shared race or faction starter such as "Dwarven
@@ -167,7 +171,8 @@ export function chainProgress(
   const out: ChainProgress[] = [];
   for (const members of g.groups.values()) {
     if (members.length < 2) continue;
-    const counted = usable ? members.filter((m) => usable(m)) : members;
+    const skipped = skippedMembers(members, g.succ, completed, inLog);
+    const counted = members.filter((m) => (!usable || usable(m)) && !skipped.has(m.id));
     if (counted.length === 0) continue;
     let done = 0;
     let on = false;
@@ -181,7 +186,7 @@ export function chainProgress(
 
     const order = topoOrder(members, g.succ);
     const root = order[0]!;
-    const usableOrder = usable ? order.filter((m) => usable(m)) : order;
+    const usableOrder = order.filter((m) => (!usable || usable(m)) && !skipped.has(m.id));
     const idx = usableOrder.findIndex((m) => !valid.has(m.id));
     out.push({
       chain: root.id,
@@ -193,6 +198,31 @@ export function chainProgress(
     });
   }
   return out.sort((a, b) => g.byId.get(a.chain)!.level - g.byId.get(b.chain)!.level || a.chain - b.chain);
+}
+
+/**
+ * Whether the quest `id` was bypassed: not completed, not in the log, with at least one successor
+ * in `succ`, and every successor completed (plain completion). A leaf is never skipped. Example:
+ * alternative route 315 or 415 into 413; a player who did 315, 413 and 414 never needs 415.
+ */
+export function isSkipped(id: number, succ: Map<number, Set<number>>, completed: Set<number>, inLog: Set<number>): boolean {
+  if (completed.has(id) || inLog.has(id)) return false;
+  const s = succ.get(id);
+  if (!s || s.size === 0) return false;
+  for (const n of s) if (!completed.has(n)) return false;
+  return true;
+}
+
+/** The members of one chain that are skipped (see `isSkipped`). */
+export function skippedMembers(
+  members: QuestRow[],
+  succ: Map<number, Set<number>>,
+  completed: Set<number>,
+  inLog: Set<number>,
+): Set<number> {
+  const out = new Set<number>();
+  for (const m of members) if (isSkipped(m.id, succ, completed, inLog)) out.add(m.id);
+  return out;
 }
 
 /** Chain order: Kahn's algorithm within one component; ready set kept sorted by level then id (components are small). */

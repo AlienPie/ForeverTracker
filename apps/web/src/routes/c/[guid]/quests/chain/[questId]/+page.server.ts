@@ -33,7 +33,7 @@ function currentStep(chain: ChainDetail): number | null {
   const m =
     chain.members.find((x) => x.state === "in-log") ??
     chain.members.find((x) => x.state === "available") ??
-    chain.members.find((x) => x.state !== "done" && x.state !== "unavailable");
+    chain.members.find((x) => x.state !== "done" && x.state !== "unavailable" && x.state !== "skipped");
   return m?.questId ?? null;
 }
 

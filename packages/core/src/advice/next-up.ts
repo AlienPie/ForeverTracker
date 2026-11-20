@@ -1,5 +1,5 @@
 import { isAvailable, prerequisiteIndex, validCompleted } from "./chain-validity";
-import { prerequisites } from "./chains";
+import { chainGraph, isSkipped, prerequisites } from "./chains";
 import { classAllowsTagged, questClass, raceAllows } from "./classes";
 import type { QuestRow } from "./content";
 import { learnedNames, professionOfQuestTagged, professionVerdict, slotsUsed } from "./professions";
@@ -78,6 +78,9 @@ function areaOf(q: QuestRow, zone: string | null, mapId: number | null): string 
  *    `areaOf`), and `level - 3 <= quest.level <= level`.
  * 3. next-level: as area but `quest.level === level + 1` (low confidence).
  *
+ * A quest bypassed by the chain "skipped" rule (see `isSkipped`: not completed, not in the log, with
+ * successors that are all completed) is never suggested.
+ *
  * Ordered by rule rank, then quest level, then id (free-slot profession picks last, see below).
  * Class quests say "<Class> class quest" in the reason.
  *
@@ -112,12 +115,20 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
   const nameOf = new Map<number, string>();
   for (const q of input.quests) nameOf.set(q.id, q.name);
 
+  // Succession graph for the "skipped" rule, built on first need and only when something is completed.
+  let succ: Map<number, Set<number>> | null = null;
+
   const picked: { rule: Rule; q: QuestRow; reason: string; profession: boolean; freeSlot: boolean }[] = [];
   for (const q of input.quests) {
     if (completed.has(q.id) || inLog.has(q.id)) continue;
     if (levelCap !== null && q.level > levelCap) continue;
     if (!classAllowsTagged(q, input.classToken, tags)) continue;
     if (tags && !raceAllows(tags.racesOf(q.id), input.raceToken)) continue;
+
+    if (completed.size > 0) {
+      succ ??= chainGraph(input.quests, input.classToken).succ;
+      if (isSkipped(q.id, succ, completed, inLog)) continue;
+    }
 
     const prof = gated ? professionOfQuestTagged(q, catalog, tags) : null;
     const verdict = prof ? professionVerdict(prof, learned, used) : null;

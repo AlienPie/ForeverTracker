@@ -348,9 +348,9 @@ describe("chain page", () => {
       () => NOW,
     );
     const data = (await chainLoad(chainEv(STRAY, "9102"))) as ChainData;
-    expect(data.chain).toMatchObject({ chain: 9101, done: 0, otherRoute: 1, total: 4 });
+    expect(data.chain).toMatchObject({ chain: 9101, done: 0, otherRoute: 1, total: 3 });
     expect(data.chain!.members.map((m) => [m.questId, m.state, m.otherRoute])).toEqual([
-      [9101, "available", false],
+      [9101, "skipped", false],
       [9102, "done", true],
       [9103, "available", false],
       [9201, "locked", false],
@@ -361,7 +361,7 @@ describe("chain page", () => {
     expect(tab.suggestions.filter((s) => s.kind === "chain")).toEqual([]);
 
     const html = render(ChainPage, { props: { data } }).body.replace(/<!--.*?-->/g, "");
-    expect(html).toContain("0 of 4 done");
+    expect(html).toContain("0 of 3 done");
     expect(html).toContain("completed, but not through this chain");
     expect(html).toContain("same name in other starting regions");
     // A character on the route sees neither the state text nor the note.

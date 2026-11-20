@@ -140,7 +140,8 @@ describe("tag-aware profession", () => {
     const withU = chainDetail(chain, 1, new Set([3]), new Set(), undefined, (m) => m.id !== 1);
     expect(plain!.otherRoute).toBe(1);
     expect(withU!.otherRoute).toBe(1);
-    expect(withU!.total).toBe(2);
+    // 2 is skipped (its successor 3 is done) and 1 is unusable, so only 3 is counted.
+    expect(withU!.total).toBe(1);
   });
 });
 

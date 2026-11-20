@@ -1,0 +1,105 @@
+[
+  {
+    "id": 315,
+    "name": "The Perfect Stout",
+    "level": 9,
+    "zone": {
+      "n": "Dun Morogh",
+      "slug": "dun-morogh",
+      "m": 1426
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 413,
+          "name": "Shimmer Stout",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": null,
+    "ends": null
+  },
+  {
+    "id": 413,
+    "name": "Shimmer Stout",
+    "level": 10,
+    "zone": {
+      "n": "Dun Morogh",
+      "slug": "dun-morogh",
+      "m": 1426
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 315,
+          "name": "The Perfect Stout",
+          "relation": "Complete first"
+        },
+        {
+          "questId": 415,
+          "name": "Rejold's New Brew",
+          "relation": "Chain link"
+        }
+      ],
+      "next": [
+        {
+          "questId": 414,
+          "name": "Stout to Kadrell",
+          "relation": "Complete first"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": null,
+    "ends": null
+  },
+  {
+    "id": 414,
+    "name": "Stout to Kadrell",
+    "level": 10,
+    "zone": {
+      "n": "Dun Morogh",
+      "slug": "dun-morogh",
+      "m": 1426
+    },
+    "chain": {
+      "previous": [
+        {
+          "questId": 413,
+          "name": "Shimmer Stout",
+          "relation": "Complete first"
+        }
+      ],
+      "next": [],
+      "questLine": null
+    },
+    "starts": null,
+    "ends": null
+  },
+  {
+    "id": 415,
+    "name": "Rejold's New Brew",
+    "level": 10,
+    "zone": {
+      "n": "Dun Morogh",
+      "slug": "dun-morogh",
+      "m": 1426
+    },
+    "chain": {
+      "previous": [],
+      "next": [
+        {
+          "questId": 413,
+          "name": "Shimmer Stout",
+          "relation": "Chain link"
+        }
+      ],
+      "questLine": null
+    },
+    "starts": null,
+    "ends": null
+  }
+]

@@ -1,9 +1,9 @@
 import { isAvailable, prerequisiteIndex, validCompleted } from "./chain-validity";
-import { chainGraph, topoOrder } from "./chains";
+import { chainGraph, skippedMembers, topoOrder } from "./chains";
 import { questClass } from "./classes";
 import type { QuestRow } from "./content";
 
-export type ChainMemberState = "done" | "in-log" | "available" | "locked" | "unavailable";
+export type ChainMemberState = "done" | "in-log" | "available" | "locked" | "unavailable" | "skipped";
 
 export type ChainMember = {
   questId: number;
@@ -64,6 +64,9 @@ function zoneName(q: QuestRow): string | null {
  * A member for which `usable(q)` is false (default: all usable; e.g. a profession quest the character
  * cannot take) gets state "unavailable" and is excluded from `total`, `done` and `otherRoute`; it
  * stays in `members` and in the chain graph.
+ * A member that is not completed and not in the log, with at least one successor in the chain all of
+ * which are completed (plain completion), is "skipped" (an alternative route that was bypassed, see
+ * `isSkipped`) and, like "unavailable", excluded from `total`; "unavailable" wins over it.
  * Pure; builds the chain graph, the prerequisite index and the valid set once.
  */
 export function chainDetail(
@@ -80,6 +83,7 @@ export function chainDetail(
   const root = order[0]!;
   const idx = prerequisiteIndex(quests);
   const valid = validCompleted(quests, completed, idx);
+  const skipped = skippedMembers(order, g.succ, completed, inLog);
 
   let done = 0;
   let otherRoute = 0;
@@ -96,8 +100,9 @@ export function chainDetail(
         otherRoute++;
       }
     } else if (inLog.has(q.id)) state = "in-log";
+    else if (skipped.has(q.id)) state = "skipped";
     else state = isAvailable(idx, q.id, (p) => completed.has(p)) ? "available" : "locked";
-    if (state !== "unavailable") total++;
+    if (state !== "unavailable" && state !== "skipped") total++;
     return {
       questId: q.id,
       name: q.name,

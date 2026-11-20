@@ -136,13 +136,13 @@ describe("chainDetail", () => {
     // 601 not done; 602 and 603 done anyway (both need 601): another route. 604 needs only 603.
     const d = chainDetail(BRANCH, 601, new Set([602, 603]), new Set())!;
     expect(d.members.map((m) => [m.questId, m.state, m.otherRoute])).toEqual([
-      [601, "available", false],
+      [601, "skipped", false], // never done, but everything that follows it is
       [602, "done", true],
       [603, "done", true],
       [604, "available", false],
       [605, "available", false], // 602 (one of its alternatives) is completed
     ]);
-    expect(d).toMatchObject({ done: 0, otherRoute: 2, total: 5 });
+    expect(d).toMatchObject({ done: 0, otherRoute: 2, total: 4 });
     // Through the first quest: every completed member counts.
     const e = chainDetail(BRANCH, 601, new Set([601, 602]), new Set())!;
     expect(e.members.map((m) => m.otherRoute)).toEqual([false, false, false, false, false]);
@@ -169,7 +169,7 @@ describe("chainDetail", () => {
 
   test("alternative prerequisites: Call of Fire done via 1522 is not otherRoute (real rows)", () => {
     const d = chainDetail(ALT, 1524, new Set([1522, 1524]), new Set(), "SHAMAN")!;
-    expect(d).toMatchObject({ chain: 1522, done: 2, otherRoute: 0, total: 6 });
+    expect(d).toMatchObject({ chain: 1522, done: 2, otherRoute: 0, total: 3 }); // the other three starters are skipped
     const byId = new Map(d.members.map((m) => [m.questId, m]));
     expect(byId.get(1524)).toMatchObject({ state: "done", otherRoute: false });
     expect(byId.get(1522)).toMatchObject({ state: "done", otherRoute: false });
