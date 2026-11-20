@@ -41,3 +41,15 @@ export {
 } from "./advice/chain-detail";
 export { professionOfQuest } from "./advice/professions";
 export { listQuestLog, type QuestLogPage, type QuestLogRow } from "./advice/quest-log";
+export {
+  emptyCurated,
+  type Curated,
+  type CuratedTags,
+  type CuratedTerritory,
+  type CuratedZone,
+  type CuratedZoneType,
+  type QuestLinkOverride,
+  type QuestTag,
+  type QuestTagKind,
+} from "./curated/types";
+export { parseCurated, readCuratedDir } from "./curated/load";
