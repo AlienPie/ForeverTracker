@@ -41,7 +41,13 @@ describe("buildUsable", () => {
     const classRace = buildTagIndex([{ questId: 3, kind: "class", value: "Shaman" }]);
     const full = { ...base, tags: classRace, professions: learn("Herbalism", "Tailoring") };
     expect(buildUsable(full)(q(10, "Camping 101: Mining"))).toBe(false);
-    expect(buildUsable({ ...full, tags })(q(10, "Camping 101: Mining"))).toBe(true);
+    expect(buildUsable({ ...full, tags })(q(10, "Camping 101: Mining"))).toBe(false);
+  });
+
+  test("tags for one profession only: an untagged Mining-named quest is still dropped when slots are full", () => {
+    const leather = buildTagIndex([{ questId: 5, kind: "profession", value: "Leatherworking" }]);
+    const full = { ...base, tags: leather, professions: learn("Herbalism", "Tailoring") };
+    expect(buildUsable(full)(q(10, "Camping 101: Mining"))).toBe(false);
   });
 
   test("class and race tags", () => {

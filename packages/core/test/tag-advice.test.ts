@@ -55,14 +55,15 @@ describe("tag-aware profession", () => {
     { questId: 2, kind: "profession", value: "Mining" },
   ]);
 
-  test("professionOfQuestTagged uses the tag; untagged quest is not a profession quest when profession tags exist", () => {
+  test("professionOfQuestTagged uses the tag; an untagged quest falls back to the name rule", () => {
     expect(professionOfQuestTagged(cook, CATALOG, tags)?.slug).toBe("cooking");
-    expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, tags)).toBeNull();
+    expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, tags)?.slug).toBe("mining");
+    expect(professionOfQuestTagged(q(3, "An ordinary quest"), CATALOG, tags)).toBeNull();
     expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, undefined)?.slug).toBe("mining");
     expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, buildTagIndex([]))?.slug).toBe("mining");
   });
 
-  test("only class or race tags: the name rule still applies; with a profession tag it is off", () => {
+  test("only class or race tags: the name rule still applies, and so it does with some profession tags", () => {
     const classRace = buildTagIndex([
       { questId: 50, kind: "class", value: "Shaman" },
       { questId: 51, kind: "race", value: "Orc" },
@@ -72,7 +73,7 @@ describe("tag-aware profession", () => {
     expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, classRace)?.slug).toBe("mining");
     const out = nextUp(base([q(7, "Camping 101: Mining")], { tags: classRace }));
     expect(out).toEqual([]);
-    expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, tags)).toBeNull();
+    expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, tags)?.slug).toBe("mining");
   });
 
   test("nextUp: Cooking allowed with full slots, Mining not suggested", () => {
@@ -86,11 +87,10 @@ describe("tag-aware profession", () => {
     expect(ids(out)).toEqual([2]);
   });
 
-  test("nextUp: tags exist and name looks like a profession quest but is untagged: ordinary quest", () => {
-    const named = q(7, "Camping 101: Mining");
-    const out = nextUp(base([named], { tags }));
-    expect(ids(out)).toEqual([7]);
-    expect(out[0]!.kind).not.toBe("profession");
+  test("nextUp: tags cover only some professions: an untagged Mining quest is still filtered by name", () => {
+    const onlyCooking = buildTagIndex([{ questId: 1, kind: "profession", value: "Cooking" }]);
+    const out = nextUp(base([cook, q(7, "Camping 101: Mining")], { tags: onlyCooking }));
+    expect(ids(out)).toEqual([1]);
   });
 
   test("tags absent equals interim rule", () => {
