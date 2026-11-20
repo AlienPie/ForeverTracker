@@ -31,14 +31,14 @@ describe("extract", () => {
     expect(c.notes.join(" ")).toContain("2 quest links outside the list were ignored");
   });
 
-  it("reads the level from the row text, or notes its absence", () => {
+  it("does not guess a level from the row text (digits in a row are not reliably the quest level)", () => {
     const c = extract(
-      page("https://x.test/forever/quests/classes/shaman", [link(1, "Call of Fire", "Call of Fire 4 Shaman"), link(2, "Plain", "Plain Shaman")]),
+      page("https://x.test/forever/quests/classes/shaman", [link(1, "Storm, Earth, and Fire", "Updated Level changed, Requirements changed +7 Storm, Earth, and Fire Shaman 43 30 3,600 60")]),
     );
-    expect(c.rows[0]!.level).toBe(4);
-    expect(c.rows[1]).not.toHaveProperty("level");
-    expect(c.notes.join(" ")).toMatch(/no level/i);
+    expect(c.rows).toEqual([{ questId: 1, name: "Storm, Earth, and Fire" }]);
+    expect(c.notes.join(" ")).not.toMatch(/level/i);
   });
+
 
   it("title-cases hyphenated slugs and handles professions and races", () => {
     expect(extract(page("https://x.test/forever/quests/professions/first-aid", [link(1, "a", "a 5")])).value).toBe("First Aid");

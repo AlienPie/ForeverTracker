@@ -42,7 +42,6 @@ function extract(input, hint) {
 
   var rows = [];
   var seen = {};
-  var noLevel = 0;
   var outside = 0;
   var anchors = input.anchors || [];
   for (var i = 0; i < anchors.length; i++) {
@@ -58,22 +57,10 @@ function extract(input, hint) {
     seen[id] = true;
     var name = String(a.text || "").trim();
     var row = { questId: id, name: name };
-    var rest = String(a.rowText || "");
-    if (name) rest = rest.split(name).join(" ");
-    var nums = rest.match(/(?:^|[^\w])(\d{1,3})(?![\w])/g) || [];
-    for (var j = 0; j < nums.length; j++) {
-      var n = parseInt(nums[j].replace(/\D/g, ""), 10);
-      if (n >= 1 && n <= 70) {
-        row.level = n;
-        break;
-      }
-    }
-    if (row.level === undefined) noLevel++;
     rows.push(row);
   }
   if (kind !== "zones" && rows.length === 0) notes.push("No quests found on this page (no links containing /quest=).");
   if (outside > 0) notes.push(outside + " quest links outside the list were ignored.");
-  if (noLevel > 0) notes.push(noLevel + " quest row(s) had no level.");
 
   var zoneRows = [];
   if (kind === "zones") {

@@ -24,7 +24,7 @@ The URLs come from the design spec and may be wrong. If one gives a 404 or an un
 3. Open the browser console (F12, then the Console tab). Firefox may ask you to type `allow pasting` first.
 4. Paste the whole contents of `tools/wowhead/capture.js` and press Enter. It prints the capture as JSON and copies it to your clipboard.
 5. Create a new file `data/wowhead-captures/<kind>-<value>.json` and paste the JSON into it. Examples: `class-shaman.json`, `profession-cooking.json`, `zones.json`. For extra pages of the same list use `class-shaman-2.json`, `class-shaman-3.json` and so on. The file name does not matter to the builder, only to you.
-6. Read the `notes` line in the JSON (or in the console output). It tells you about quest rows without a level, or that the URL was not recognised.
+6. Read the `notes` line in the JSON (or in the console output). It tells you about quest links outside the list that were ignored, that no quests were found, or that the URL was not recognised.
 
 If the snippet could not tell what the page is, its note says so and `kind` is `unknown`. Run this in the same console, with the right kind (`class`, `race`, `profession` or `zones`) and value:
 
@@ -66,7 +66,7 @@ The first line is a summary, for example `412 tags, 61 zones from 24 capture fil
 - `mirror not available, ids not validated` no mirror found at `DATA_DIR`, so the check was skipped.
 - `mirror error: ...` the mirror exists but could not be read.
 - `zone row N not parsed (no name cell): ...` a zones table row without a name.
-- `note from capture <url>: ...` a note the snippet recorded, such as quests without a level.
+- `note from capture <url>: ...` a note the snippet recorded, such as links outside the list that were ignored.
 
 The `patch` field in `data/curated/quest-tags.json` is kept as it is (null at first); edit it by hand to the game patch you captured against. `capturedAt` is set to today's date.
 
