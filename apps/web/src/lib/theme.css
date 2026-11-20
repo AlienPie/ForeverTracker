@@ -238,6 +238,10 @@ details[open].session h3::before{content:"\25BE\00a0"}
 .zhead{font-size:18px;margin:18px 0 6px}
 .zone{border-top:1px solid #0003}.zone:first-of-type{border-top:0}
 .zone summary,.zlist li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;padding:10px 0;cursor:pointer}
+.zone summary{list-style:none;border-radius:3px}.zone summary::-webkit-details-marker{display:none}
+.zone summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.zone .zname::before{content:"\25B8\00a0";color:var(--ink-soft)}
+.zone[open] .zname::before{content:"\25BE\00a0"}
 .zlist{list-style:none;margin:0;padding:0}.zlist li{cursor:default;border-top:1px solid #0003}.zlist li:first-child{border-top:0}
 .zname{font:18px var(--serif);color:var(--ink)}
 .zmeta{grid-column:1;color:var(--ink-soft);font-size:14px}
