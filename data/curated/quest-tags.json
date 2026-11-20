@@ -1,1 +1,577 @@
-{ "version": 1, "patch": null, "capturedAt": null, "tags": [] }
+{
+  "version": 1,
+  "patch": null,
+  "capturedAt": "2026-11-20",
+  "tags": [
+    {
+      "questId": 79358,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 96016,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 79442,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 79361,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 79366,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 96135,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 95753,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 96264,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 79360,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 8413,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94789,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 97169,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 8258,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 8410,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 8412,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94495,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 79365,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 95751,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 8411,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 79364,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1530,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 97168,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 63,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 7667,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94500,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1527,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94499,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 220,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94505,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1531,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94502,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1525,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94501,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94503,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1534,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94497,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 96,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 7668,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94449,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1536,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94466,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 100,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94467,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1535,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94468,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1522,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 96136,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1528,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94465,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1526,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1524,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 97257,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94494,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1520,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1532,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 8259,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1529,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94373,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1517,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 97245,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 2986,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 972,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94375,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94374,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 2985,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1523,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1103,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 2983,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1518,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 98517,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 2984,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 96243,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1516,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1521,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1519,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 97244,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94616,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1537,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 97243,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 7669,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 98581,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94472,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 92484,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1464,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 94473,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1463,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 3089,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 1462,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 3093,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 3084,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 987,
+      "kind": "class",
+      "value": "Shaman"
+    },
+    {
+      "questId": 5143,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 5148,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 5141,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 5145,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2854,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2860,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2856,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2859,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2858,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2857,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 5146,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2847,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2855,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 5144,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2850,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2852,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2849,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2853,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2851,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 2848,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 1582,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 82656,
+      "kind": "profession",
+      "value": "Leatherworking"
+    },
+    {
+      "questId": 82657,
+      "kind": "profession",
+      "value": "Leatherworking"
+    }
+  ]
+}
