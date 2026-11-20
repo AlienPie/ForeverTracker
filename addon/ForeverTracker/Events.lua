@@ -56,6 +56,8 @@ end
 -- added; false when it was already known or cannot be determined. Returns the
 -- place as 2nd/3rd values when newly added.
 function FT.recordVisit()
+  -- Flying over a place is not discovering it: skip while on a flight path.
+  if FT.safe(FT.call, "UnitOnTaxi", "player") == true then return false end
   local mapId = FT.safe(function()
     local cmap = _G.C_Map
     return cmap.GetBestMapForUnit("player")

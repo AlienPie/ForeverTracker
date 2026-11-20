@@ -5,7 +5,7 @@ local M = { frames = {}, playedRequests = 0, calls = {}, timers = {}, tickers = 
 local WOW_GLOBALS = {
   "FT", "ForeverTrackerDB", "time", "GetBuildInfo", "UnitGUID", "UnitName",
   "UnitClass", "UnitRace", "UnitFactionGroup", "UnitLevel", "UnitXP",
-  "UnitXPMax", "GetRealZoneText", "GetSubZoneText", "GetMoney",
+  "UnitXPMax", "UnitOnTaxi", "GetRealZoneText", "GetSubZoneText", "GetMoney",
   "GetInventoryItemLink", "C_Map", "CreateFrame", "RequestTimePlayed",
   "C_ClassTalents", "C_Traits", "GetNumTalentTabs", "GetNumTalents",
   "GetTalentInfo", "UnitCharacterPoints", "GetNumSkillLines",

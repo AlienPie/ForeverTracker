@@ -18,6 +18,15 @@ describe("FT.recordVisit", function()
     assert.are.equal(1, n)
   end)
 
+  it("does not record a place while on a flight path", function()
+    local FT = stubs.load({ UnitOnTaxi = function() return true end })
+    stubs.setDB(nil)
+    assert.is_false(FT.recordVisit())
+    local db = stubs.getDB()
+    local rec = db and db.characters and db.characters[GUID]
+    assert.is_nil(rec and rec.visited and next(rec.visited))
+  end)
+
   it("keeps an existing earlier firstSeen already in the DB", function()
     local FT = stubs.load()
     stubs.setDB({ characters = { [GUID] = { visited = {
