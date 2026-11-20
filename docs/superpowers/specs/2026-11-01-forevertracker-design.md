@@ -269,13 +269,25 @@ supplies their own keys. Keys and tokens are never logged.
   with a pace strip and a route strip; quest chains you can open; quest log lists (in progress
   and completed); interim profession-quest rule (from the quest names, ForeverDB data only);
   surname on the roster. No new external data sources.
-- **M2:** the maintainer snippet tool and curated data (class/race/profession quest tags, zone
-  level ranges and territory from Wowhead); class/race/profession chains using those tags
-  (replacing the interim profession rule); "Where to next" levelling areas; talent playground
-  with guide builds; profession advice; alt comparison chart (level against date, all
-  characters).
+- **M2 (order as listed):**
+  0. **Spike first:** check what ForeverDB already offers for class/race/profession tagging, and read Wowhead's
+     terms and robots rules. If ForeverDB covers it, no Wowhead step is needed. If a scripted run is allowed,
+     build the maintainer script below; otherwise keep the paste snippet.
+  1. **Maintainer tool and curated data** (class/race/profession quest tags, zone level ranges and territory
+     from Wowhead, link overrides for quests shared between regions). Preferred shape: a script the owner runs
+     once per patch in a real browser with a polite delay, writing curated JSON that is committed with the
+     repo; the app reads the local files and never calls Wowhead. The paste-in snippet is the fallback.
+  2. Class/race/profession chains using the tags (replacing the interim profession rule; hides steps for
+     professions the character lacks).
+  3. **Exploration and completion view, v1:** quest-based completion per zone, what is left, skipped quests in
+     visited zones. Real map exploration (areas uncovered, flight paths) is a follow-up behind a short in-game
+     check of the exploration API.
+  4. "Where to next" levelling areas.
+  5. Alt comparison chart (level against date, all characters).
+  6. Profession advice, then the talent playground with guide builds.
+  Backup and restore (bug-list item 11) is small and may go first or alongside.
 - **M3:** sync agent first (owner priority: automatic upload), then Battle.net login, planning view, theme polish.
-- **M4 (backlog, after M3):** dungeon planner and tracker; gear tab with best-in-slot at the level caps and where to find it; share card; quest finder alongside the M2 quest tags if not already done; backup and restore, "since your last upload" recap with gold trend, exploration and completion view, pace ETA (see `docs/superpowers/m1-bugs-and-tweaks.md` items 8 to 17 for the owner's priorities, which may pull some of these earlier).
+- **M4 (backlog, after M3):** dungeon planner and tracker; gear tab with best-in-slot at the level caps and where to find it; share card; quest finder alongside the M2 quest tags if not already done; backup and restore, "since your last upload" recap with gold trend, pace ETA (see `docs/superpowers/m1-bugs-and-tweaks.md` items 8 to 17 for the owner's priorities, which may pull some of these earlier).
 
 ## 12. Open items
 
