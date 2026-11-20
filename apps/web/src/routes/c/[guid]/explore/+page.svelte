@@ -42,7 +42,15 @@
           <span class="zcount">{z.done} / {z.total}{#if pct(z.done, z.total)} <span class="sub">{pct(z.done, z.total)}</span>{/if}</span>
         </summary>
         <div class="zbody">
-          {#if z.inLog > 0}<p class="sub">{z.inLog} in your log</p>{/if}
+          {#if z.inProgress.length > 0}
+            <h4>In progress</h4>
+            <ul class="zquests">
+              {#each z.inProgress as q (q.id)}
+                <li><a href={chainHref(q.id)}>{q.name}</a> <span class="lvl">level {q.level}</span> <span class="hint">{q.inLog ? "in your log" : "next in a chain you are on"}</span></li>
+              {/each}
+            </ul>
+          {/if}
+          <h4>Not done</h4>
           {#if z.remaining.length > 0}
             <ul class="zquests">
               {#each z.remaining as q (q.id)}
@@ -57,6 +65,14 @@
             <ul class="zquests dim">
               {#each z.skippedQuests as q (q.id)}
                 <li><a href={chainHref(q.id)}>{q.name}</a> <span class="lvl">level {q.level}</span> <span class="hint">skipped, you completed what follows</span></li>
+              {/each}
+            </ul>
+          {/if}
+          {#if z.completedQuests.length > 0}
+            <h4>Completed</h4>
+            <ul class="zquests">
+              {#each z.completedQuests as q (q.id)}
+                <li><a href={chainHref(q.id)}>{q.name}</a> <span class="lvl">level {q.level}</span></li>
               {/each}
             </ul>
           {/if}

@@ -210,9 +210,12 @@ describe("explore page", () => {
     expect(out).toContain("Nothing left that is open to you here.");
   });
 
-  test("quests in the log show as N in your log", async () => {
+  test("quests split into in progress, not done and completed", async () => {
     setup({ sv: sv("questsCompleted = { 100 }, questLog = { 101, 104 }") });
     const out = html(await run());
-    expect(out).toContain("2 in your log");
+    expect(out).toContain("In progress");
+    expect(out).toContain("in your log");
+    expect(out).toContain("Completed");
+    expect(out).toContain("Not done");
   });
 });

@@ -136,4 +136,24 @@ describe("zoneProgress visited and fit", () => {
   test("fit unknown with null minLevel", () => {
     expect(only(zoneProgress(input({ quests, zones: [cz("Elwynn Forest", null, null)] }))).fit).toBe("unknown");
   });
+
+  test("splits a visited zone into completed, in progress (log or chain) and not started", () => {
+    const quests = [
+      q(1, 1, "Zed", 9),
+      q(2, 2, "Zed", 9, [1], [3]),
+      q(3, 3, "Zed", 9, [2]),
+      q(4, 4, "Zed", 9),
+      q(5, 5, "Zed", 9),
+    ];
+    const { zones } = zoneProgress(input({ quests, completed: set(1), inLog: set(4) }));
+    const z = zones[0]!;
+    expect(z.completedQuests.map((x) => x.id)).toEqual([1]);
+    expect(z.inProgress.map((x) => [x.id, x.inLog])).toEqual([
+      [2, false],
+      [3, false],
+      [4, true],
+    ]);
+    expect(z.remaining.map((x) => x.id)).toEqual([5]);
+    expect(z.left).toBe(3);
+  });
 });

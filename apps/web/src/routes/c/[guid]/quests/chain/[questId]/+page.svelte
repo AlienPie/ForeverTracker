@@ -70,8 +70,8 @@
       <p class="sub note">Dimmed steps marked skipped are not needed: you completed what follows them. They are not counted above.</p>
     {/if}
     <p class="sub foot">
-      Order and prerequisites come from ForeverDB. "Available now" means a quest it needs is done (where several are listed, as for
-      different races or factions, any one of them is enough).
+      Order and prerequisites come from ForeverDB. "Available now" means you have finished the step just before it in the chain, so you can pick it up. Some steps
+      can be reached from more than one earlier step, for example one per race or faction; finishing any one of those is enough.
     </p>
   {/if}
 </section>

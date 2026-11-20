@@ -1,4 +1,4 @@
-import { chainGraph, skippedMembers } from "./chains";
+import { chainGraph, chainProgress, skippedMembers } from "./chains";
 import type { QuestRow } from "./content";
 import type { CuratedTerritory, CuratedZone } from "../curated/types";
 import { sideAllows, type Faction } from "./faction";
@@ -17,7 +17,14 @@ export type ZoneProgress = PlaceZone & {
   skipped: number;
   /** done + inLog + left. */
   total: number;
-  /** Left quests, by level then id; empty unless visited. */
+  /** Completed quests, by level then id; empty unless visited. */
+  completedQuests: ZoneQuest[];
+  /**
+   * In progress, empty unless visited: quests in the log, plus quests not yet done that belong to a
+   * chain the character is part way through. `inLog` tells them apart.
+   */
+  inProgress: (ZoneQuest & { inLog: boolean })[];
+  /** Not started and not part of a chain in progress, by level then id; empty unless visited. */
   remaining: ZoneQuest[];
   /** Skipped quests, same order; empty unless visited. */
   skippedQuests: ZoneQuest[];
@@ -107,21 +114,37 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
   const skippedIds =
     completed.size === 0 ? new Set<number>() : skippedMembers(quests, chainGraph(quests, input.classToken).succ, completed, inLog);
 
+  const graph = chainGraph(quests, input.classToken);
+  const activeGroups = new Set(
+    chainProgress(quests, completed, inLog, input.classToken, input.usable).map((c) => graph.groupOf(c.chain)),
+  );
+  const chainActive = (q: QuestRow) => graph.byId.has(q.id) && activeGroups.has(graph.groupOf(q.id));
+
   let unplaced = 0;
   for (const q of quests) if (!q.zone || typeof q.zone.m !== "number") unplaced++;
 
   const zones = place(input.zones, groups).map((p): ZoneProgress => {
     const g = groups.get(norm(p.name))!;
     let done = 0;
+    const finished: QuestRow[] = [];
+    const logged: QuestRow[] = [];
+    const chained: QuestRow[] = [];
     let log = 0;
     const left: QuestRow[] = [];
     const skipped: QuestRow[] = [];
     for (const q of g.quests) {
-      if (completed.has(q.id)) done++;
-      else if (inLog.has(q.id)) log++;
-      else if ((input.usable && !input.usable(q)) || !sideAllows(q, faction)) continue;
+      if (completed.has(q.id)) {
+        done++;
+        finished.push(q);
+      } else if (inLog.has(q.id)) {
+        log++;
+        logged.push(q);
+      } else if ((input.usable && !input.usable(q)) || !sideAllows(q, faction)) continue;
       else if (skippedIds.has(q.id)) skipped.push(q);
-      else left.push(q);
+      else {
+        left.push(q);
+        if (chainActive(q)) chained.push(q);
+      }
     }
     const visited = input.visitedMapIds.has(g.mapId) || done + log > 0;
     return {
@@ -134,7 +157,13 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
       left: left.length,
       skipped: skipped.length,
       total: done + log + left.length,
-      remaining: visited ? left.sort(byLevelThenId).map(zq) : [],
+      completedQuests: visited ? finished.sort(byLevelThenId).map(zq) : [],
+      inProgress: visited
+        ? [...logged.map((q) => ({ q, inLog: true })), ...chained.map((q) => ({ q, inLog: false }))]
+            .sort((a, b) => byLevelThenId(a.q, b.q))
+            .map(({ q, inLog }) => ({ ...zq(q), inLog }))
+        : [],
+      remaining: visited ? left.filter((q) => !chained.includes(q)).sort(byLevelThenId).map(zq) : [],
       skippedQuests: visited ? skipped.sort(byLevelThenId).map(zq) : [],
     };
   });
