@@ -1,5 +1,6 @@
 import type { CharacterCard } from "../read/character";
-import type { ProfessionInfo } from "./content";
+import type { TagIndex } from "../curated/apply";
+import type { ProfessionInfo, QuestRow } from "./content";
 
 /**
  * INTERIM rule (M1.1), to be replaced in M2 by the curated Wowhead profession tags: ForeverDB
@@ -91,4 +92,26 @@ export function slotsUsed(learned: Set<string>, catalog: ProfessionInfo[]): numb
     }
   }
   return n;
+}
+
+/**
+ * The profession a quest is for. When `tags` has tags (`tags.hasTags`), the curated profession tag
+ * decides (matched by name, case-insensitive, to the catalog) and a quest without a profession tag
+ * is NOT a profession quest, whatever its name. With no tags (absent or empty) the interim name
+ * rule (`professionOfQuest`) applies. A tag naming a profession missing from the catalog gives null.
+ */
+export function professionOfQuestTagged(
+  q: QuestRow,
+  professions: ProfessionInfo[],
+  tags?: TagIndex,
+): ProfessionInfo | null {
+  if (!tags || !tags.hasTags) return professionOfQuest(q.name, professions);
+  const tag = tags.professionOf(q.id);
+  if (tag === null) return null;
+  const key = norm(tag);
+  for (const p of Array.isArray(professions) ? professions : []) {
+    const name = isObj(p) ? text(p.name) : null;
+    if (name && norm(name) === key) return p;
+  }
+  return null;
 }

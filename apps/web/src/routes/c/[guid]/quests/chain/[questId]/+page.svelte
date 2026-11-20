@@ -12,6 +12,7 @@
     "in-log": "in your log",
     available: "available now",
     locked: "locked",
+    unavailable: "not available to you",
   };
 </script>
 

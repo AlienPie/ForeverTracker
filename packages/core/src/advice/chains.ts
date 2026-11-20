@@ -145,6 +145,10 @@ export const isHub = (g: ChainGraph, id: number): boolean => g.hubs.has(id);
  * Outfitters" does not pull every class's rune into one chain. When `classToken` is null or
  * omitted the class is unknown and every class quest is left out.
  *
+ * `usable` (default: all usable): a member for which it returns false is left out of `done`, `total`,
+ * `currentIndex` and `complete` (and of the "on it" test), but still takes part in the graph, hub
+ * detection and ordering. A chain with no usable member is not listed.
+ *
  * Only chains the character is on and has not finished are reported: a member is in the log, or
  * a valid completed member is not a hub. A hub is a quest with 3 or more direct successors among all
  * quests passed in, class quests included (a shared race or faction starter such as "Dwarven
@@ -156,32 +160,36 @@ export function chainProgress(
   completed: Set<number>,
   inLog: Set<number>,
   classToken?: string | null,
+  usable?: (q: QuestRow) => boolean,
 ): ChainProgress[] {
   const g = chainGraph(quests, classToken);
   const valid = validCompleted(quests, completed);
   const out: ChainProgress[] = [];
   for (const members of g.groups.values()) {
     if (members.length < 2) continue;
+    const counted = usable ? members.filter((m) => usable(m)) : members;
+    if (counted.length === 0) continue;
     let done = 0;
     let on = false;
-    for (const m of members) {
+    for (const m of counted) {
       if (valid.has(m.id)) {
         done++;
         if (!isHub(g, m.id)) on = true;
       } else if (inLog.has(m.id)) on = true;
     }
-    if (!on || done === members.length) continue;
+    if (!on || done === counted.length) continue;
 
     const order = topoOrder(members, g.succ);
     const root = order[0]!;
-    const idx = order.findIndex((m) => !valid.has(m.id));
+    const usableOrder = usable ? order.filter((m) => usable(m)) : order;
+    const idx = usableOrder.findIndex((m) => !valid.has(m.id));
     out.push({
       chain: root.id,
       name: root.name,
       done,
-      total: members.length,
+      total: counted.length,
       currentIndex: idx === -1 ? null : idx,
-      complete: done === members.length,
+      complete: done === counted.length,
     });
   }
   return out.sort((a, b) => g.byId.get(a.chain)!.level - g.byId.get(b.chain)!.level || a.chain - b.chain);

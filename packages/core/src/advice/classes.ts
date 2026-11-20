@@ -1,3 +1,4 @@
+import type { TagIndex } from "../curated/apply";
 import type { QuestRow } from "./content";
 
 /**
@@ -22,4 +23,27 @@ export function classAllows(q: QuestRow, classToken: string | null | undefined):
   const cls = questClass(q);
   if (cls === null) return true;
   return typeof classToken === "string" && classToken.trim().toLowerCase() === cls.toLowerCase();
+}
+
+/**
+ * `classAllows`, plus the curated class tags: a quest tagged for one or more classes is allowed
+ * only for a character of one of them. Without `tags` (or without tags for the quest) this is
+ * exactly `classAllows`.
+ */
+export function classAllowsTagged(q: QuestRow, classToken: string | null | undefined, tags?: TagIndex): boolean {
+  if (!classAllows(q, classToken)) return false;
+  const tagged = tags ? tags.classesOf(q.id) : [];
+  if (tagged.length === 0) return true;
+  const t = typeof classToken === "string" ? classToken.trim().toLowerCase() : "";
+  return t !== "" && tagged.some((c) => c.trim().toLowerCase() === t);
+}
+
+/**
+ * Whether a character of `raceToken` (snapshot race, e.g. "Dwarf", any case) may do a quest tagged
+ * for `races`: true when `races` is empty, otherwise only on a case-insensitive match.
+ */
+export function raceAllows(races: string[], raceToken: string | null | undefined): boolean {
+  if (races.length === 0) return true;
+  const t = typeof raceToken === "string" ? raceToken.trim().toLowerCase() : "";
+  return t !== "" && races.some((r) => r.trim().toLowerCase() === t);
 }

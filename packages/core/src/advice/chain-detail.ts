@@ -3,7 +3,7 @@ import { chainGraph, topoOrder } from "./chains";
 import { questClass } from "./classes";
 import type { QuestRow } from "./content";
 
-export type ChainMemberState = "done" | "in-log" | "available" | "locked";
+export type ChainMemberState = "done" | "in-log" | "available" | "locked" | "unavailable";
 
 export type ChainMember = {
   questId: number;
@@ -61,6 +61,9 @@ function zoneName(q: QuestRow): string | null {
  * completion (a prerequisite done by any route lets the game offer the quest); the counts do not:
  * a "done" member with no completed route back to a starting quest (see `validCompleted`) is
  * `otherRoute` and counted in `otherRoute`, not in `done`.
+ * A member for which `usable(q)` is false (default: all usable; e.g. a profession quest the character
+ * cannot take) gets state "unavailable" and is excluded from `total`, `done` and `otherRoute`; it
+ * stays in `members` and in the chain graph.
  * Pure; builds the chain graph, the prerequisite index and the valid set once.
  */
 export function chainDetail(
@@ -69,6 +72,7 @@ export function chainDetail(
   completed: Set<number>,
   inLog: Set<number>,
   classToken?: string | null,
+  usable?: (q: QuestRow) => boolean,
 ): ChainDetail | null {
   const g = chainGraph(quests, classToken);
   if (!g.byId.has(questId)) return null;
@@ -79,10 +83,12 @@ export function chainDetail(
 
   let done = 0;
   let otherRoute = 0;
+  let total = 0;
   const members = order.map((q, i): ChainMember => {
     let state: ChainMemberState;
     let other = false;
-    if (completed.has(q.id)) {
+    if (usable && !usable(q)) state = "unavailable";
+    else if (completed.has(q.id)) {
       state = "done";
       if (valid.has(q.id)) done++;
       else {
@@ -91,6 +97,7 @@ export function chainDetail(
       }
     } else if (inLog.has(q.id)) state = "in-log";
     else state = isAvailable(idx, q.id, (p) => completed.has(p)) ? "available" : "locked";
+    if (state !== "unavailable") total++;
     return {
       questId: q.id,
       name: q.name,
@@ -102,5 +109,5 @@ export function chainDetail(
       step: i + 1,
     };
   });
-  return { chain: root.id, name: root.name, members, done, otherRoute, total: members.length };
+  return { chain: root.id, name: root.name, members, done, otherRoute, total };
 }

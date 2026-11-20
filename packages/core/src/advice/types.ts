@@ -1,4 +1,5 @@
 import type { CharacterCard } from "../read/character";
+import type { TagIndex } from "../curated/apply";
 import type { ProfessionInfo, QuestRow } from "./content";
 
 /** One "next up" recommendation; `reason` says what and where using only mirrored data. */
@@ -41,6 +42,14 @@ export type NextUpInput = {
    * INTERIM profession-quest rule applies (see `nextUp`); when omitted, behaviour is unchanged.
    */
   professionCatalog?: ProfessionInfo[];
+  /**
+   * Curated quest tags (see `buildTagIndex`). When it has tags, class, race and profession tags
+   * filter quests (a quest without a profession tag is then not a profession quest); when omitted
+   * or empty, behaviour is unchanged.
+   */
+  tags?: TagIndex;
+  /** Character race from the snapshot (e.g. "Dwarf"; any case). Used with race tags only. */
+  raceToken?: string | null;
 };
 
 export type ChainProgress = {

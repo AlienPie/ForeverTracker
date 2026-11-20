@@ -1,8 +1,8 @@
 import { isAvailable, prerequisiteIndex, validCompleted } from "./chain-validity";
 import { prerequisites } from "./chains";
-import { classAllows, questClass } from "./classes";
+import { classAllowsTagged, questClass, raceAllows } from "./classes";
 import type { QuestRow } from "./content";
-import { learnedNames, professionMatcher, professionVerdict, slotsUsed } from "./professions";
+import { learnedNames, professionOfQuestTagged, professionVerdict, slotsUsed } from "./professions";
 import type { NextUpInput, Suggestion } from "./types";
 
 type Rule = "chain" | "area" | "next-level" | "chain-far";
@@ -90,6 +90,11 @@ function areaOf(q: QuestRow, zone: string | null, mapId: number | null): string 
  * reason says "You have a free profession slot"; free-slot picks sort after every other
  * suggestion, whatever their rule. Otherwise it is dropped from every rule. An allowed profession quest still needs one of the rules above; it then gets kind "profession"
  * and a reason naming the profession. A catalog profession of any other kind is not gated.
+ *
+ * With curated `tags` (see `buildTagIndex`, only when `tags.hasTags`): the profession comes from the
+ * quest's profession tag instead of its name (an untagged quest is then not a profession quest),
+ * a class tag allows the quest only for that class (`classAllowsTagged`), and a race tag only for
+ * that race (`raceAllows`, against `raceToken`). Without tags nothing changes.
  */
 export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
   const { level, completed, inLog, levelCap } = input;
@@ -98,9 +103,10 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
 
   // Interim profession rule: lookups built once per call.
   const catalog = Array.isArray(input.professionCatalog) ? input.professionCatalog : [];
-  const professionOf = catalog.length > 0 ? professionMatcher(catalog) : null;
-  const learned = professionOf ? learnedNames(input.professions) : new Set<string>();
-  const used = professionOf ? slotsUsed(learned, catalog) : 0;
+  const tags = input.tags;
+  const gated = catalog.length > 0;
+  const learned = gated ? learnedNames(input.professions) : new Set<string>();
+  const used = gated ? slotsUsed(learned, catalog) : 0;
   const idx = prerequisiteIndex(input.quests);
   const valid = validCompleted(input.quests, completed, idx);
   const nameOf = new Map<number, string>();
@@ -110,9 +116,10 @@ export function nextUp(input: NextUpInput, limit = 5): Suggestion[] {
   for (const q of input.quests) {
     if (completed.has(q.id) || inLog.has(q.id)) continue;
     if (levelCap !== null && q.level > levelCap) continue;
-    if (!classAllows(q, input.classToken)) continue;
+    if (!classAllowsTagged(q, input.classToken, tags)) continue;
+    if (tags && !raceAllows(tags.racesOf(q.id), input.raceToken)) continue;
 
-    const prof = professionOf ? professionOf(q.name) : null;
+    const prof = gated ? professionOfQuestTagged(q, catalog, tags) : null;
     const verdict = prof ? professionVerdict(prof, learned, used) : null;
     if (verdict && !verdict.allowed) continue;
     const profession = verdict !== null;
