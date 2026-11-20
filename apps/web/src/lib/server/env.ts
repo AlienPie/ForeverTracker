@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { parseContentMode, type ContentMode } from "@ft/content";
 import { parseTooltipProvider, type TooltipProvider } from "../links";
 
@@ -14,6 +16,21 @@ export interface Env {
    * the loopback names; from the comma-separated ALLOWED_HOSTS.
    */
   allowedHosts: string[];
+  /** Directory of the curated data files (CURATED_DIR; default: `data/curated` under the working directory). */
+  curatedDir: string;
+}
+
+/**
+ * The curated data directory: CURATED_DIR when set, else `<cwd>/data/curated`. When that does not exist
+ * (running from `apps/web` in development) the nearest parent directory holding `data/curated` is used.
+ */
+export function resolveCuratedDir(configured: string | undefined, cwd: string = process.cwd()): string {
+  if (configured) return resolve(cwd, configured);
+  for (let dir = resolve(cwd); ; dir = dirname(dir)) {
+    if (existsSync(join(dir, "data", "curated"))) return join(dir, "data", "curated");
+    if (dirname(dir) === dir) break;
+  }
+  return join(resolve(cwd), "data", "curated");
 }
 
 const orNull = (v: string | undefined): string | null => (v ? v : null);
@@ -40,6 +57,7 @@ export function readEnv(source: Record<string, string | undefined> = process.env
     ownerPassword: orNull(source.OWNER_PASSWORD),
     sessionSecret: orNull(source.SESSION_SECRET),
     allowedHosts: hostList(source.ALLOWED_HOSTS),
+    curatedDir: resolveCuratedDir(orNull(source.CURATED_DIR) ?? undefined),
   };
 }
 

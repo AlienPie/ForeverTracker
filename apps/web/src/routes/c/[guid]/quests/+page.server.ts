@@ -2,6 +2,7 @@ import type { ServerLoad } from "@sveltejs/kit";
 import type { ContentMode } from "@ft/content";
 import { chainProgress, nextUp, type Suggestion } from "@ft/core";
 import { characterOr404 } from "../../../../lib/server/character";
+import { buildUsable } from "../../../../lib/server/usable";
 import { env } from "../../../../lib/server/env";
 import { getQuestCatalogSafe } from "../../../../lib/server/safe-catalog";
 
@@ -33,6 +34,16 @@ export const load: ServerLoad = async ({ params }): Promise<QuestsPageData> => {
   const completed = new Set(view.completedIds);
   const inLog = new Set(view.questLogIds);
 
+  const usable = buildUsable({
+    tags: catalog.tags,
+    professionCatalog: catalog.professions,
+    professions: view.professions,
+    classToken: view.class,
+    raceToken: view.race,
+    completed,
+    inLog,
+  });
+
   const suggestions =
     contentReady && view.level !== null
       ? nextUp(
@@ -47,12 +58,14 @@ export const load: ServerLoad = async ({ params }): Promise<QuestsPageData> => {
             levelCap: catalog.levelCap,
             professions: view.professions,
             professionCatalog: catalog.professions,
+            tags: catalog.tags,
+            raceToken: view.race,
           },
           5,
         )
       : [];
   const chains = contentReady
-    ? chainProgress(catalog.quests, completed, inLog, view.class).map((c) => ({
+    ? chainProgress(catalog.quests, completed, inLog, view.class, usable).map((c) => ({
         chain: c.chain,
         name: c.name,
         done: c.done,

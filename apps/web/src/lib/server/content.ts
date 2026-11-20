@@ -1,8 +1,21 @@
 import { createContentSource, type ContentMode, type ContentSource, type ForeverDbClient } from "@ft/content";
-import { getLevelCap, loadProfessions, loadQuests, type ProfessionInfo, type QuestRow } from "@ft/core";
+import {
+  applyOverrides,
+  buildTagIndex,
+  emptyCurated,
+  getLevelCap,
+  loadProfessions,
+  loadQuests,
+  readCuratedDir,
+  type Curated,
+  type CuratedZone,
+  type ProfessionInfo,
+  type QuestRow,
+  type TagIndex,
+} from "@ft/core";
 import type { Db } from "@ft/db";
 import { getDb } from "./db";
-import { env } from "./env";
+import { env, resolveCuratedDir } from "./env";
 
 export type QuestCatalog = {
   quests: QuestRow[];
@@ -14,6 +27,10 @@ export type QuestCatalog = {
    * (additive): absent on the empty catalog, and an absent or empty list leaves `nextUp` unchanged.
    */
   professions?: ProfessionInfo[];
+  /** Curated quest tags (class, race, profession); absent when there are none. */
+  tags?: TagIndex;
+  /** Curated zone level ranges; absent when there are none. */
+  zones?: CuratedZone[];
 };
 
 export const CATALOG_TTL_MS = 60_000;
@@ -94,6 +111,24 @@ async function professionsOrNone(source: ContentSource): Promise<ProfessionInfo[
   }
 }
 
+let lastProblems = "";
+
+/** The curated files, or nothing when there is no directory or it cannot be read. Problems are logged. */
+function curatedOrNone(dir: (() => string) | undefined): Curated {
+  if (!dir) return emptyCurated();
+  try {
+    const curated = readCuratedDir(dir());
+    const text = curated.problems.join("\n");
+    // Once per distinct set of problems, not on every 60 s reload.
+    if (text !== "" && text !== lastProblems) console.warn(`curated data problems:\n${text}`);
+    lastProblems = text;
+    return curated;
+  } catch (err) {
+    console.warn("curated data unavailable:", err instanceof Error ? err.message : err);
+    return emptyCurated();
+  }
+}
+
 /**
  * A memo of the quest catalog with a TTL. Concurrent callers share one load;
  * a failed load is not cached. With no quests the result is the empty shape
@@ -101,6 +136,8 @@ async function professionsOrNone(source: ContentSource): Promise<ProfessionInfo[
  */
 export function createQuestCatalog(opts: {
   source: () => ContentSource | null;
+  /** Directory of the curated files; absent means no curated data. Read inside the memo only. */
+  curatedDir?: () => string;
   now?: () => number;
   ttlMs?: number;
 }): { get(): Promise<QuestCatalog>; clear(): void } {
@@ -111,14 +148,19 @@ export function createQuestCatalog(opts: {
   async function build(): Promise<QuestCatalog> {
     const source = opts.source();
     if (!source) return EMPTY;
-    const quests = await loadQuests(source);
-    if (quests.length === 0) return EMPTY;
-    return {
+    const loaded = await loadQuests(source);
+    if (loaded.length === 0) return EMPTY;
+    const curated = curatedOrNone(opts.curatedDir);
+    const { quests } = curated.links.length > 0 ? applyOverrides(loaded, curated.links) : { quests: loaded };
+    const catalog: QuestCatalog = {
       quests,
       levelCap: await getLevelCap(source),
       mapNames: await loadMapNames(source, quests),
       professions: await professionsOrNone(source),
     };
+    if (curated.tags.tags.length > 0) catalog.tags = buildTagIndex(curated.tags.tags);
+    if (curated.zones.length > 0) catalog.zones = curated.zones;
+    return catalog;
   }
 
   return {
@@ -138,7 +180,10 @@ export function createQuestCatalog(opts: {
   };
 }
 
-const processCatalog = createQuestCatalog({ source: () => catalogSource(env().contentMode, getDb()) });
+const processCatalog = createQuestCatalog({
+  source: () => catalogSource(env().contentMode, getDb()),
+  curatedDir: () => env().curatedDir ?? resolveCuratedDir(undefined),
+});
 
 /** Process-wide quest catalog, reloaded at most every 60 seconds. */
 export const getQuestCatalog = (): Promise<QuestCatalog> => processCatalog.get();

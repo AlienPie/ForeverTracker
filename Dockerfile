@@ -24,6 +24,8 @@ WORKDIR /app
 # @ft/db's migrations folder is pinned to /app/packages/db/drizzle at build time (same path here).
 COPY --from=build /app/packages/db/drizzle ./packages/db/drizzle
 COPY --from=build /app/apps/web/build ./build
+# Curated quest tags, link overrides and zone data (read at runtime from ./data/curated, or CURATED_DIR).
+COPY --from=build /app/data/curated ./data/curated
 COPY --from=build /app/create-token.mjs /app/list-tokens.mjs /app/revoke-token.mjs /app/content-sync.mjs ./
 COPY --from=build /deploy/node_modules ./node_modules
 RUN mkdir /data && chown node:node /data

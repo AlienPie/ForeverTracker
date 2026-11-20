@@ -14,6 +14,11 @@
     locked: "locked",
     unavailable: "not available to you",
   };
+  const WHY: Record<string, string> = {
+    profession: "not for your professions",
+    class: "not for your class",
+    race: "not for your race",
+  };
 </script>
 
 <svelte:head>{#if data.chain}<title>{data.chain.name}, quest chain, ForeverTracker</title>{/if}</svelte:head>
@@ -47,7 +52,7 @@
           <div class="body">
             <h3><span class="sr-only">Step {m.step}: </span><ItemLink kind="quest" id={m.questId} name={m.name} /></h3>
             <div class="meta">
-              <span class="tag state">{m.otherRoute ? "completed, but not through this chain" : (STATE[m.state] ?? m.state)}</span>
+              <span class="tag state">{m.otherRoute ? "completed, but not through this chain" : m.state === "unavailable" ? (WHY[data.reasons?.[m.questId] ?? ""] ?? STATE.unavailable) : (STATE[m.state] ?? m.state)}</span>
               {#if m.questId === data.current}<span class="tag cont">current step</span>{/if}
               {#if m.zone}<span>{m.zone}</span>{/if}
               {#if m.giver}<span>from {m.giver}</span>{/if}
@@ -57,6 +62,9 @@
         </li>
       {/each}
     </ol>
+    {#if c.members.some((m) => m.state === "unavailable")}
+      <p class="sub note">Dimmed steps are quests your character cannot take, going by Wowhead's class, race and profession tags. They are not counted above.</p>
+    {/if}
     <p class="sub foot">
       Order and prerequisites come from ForeverDB. "Available now" means a quest it needs is done (where several are listed, as for
       different races or factions, any one of them is enough).

@@ -42,6 +42,8 @@ export const load: ServerLoad = async (): Promise<RosterPageData> => {
         levelCap: catalog.levelCap,
         professions: view.professions,
         professionCatalog: catalog.professions,
+        tags: catalog.tags,
+        raceToken: view.race,
       },
       1,
     );

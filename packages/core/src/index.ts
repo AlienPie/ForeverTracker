@@ -39,7 +39,14 @@ export {
   type ChainMember,
   type ChainMemberState,
 } from "./advice/chain-detail";
-export { professionOfQuest } from "./advice/professions";
+export {
+  learnedNames,
+  professionOfQuest,
+  professionOfQuestTagged,
+  professionVerdict,
+  slotsUsed,
+} from "./advice/professions";
+export { classAllows, classAllowsTagged, raceAllows } from "./advice/classes";
 export { listQuestLog, type QuestLogPage, type QuestLogRow } from "./advice/quest-log";
 export {
   emptyCurated,
