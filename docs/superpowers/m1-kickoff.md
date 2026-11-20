@@ -107,7 +107,7 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 
 ## State at the end of M2 part 1
 
-**What exists.** Branch `m2-curated-data`, commits `63d1549`..`287b953`. Curated data types and loaders (`63d1549`); link overrides applied and a quest-tag index (`0b11d6d`); the browser capture snippet `tools/wowhead/capture.js` and the builder `pnpm curated:build` (`bd17073`, with the read-only mirror fix in `3c2d72b`); the owner guide `docs/wowhead-data-guide.md` (`5ab3ec9`); profession, class and race filtering from the curated tags in core (`b152df5`); the web app loads the curated files and hides chain steps the character cannot take (`287b953`). The files `data/curated/quest-tags.json`, `overrides.json` and `zones.json` are committed but EMPTY, so the app behaves as before until the owner collects the data. Formats: section "Data formats" of `docs/superpowers/plans/2026-11-20-m2-curated-data-and-tags.md` and spec section 8.
+**What exists.** Branch `m2-curated-data`, commits `63d1549`..`287b953`. Curated data types and loaders (`63d1549`); link overrides applied and a quest-tag index (`0b11d6d`); the browser capture snippet `tools/wowhead/capture.js` and the builder `pnpm curated:build` (`bd17073`, with the read-only mirror fix in `3c2d72b`); the owner guide `docs/wowhead-data-guide.md` (`5ab3ec9`); profession, class and race filtering from the curated tags in core (`b152df5`); the web app loads the curated files and hides chain steps the character cannot take (`287b953`). The files `data/curated/quest-tags.json`, `overrides.json` and `zones.json` hold the owner's first collection: 150 zones and 114 class and profession tags; more pages can be added. Formats: section "Data formats" of `docs/superpowers/plans/2026-11-20-m2-curated-data-and-tags.md` and spec section 8.
 
 **Verified.** Reported by the Task 6 implementer; not re-run for this note.
 - `pnpm test` (514 tests, 40 files) and `pnpm typecheck` pass.
@@ -142,12 +142,12 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 
 ## State at the end of M2 step 3
 
-**What exists.** Branch `exploration-view`, commits `0bda4ed`..`c04eacc`. Race faction and the quest side filter (`factionOfRace`, `sideAllows` in `packages/core/src/advice/faction.ts`); per-zone quest completion (`placeZones`, `zoneProgress` in `packages/core/src/advice/exploration.ts`); the Explore tab on each character, `/c/<guid>/explore/`, with a zone list, what is left and skipped quests in visited zones. Completion is quest-based only: no map exploration, no dungeons or raids, no "where to next" (step 4).
+**What exists.** Branch `exploration-view`, commits `f3609f0`..`84a16ea`. Race faction and the quest side filter (`factionOfRace`, `sideAllows` in `packages/core/src/advice/faction.ts`); per-zone quest completion (`placeZones`, `zoneProgress` in `packages/core/src/advice/exploration.ts`); the Explore tab on each character, `/c/<guid>/explore/`, with a zone list, what is left and skipped quests in visited zones. Completion is quest-based only: no map exploration, no dungeons or raids, no "where to next" (step 4).
 
 **Known limits.**
 - Completion is plain quest completion, so a completion from another region can mark a quest skipped.
 - `nextUp` does not yet filter by quest `side` (follow-up, not done).
-- About 380 quests have no zone and are not counted in the Explore tab.
+- About 1,180 quests (class, profession, event and other quests with no map zone) are not counted in the Explore tab.
 
 **Owner check.** Rebuild with `podman compose up -d --build --force-recreate`, open a character's Explore tab, and compare a zone count with the same zone on the Quests tab.
 

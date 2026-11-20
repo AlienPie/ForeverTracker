@@ -292,8 +292,8 @@ supplies their own keys. Keys and tokens are never logged.
      territory from Wowhead, link overrides for quests shared between regions). The snippet runs in the
      owner's own browser on pages the owner has opened; output is curated JSON committed with the repo; the
      app reads the local files and never calls Wowhead. **Status (2026-11-20): tool and formats built;
-     data collection pending.** The owner collects the pages by hand, following `docs/wowhead-data-guide.md`;
-     the curated files in `data/curated/` are still empty.
+     zones and a first set of tags collected.** The owner collects the pages by hand, following `docs/wowhead-data-guide.md`;
+     `data/curated/` holds 150 zones and 114 class and profession tags so far, and more pages can be added.
   2. Class/race/profession chains using the tags (replacing the interim profession rule; hides steps for
      professions the character lacks). **Status (2026-11-20): built** (tag-aware chains and filtering), with
      no visible effect until the data exists.
@@ -301,10 +301,9 @@ supplies their own keys. Keys and tokens are never logged.
      visited zones. Real map exploration (areas uncovered, flight paths) is a follow-up behind a short in-game
      check of the exploration API. **Status (2026-11-20): built** (Explore tab per character, per-zone
      counts from the quest data and the curated zones). Left out of v1: real map exploration, dungeons and
-     raids (the Explore tab lists only curated rows of type zone, plus quest zone names the curated list
-     lacks), and "where to next" (step 4). Completion is plain quest completion, so a completion from
+     raids (the Explore tab lists only curated rows of type zone, plus any quest zone name with a numeric map id that has no zone-type row in the curated list), and "where to next" (step 4). Completion is plain quest completion, so a completion from
      another region can mark a quest skipped. `nextUp` does not yet
-     filter by quest `side` (follow-up, not done here). About 380 quests have no zone and are not counted.
+     filter by quest `side` (follow-up, not done here). About 1,180 quests (class, profession, event and other quests with no map zone) are not counted.
   4. "Where to next" levelling areas.
   5. Alt comparison chart (level against date, all characters).
   6. Profession advice, then the talent playground with guide builds.

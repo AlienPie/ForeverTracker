@@ -38,17 +38,18 @@ const quest = (id: number, name: string, level: number, zone: unknown, previous:
 });
 
 let dir = "";
-function setup(opts: { sv?: string; quests?: boolean; zones?: boolean } = {}) {
+const ZONES = [
+  { name: "Dun Morogh", minLevel: 1, maxLevel: 10, territory: "Alliance", type: "zone" },
+  { name: "Westfall", minLevel: 10, maxLevel: 14, territory: "Alliance", type: "zone" },
+];
+function setup(opts: { sv?: string; quests?: boolean; zones?: boolean; zoneList?: unknown[] } = {}) {
   const { quests = true, zones = true } = opts;
   if (zones)
     writeFileSync(
       join(dir, "zones.json"),
       JSON.stringify({
         version: 1,
-        zones: [
-          { name: "Dun Morogh", minLevel: 1, maxLevel: 10, territory: "Alliance", type: "zone" },
-          { name: "Westfall", minLevel: 10, maxLevel: 14, territory: "Alliance", type: "zone" },
-        ],
+        zones: opts.zoneList ?? ZONES,
       }),
     );
   state.e.curatedDir = dir;
@@ -117,7 +118,7 @@ describe("explore page", () => {
     expect(out).toContain("in range");
     expect(out).toContain("10 to 14");
     expect(out).not.toContain("Farm Hands"); // unvisited zones list no quests
-    expect(out).toContain("1 quest has no zone and is not counted");
+    expect(out).toContain("1 quest with no map zone (class, profession, event and other quests) is not counted");
     expect(out).not.toContain("wowhead-data-guide");
   });
 
@@ -166,5 +167,52 @@ describe("explore page", () => {
     expect(out).toContain("0 / 0");
     expect(out).not.toContain("NaN");
     expect(out).not.toContain("%");
+  });
+
+  const add = (...qs: ReturnType<typeof quest>[]) => {
+    for (const q of qs)
+      (state.db as ReturnType<typeof openDb>)
+        .insert(contentRecord)
+        .values({ resource: "quests", id: String(q.id), build: "1.0", data: JSON.stringify(q), fetchedAt: NOW })
+        .run();
+    resetQuestCatalog();
+  };
+
+  test("unvisited order: in-range first, other-faction territory last, level order otherwise", async () => {
+    const zoneList = [
+      ...ZONES,
+      { name: "Orgrimmar", minLevel: 1, maxLevel: 60, territory: "Horde", type: "zone" },
+      { name: "Redridge", minLevel: 15, maxLevel: 25, territory: "Alliance", type: "zone" },
+      { name: "Teldrassil", minLevel: 1, maxLevel: 10, territory: "Alliance", type: "zone" },
+    ];
+    setup({ zoneList });
+    add(
+      quest(201, "Boss Task", 5, { n: "Orgrimmar", slug: "o", m: 1454 }),
+      quest(202, "Lake Task", 16, { n: "Redridge", slug: "r", m: 1433 }),
+      quest(203, "Tree Task", 2, { n: "Teldrassil", slug: "t", m: 1438 }),
+    );
+    const data = await run();
+    // Westfall is in range; Teldrassil and Redridge are not; Orgrimmar is hostile and in range but last.
+    expect(data.unvisited.map((z) => z.name)).toEqual(["Westfall", "Teldrassil", "Redridge", "Orgrimmar"]);
+    const out = html(data);
+    expect(out.indexOf("Westfall")).toBeLessThan(out.indexOf("Teldrassil"));
+    expect(out.indexOf("Redridge")).toBeLessThan(out.indexOf("Orgrimmar"));
+    expect(out).not.toMatch(/,\s*<\/span>/); // no trailing separator
+  });
+
+  test("a fully done zone shows 100% and nothing left", async () => {
+    setup({ sv: sv("questsCompleted = { 100, 101, 102, 103, 104 }, questLog = {}") });
+    const data = await run();
+    expect(data.visited[0]).toMatchObject({ name: "Dun Morogh", done: 5, total: 5, left: 0 });
+    const out = html(data);
+    expect(out).toContain("5 / 5");
+    expect(out).toContain("100%");
+    expect(out).toContain("Nothing left that is open to you here.");
+  });
+
+  test("quests in the log show as N in your log", async () => {
+    setup({ sv: sv("questsCompleted = { 100 }, questLog = { 101, 104 }") });
+    const out = html(await run());
+    expect(out).toContain("2 in your log");
   });
 });

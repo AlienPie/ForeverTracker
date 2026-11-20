@@ -27,6 +27,7 @@ export const load: ServerLoad = async ({ params }): Promise<ExplorePageData> => 
   const base = { contentMode: env().contentMode, level: view.level, hasZoneData };
   if (!contentReady) return { ...base, contentReady, visited: [], unvisited: [], unplaced: 0 };
 
+  const faction = factionOfRace(view.race);
   const completed = new Set(view.completedIds);
   const inLog = new Set(view.questLogIds);
   const usable = buildUsable({
@@ -43,15 +44,17 @@ export const load: ServerLoad = async ({ params }): Promise<ExplorePageData> => 
     zones: catalog.zones,
     level: view.level,
     classToken: view.class,
-    faction: factionOfRace(view.race),
+    faction,
     completed,
     inLog,
     visitedMapIds: new Set(view.visitedMaps.map((v) => v.mapId)),
     usable,
   });
-  // In-range zones first among the unvisited; the rest keep the level order.
+  // Unvisited: in-range zones first, zones of the other faction's territory last; the rest keep the level order.
   const unvisited = zones.filter((z) => !z.visited);
-  const rank = (z: ZoneProgress) => (z.fit === "in-range" ? 0 : 1);
+  const rank = (z: ZoneProgress) =>
+    (faction !== null && (z.territory === "Alliance" || z.territory === "Horde") && z.territory !== faction ? 2 : 0) +
+    (z.fit === "in-range" ? 0 : 1);
   unvisited.sort((a, b) => rank(a) - rank(b));
   return { ...base, contentReady, visited: zones.filter((z) => z.visited), unvisited, unplaced };
 };

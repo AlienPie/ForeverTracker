@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import ContentBanner from "../../../../lib/components/ContentBanner.svelte";
+  import type { ZoneProgress } from "@ft/core";
   import type { ExplorePageData } from "./+page.server";
 
   let { data }: { data: ExplorePageData } = $props();
@@ -10,6 +11,8 @@
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const range = (min: number | null, max: number | null) =>
     min === null ? null : max === null || max === min ? `level ${min}` : `levels ${min} to ${max}`;
+  const meta = (z: ZoneProgress) =>
+    data.hasZoneData ? [range(z.minLevel, z.maxLevel), z.territory].filter(Boolean).join(", ") : "";
   const pct = (done: number, total: number) => (total > 0 ? `${Math.round((done / total) * 100)}%` : null);
   const doneInVisited = $derived(data.visited.reduce((n, z) => n + z.done, 0));
 </script>
@@ -33,9 +36,7 @@
         <summary>
           <span class="zname">{z.name}</span>
           <span class="zmeta">
-            {#if data.hasZoneData}
-              {#if range(z.minLevel, z.maxLevel)}{range(z.minLevel, z.maxLevel)}, {/if}{#if z.territory}{z.territory}, {/if}
-            {/if}
+            {meta(z)}{#if meta(z) && FIT[z.fit]}, {/if}
             {#if FIT[z.fit]}<span class="tag" class:cont={z.fit === "in-range"}>{FIT[z.fit]}</span>{/if}
           </span>
           <span class="zcount">{z.done} / {z.total}{#if pct(z.done, z.total)} <span class="sub">{pct(z.done, z.total)}</span>{/if}</span>
@@ -72,9 +73,7 @@
           <li>
             <span class="zname">{z.name}</span>
             <span class="zmeta">
-              {#if data.hasZoneData}
-                {#if range(z.minLevel, z.maxLevel)}{range(z.minLevel, z.maxLevel)}, {/if}{#if z.territory}{z.territory}, {/if}
-              {/if}
+              {meta(z)}{#if meta(z) && FIT[z.fit]}, {/if}
               {#if FIT[z.fit]}<span class="tag" class:cont={z.fit === "in-range"}>{FIT[z.fit]}</span>{/if}
             </span>
             <span class="zcount">{plural(z.total, "quest", "quests")}</span>
@@ -91,7 +90,7 @@
     {/if}
     {#if data.unplaced > 0}
       <p class="sub foot">
-        {plural(data.unplaced, "quest has", "quests have")} no zone and {data.unplaced === 1 ? "is" : "are"} not counted.
+        {plural(data.unplaced, "quest", "quests")} with no map zone (class, profession, event and other quests) {data.unplaced === 1 ? "is" : "are"} not counted.
       </p>
     {/if}
   {/if}
