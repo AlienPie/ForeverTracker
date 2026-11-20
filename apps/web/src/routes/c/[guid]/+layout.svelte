@@ -18,6 +18,7 @@
   const tabs = [
     { slug: "journey", label: "Journey" },
     { slug: "quests", label: "Quests" },
+    { slug: "explore", label: "Explore" },
     { slug: "talents", label: "Talents" },
     { slug: "professions", label: "Professions" },
   ];

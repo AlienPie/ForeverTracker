@@ -142,7 +142,7 @@ test("owner journey: login, upload, browse, settings, sign out", async ({ page, 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Thalindra Ashgrove");
   const guid = "Player-1234-0A1B2C3D";
   const tabs = page.getByRole("navigation", { name: "Character" });
-  for (const name of ["Journey", "Quests", "Talents", "Professions"]) {
+  for (const name of ["Journey", "Quests", "Explore", "Talents", "Professions"]) {
     await tabs.getByRole("link", { name }).click();
     await expect(tabs.getByRole("link", { name })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();

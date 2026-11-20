@@ -233,3 +233,16 @@ details[open].session h3::before{content:"\25BE\00a0"}
 .session .events .more{color:var(--ink-soft);font-style:italic}
 @media(max-width:560px){.pace{gap:3px}.panel.dark{padding:18px 14px}details.session summary{padding:12px 14px}.session .events{padding:6px 14px 14px}
   .session .events li{grid-template-columns:52px 1fr;gap:10px}}
+/* Explore tab: one folded row per zone */
+.explore{margin:26px 0 40px}
+.zhead{font-size:18px;margin:18px 0 6px}
+.zone{border-top:1px solid #0003}.zone:first-of-type{border-top:0}
+.zone summary,.zlist li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;padding:10px 0;cursor:pointer}
+.zlist{list-style:none;margin:0;padding:0}.zlist li{cursor:default;border-top:1px solid #0003}.zlist li:first-child{border-top:0}
+.zname{font:18px var(--serif);color:var(--ink)}
+.zmeta{grid-column:1;color:var(--ink-soft);font-size:14px}
+.zcount{grid-row:1/3;grid-column:2;text-align:right;color:var(--ink)}
+.zbody{padding:0 0 12px 14px}.zbody h4{font-size:14px;margin:10px 0 2px;color:var(--ink-soft)}
+.zquests{list-style:none;margin:0;padding:0}.zquests li{padding:3px 0}
+.zquests .lvl{font:italic 14px var(--serif);color:var(--ink-soft);margin-left:6px}
+.zquests.dim li{opacity:.75}
