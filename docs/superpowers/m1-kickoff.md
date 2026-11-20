@@ -104,3 +104,41 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 2. Run the content sync once if not done: `podman compose exec forevertracker node /app/content-sync.mjs` (needs `FOREVERDB_API_KEY` in `.env`).
 
 **Next: M2** (spec section 11). Class/race/profession chains (maintainer quest-tagging tool, Wowhead tags), the talent playground with guide builds, profession advice, "where to next" and the alt comparison chart. After that, M3: the sync agent, Battle.net login, a planning view and theme polish.
+
+## State at the end of M2 part 1
+
+**What exists.** Branch `m2-curated-data`, commits `63d1549`..`287b953`. Curated data types and loaders (`63d1549`); link overrides applied and a quest-tag index (`0b11d6d`); the browser capture snippet `tools/wowhead/capture.js` and the builder `pnpm curated:build` (`bd17073`, with the read-only mirror fix in `3c2d72b`); the owner guide `docs/wowhead-data-guide.md` (`5ab3ec9`); profession, class and race filtering from the curated tags in core (`b152df5`); the web app loads the curated files and hides chain steps the character cannot take (`287b953`). The files `data/curated/quest-tags.json`, `overrides.json` and `zones.json` are committed but EMPTY, so the app behaves as before until the owner collects the data. Formats: plan section "Data formats" and spec section 8.
+
+**Verified.** Reported by the Task 6 implementer; not re-run for this note.
+- `pnpm test` (514 tests, 40 files) and `pnpm typecheck` pass.
+- Addon tests pass: 128 successes, 0 failures.
+- `pnpm --filter web test:e2e` passes.
+- Throwaway container image check passes; the container and volume were removed afterwards.
+
+**NOT verified.**
+- `tools/wowhead/capture.js` has never run against a live Wowhead page.
+- The page URLs and the profession list in `docs/wowhead-data-guide.md` come from the spec and are unverified.
+- The real effect on chains is unseen until data exists.
+- A read-only open of a WAL-mode mirror may still create `-shm` and `-wal` side files (the test covers only non-WAL databases).
+- Docker Compose was not re-checked for M2.
+
+**Owner actions.**
+1. If you use the local server on :3000, restart it: the e2e run rebuilt `apps/web/build`.
+2. Follow `docs/wowhead-data-guide.md` on one class page and one profession page first (for example Shaman and Cooking). Report what the snippet prints before collecting the rest.
+3. Recreate the container to pick up the new code: `podman compose up -d --build --force-recreate`. Note that `podman build -t forevertracker:dev .` retags the image the compose stack uses.
+4. Later: the M2 cleanup list (below).
+
+**Known small issues** (deferred in the reviews; none blocks this part).
+- `capture.js` `main()` has a bare catch that reports real database errors as "mirror not available".
+- `capture.js` takes the largest table, so rows can include header rows (a zone named after a header); zone rows without a level are not reported.
+- `capture.js` removes every substring matching the page name (`rest.split(name)`), not only the title.
+- The builder gives the same message for invalid JSON and an invalid capture shape, assumes `data/curated` exists, and has no tests for `main()` or the invalid-capture message.
+- `readQuestIdsReadonly` duplicates the `readQuestIds` SQL filter (drift risk).
+- The guide calls quest 96626 "Camping 101"; its real name is "Camping 101: Cooking". Two wording nits.
+- `chainProgress` checks "fewer than 2 members" against the full group, so a chain with one usable member can list as a chain of one; a completed but unusable member shows "unavailable"; no test for the one-usable case.
+- Stale INTERIM comments in `professions.ts` and `next-up.ts`; no test for a tag naming a profession missing from the catalogue; duplicate helpers in one test.
+- The Quests-tab chain test asserts `every(total<=2)`, which passes with no chains; no web-level test of Next up tag filtering; the "logged once" behaviour is untested.
+- The curated directory walk upwards can reach `/data/curated` (the `DATA_DIR` volume) inside the image.
+- Steps shown for unavailable chain members are dimmed at 0.6 opacity, which may be low contrast.
+
+**Next: M2 step 3** (exploration and completion view v1), once the owner has collected the data. Then "where to next" (step 4), the alt comparison chart (step 5), profession advice and the talent playground (step 6). M2 cleanup at the end: sync rate and Retry-After, login rate limit, and session binding with the cookie `secure` flag.

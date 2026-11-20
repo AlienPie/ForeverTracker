@@ -214,17 +214,28 @@ Lives in `data/` as versioned files, not code. Each file records the game build 
 written for and its sources; the app flags files older than the current build. Updating
 for a patch means editing data.
 
-- **Class, race and profession quest tags:** generated from Wowhead's Forever listings by a
-  **maintainer tool** — a browser-console snippet run by a person on pages they have
-  opened — which extracts (quest ID, name, level, required level) into JSON. About 22
-  pages (9 classes, ~13 professions) once per patch. A validation script checks every ID
-  against the ForeverDB mirror and reports misses. The app never fetches Wowhead.
-- **Zones:** Wowhead's Forever zones page (one table, about 144 rows) gives each zone's level
-  range, territory (Alliance, Horde or Contested), instance type (dungeon, raid, battleground)
-  and whether it is new or changed. The same maintainer tool extracts it to `data/zones.json`;
-  a validation script matches names to the ForeverDB `zones` mirror. Ranges can be wide or
-  missing, so the app cross-checks them against the quest-derived band (the spread of quest
-  levels per zone) and says "no recommendation yet" when neither source has a range.
+- **Class, race and profession quest tags:** collected by hand from Wowhead's Forever pages
+  with a **maintainer tool** (`tools/wowhead/capture.js`, a browser-console snippet run by the
+  owner on pages they have opened; see `docs/wowhead-data-guide.md`). The snippet writes one
+  capture file per page to `data/wowhead-captures/`. `tools/build-curated.ts` (`pnpm curated:build`)
+  reads the captures and writes `data/curated/quest-tags.json`: a list of `{questId, kind, value}`
+  tags, where `kind` is `class`, `race` or `profession`. Several tags of one kind are alternatives.
+  The builder checks quest IDs against the ForeverDB mirror and reports misses. The app never
+  fetches Wowhead. Exact shapes: `docs/superpowers/plans/2026-11-20-m2-curated-data-and-tags.md`,
+  "Data formats".
+- **Link overrides:** `data/curated/overrides.json`, written by hand (the builder never touches
+  it). Each entry `{from, to, note}` says quest `to` can follow quest `from`, for quests shared
+  between regions that the mirror links in one region only. Unknown IDs and loops are skipped.
+- **Zones:** Wowhead's Forever zones page (one table, about 144 rows). The snippet captures the
+  raw table cells to a capture file; the builder turns them into `data/curated/zones.json`, with
+  `{name, minLevel, maxLevel, territory, type}` per zone (territory `Alliance`, `Horde` or
+  `Contested`; type `zone`, `dungeon`, `raid` or `battleground`; levels may be null). The "new or
+  changed" flag is not kept. Zone names are not yet matched against the ForeverDB `zones` mirror.
+  Ranges can be wide or missing, so the app cross-checks them against the quest-derived band (the
+  spread of quest levels per zone) and says "no recommendation yet" when neither source has a range.
+- **Capture files:** each snippet run is saved by hand as `data/wowhead-captures/<name>.json`
+  (`tool: "ft-capture"`, page URL, kind and value, `rows` of quest ID, name and optional level,
+  `zoneRows` for the zones page, and `notes`). Shape in the plan's "Data formats" section.
 - **Talent builds:** recorded from guides (Icy Veins, Wowhead and similar) as lists of
   node ranks with the guide link, author/date and game build. Facts only; no guide text.
   Absent builds are represented as "no recommendation".
@@ -280,9 +291,12 @@ supplies their own keys. Keys and tokens are never logged.
   1. **Maintainer snippet tool and curated data** (class/race/profession quest tags, zone level ranges and
      territory from Wowhead, link overrides for quests shared between regions). The snippet runs in the
      owner's own browser on pages the owner has opened; output is curated JSON committed with the repo; the
-     app reads the local files and never calls Wowhead.
+     app reads the local files and never calls Wowhead. **Status (2026-11-20): tool and formats built;
+     data collection pending.** The owner collects the pages by hand, following `docs/wowhead-data-guide.md`;
+     the curated files in `data/curated/` are still empty.
   2. Class/race/profession chains using the tags (replacing the interim profession rule; hides steps for
-     professions the character lacks).
+     professions the character lacks). **Status (2026-11-20): built** (tag-aware chains and filtering), with
+     no visible effect until the data exists.
   3. **Exploration and completion view, v1:** quest-based completion per zone, what is left, skipped quests in
      visited zones. Real map exploration (areas uncovered, flight paths) is a follow-up behind a short in-game
      check of the exploration API.
