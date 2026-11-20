@@ -43,9 +43,9 @@ const quest = (id: number, name: string, previous: Link[] = []) => ({
 });
 const after = (id: number, name: string): Link[] => [{ questId: id, name, relation: "Complete first" }];
 
-function seeded(): Db {
+function seeded(fixture = FIXTURE): Db {
   const db = openDb(":memory:");
-  ingestSavedVariables(db, FIXTURE, () => NOW);
+  ingestSavedVariables(db, fixture, () => NOW);
   const put = (resource: string, id: string, data: unknown) =>
     db.insert(contentRecord).values({ resource, id, build: "1.0", data: JSON.stringify(data), fetchedAt: NOW }).run();
   put("meta", "current", { build: "1.0", levelCap: 60 });
@@ -107,7 +107,17 @@ describe("chain page with curated profession tags", () => {
   });
 
   test("the Quests tab chain list excludes the unavailable step too", async () => {
+    // A quest in the log makes the chain listed.
+    state.db = seeded(`ForeverTrackerDB = { schema = 1, characters = {
+  ["${FULL}"] = { snapshot = { takenAt = ${NOW - 3600},
+    identity = { name = "Tessaly", class = "PRIEST", race = "Human", level = 12 },
+    state = { zone = "Dun Morogh", mapId = 1426 },
+    progress = { professions = { { skillLine = 182, name = "Herbalism", rank = 10, max = 75 }, { skillLine = 197, name = "Tailoring", rank = 10, max = 75 } },
+      questsCompleted = {}, questLog = { { id = 9101 } } } }, visited = {} },
+} }`);
+    resetQuestCatalog();
     const tab = (await questsLoad({ params: { guid: FULL } } as never)) as { chains: { total: number }[] };
-    expect(tab.chains.every((c) => c.total <= 2)).toBe(true);
+    expect(tab.chains).toHaveLength(1);
+    expect(tab.chains[0]!.total).toBe(2);
   });
 });

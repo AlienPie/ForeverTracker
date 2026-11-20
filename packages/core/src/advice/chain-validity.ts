@@ -1,7 +1,8 @@
+import { CURATED_RELATION } from "../curated/relation";
 import type { QuestRow } from "./content";
 
 /** Relations that mean "the other quest comes first" (used by `prerequisites` too). "Curated" is a link added from `overrides.json`. */
-export const PREREQUISITE = new Set(["Complete first", "Chain link", "Offered after", "Next quest", "Curated"]);
+export const PREREQUISITE = new Set(["Complete first", "Chain link", "Offered after", "Next quest", CURATED_RELATION]);
 
 type AnyLink = { questId?: unknown; relation?: unknown };
 

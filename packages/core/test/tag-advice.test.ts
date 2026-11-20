@@ -55,11 +55,24 @@ describe("tag-aware profession", () => {
     { questId: 2, kind: "profession", value: "Mining" },
   ]);
 
-  test("professionOfQuestTagged uses the tag; untagged quest is not a profession quest when tags exist", () => {
+  test("professionOfQuestTagged uses the tag; untagged quest is not a profession quest when profession tags exist", () => {
     expect(professionOfQuestTagged(cook, CATALOG, tags)?.slug).toBe("cooking");
     expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, tags)).toBeNull();
     expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, undefined)?.slug).toBe("mining");
     expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, buildTagIndex([]))?.slug).toBe("mining");
+  });
+
+  test("only class or race tags: the name rule still applies; with a profession tag it is off", () => {
+    const classRace = buildTagIndex([
+      { questId: 50, kind: "class", value: "Shaman" },
+      { questId: 51, kind: "race", value: "Orc" },
+    ]);
+    expect(classRace.hasTags).toBe(true);
+    expect(classRace.hasProfessionTags).toBe(false);
+    expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, classRace)?.slug).toBe("mining");
+    const out = nextUp(base([q(7, "Camping 101: Mining")], { tags: classRace }));
+    expect(out).toEqual([]);
+    expect(professionOfQuestTagged(q(3, "Camping 101: Mining"), CATALOG, tags)).toBeNull();
   });
 
   test("nextUp: Cooking allowed with full slots, Mining not suggested", () => {
@@ -141,6 +154,14 @@ describe("race and class tags", () => {
     expect(raceAllows(["Orc"], "Dwarf")).toBe(false);
     expect(raceAllows(["Orc"], null)).toBe(false);
     expect(raceAllows(["Orc", "Troll"], "TROLL")).toBe(true);
+  });
+
+  test("raceAllows matches the addon tokens by letters only", () => {
+    expect(raceAllows(["Night Elf"], "NightElf")).toBe(true);
+    expect(raceAllows(["Undead"], "Scourge")).toBe(true);
+    expect(raceAllows(["Scourge"], "Undead")).toBe(true);
+    expect(raceAllows(["Dwarf"], "NightElf")).toBe(false);
+    expect(raceAllows(["Night Elf"], "Scourge")).toBe(false);
   });
 
   test("nextUp filters by race", () => {

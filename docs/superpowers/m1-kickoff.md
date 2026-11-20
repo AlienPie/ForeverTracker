@@ -107,7 +107,7 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 
 ## State at the end of M2 part 1
 
-**What exists.** Branch `m2-curated-data`, commits `63d1549`..`287b953`. Curated data types and loaders (`63d1549`); link overrides applied and a quest-tag index (`0b11d6d`); the browser capture snippet `tools/wowhead/capture.js` and the builder `pnpm curated:build` (`bd17073`, with the read-only mirror fix in `3c2d72b`); the owner guide `docs/wowhead-data-guide.md` (`5ab3ec9`); profession, class and race filtering from the curated tags in core (`b152df5`); the web app loads the curated files and hides chain steps the character cannot take (`287b953`). The files `data/curated/quest-tags.json`, `overrides.json` and `zones.json` are committed but EMPTY, so the app behaves as before until the owner collects the data. Formats: plan section "Data formats" and spec section 8.
+**What exists.** Branch `m2-curated-data`, commits `63d1549`..`287b953`. Curated data types and loaders (`63d1549`); link overrides applied and a quest-tag index (`0b11d6d`); the browser capture snippet `tools/wowhead/capture.js` and the builder `pnpm curated:build` (`bd17073`, with the read-only mirror fix in `3c2d72b`); the owner guide `docs/wowhead-data-guide.md` (`5ab3ec9`); profession, class and race filtering from the curated tags in core (`b152df5`); the web app loads the curated files and hides chain steps the character cannot take (`287b953`). The files `data/curated/quest-tags.json`, `overrides.json` and `zones.json` are committed but EMPTY, so the app behaves as before until the owner collects the data. Formats: section "Data formats" of `docs/superpowers/plans/2026-11-20-m2-curated-data-and-tags.md` and spec section 8.
 
 **Verified.** Reported by the Task 6 implementer; not re-run for this note.
 - `pnpm test` (514 tests, 40 files) and `pnpm typecheck` pass.
@@ -129,7 +129,6 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 4. Later: the M2 cleanup list (below).
 
 **Known small issues** (deferred in the reviews; none blocks this part).
-- `capture.js` `main()` has a bare catch that reports real database errors as "mirror not available".
 - `capture.js` takes the largest table, so rows can include header rows (a zone named after a header); zone rows without a level are not reported.
 - `capture.js` removes every substring matching the page name (`rest.split(name)`), not only the title.
 - The builder gives the same message for invalid JSON and an invalid capture shape, assumes `data/curated` exists, and has no tests for `main()` or the invalid-capture message.

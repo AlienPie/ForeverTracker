@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { catalogSource, createQuestCatalog } from "../src/lib/server/content";
+import { catalogSource, createQuestCatalog, resetCuratedProblemLog } from "../src/lib/server/content";
 import { resolveCuratedDir } from "../src/lib/server/env";
 
 const NOW = 1_800_000_000;
@@ -60,6 +60,33 @@ describe("catalog with curated data", () => {
     writeFileSync(join(dir, "overrides.json"), "{not json");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     await createQuestCatalog({ source: () => catalogSource("mirror", seeded()), curatedDir: () => dir }).get();
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("skipped override links", () => {
+  test("an unknown quest and a cycle are warned about once", async () => {
+    resetCuratedProblemLog();
+    const dir = tmp();
+    writeFileSync(
+      join(dir, "overrides.json"),
+      JSON.stringify({
+        version: 1,
+        links: [
+          { from: 9001, to: 9002 },
+          { from: 9002, to: 9001 },
+          { from: 9001, to: 4242 },
+        ],
+      }),
+    );
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const build = () => createQuestCatalog({ source: () => catalogSource("mirror", seeded()), curatedDir: () => dir }).get();
+    await build();
+    expect(warn).toHaveBeenCalledTimes(1);
+    const msg = String(warn.mock.calls[0]![0]);
+    expect(msg).toContain("4242");
+    expect(msg).toContain("cycle");
+    await build();
     expect(warn).toHaveBeenCalledTimes(1);
   });
 });

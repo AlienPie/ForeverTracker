@@ -216,8 +216,8 @@ for a patch means editing data.
 
 - **Class, race and profession quest tags:** collected by hand from Wowhead's Forever pages
   with a **maintainer tool** (`tools/wowhead/capture.js`, a browser-console snippet run by the
-  owner on pages they have opened; see `docs/wowhead-data-guide.md`). The snippet writes one
-  capture file per page to `data/wowhead-captures/`. `tools/build-curated.ts` (`pnpm curated:build`)
+  owner on pages they have opened; see `docs/wowhead-data-guide.md`). The snippet prints one
+  capture per page, which the owner saves to `data/wowhead-captures/`. `tools/build-curated.ts` (`pnpm curated:build`)
   reads the captures and writes `data/curated/quest-tags.json`: a list of `{questId, kind, value}`
   tags, where `kind` is `class`, `race` or `profession`. Several tags of one kind are alternatives.
   The builder checks quest IDs against the ForeverDB mirror and reports misses. The app never

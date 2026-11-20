@@ -37,6 +37,13 @@ describe("buildUsable", () => {
     expect(full(q(99))).toBe(true); // untagged
   });
 
+  test("only class or race tags: the name rule still drops a profession-named quest", () => {
+    const classRace = buildTagIndex([{ questId: 3, kind: "class", value: "Shaman" }]);
+    const full = { ...base, tags: classRace, professions: learn("Herbalism", "Tailoring") };
+    expect(buildUsable(full)(q(10, "Camping 101: Mining"))).toBe(false);
+    expect(buildUsable({ ...full, tags })(q(10, "Camping 101: Mining"))).toBe(true);
+  });
+
   test("class and race tags", () => {
     expect(buildUsable({ ...base, classToken: "PRIEST" })(q(3))).toBe(false);
     expect(buildUsable({ ...base, classToken: "SHAMAN" })(q(3))).toBe(true);

@@ -113,16 +113,23 @@ async function professionsOrNone(source: ContentSource): Promise<ProfessionInfo[
 
 let lastProblems = "";
 
+/** Logs the curated problems once per distinct set, not on every 60 s reload. */
+function reportProblems(problems: string[]): void {
+  const text = problems.join("\n");
+  if (text !== "" && text !== lastProblems) console.warn(`curated data problems:\n${text}`);
+  lastProblems = text;
+}
+
+/** Forget the last logged problems (tests). */
+export const resetCuratedProblemLog = (): void => {
+  lastProblems = "";
+};
+
 /** The curated files, or nothing when there is no directory or it cannot be read. Problems are logged. */
 function curatedOrNone(dir: (() => string) | undefined): Curated {
   if (!dir) return emptyCurated();
   try {
-    const curated = readCuratedDir(dir());
-    const text = curated.problems.join("\n");
-    // Once per distinct set of problems, not on every 60 s reload.
-    if (text !== "" && text !== lastProblems) console.warn(`curated data problems:\n${text}`);
-    lastProblems = text;
-    return curated;
+    return readCuratedDir(dir());
   } catch (err) {
     console.warn("curated data unavailable:", err instanceof Error ? err.message : err);
     return emptyCurated();
@@ -151,7 +158,9 @@ export function createQuestCatalog(opts: {
     const loaded = await loadQuests(source);
     if (loaded.length === 0) return EMPTY;
     const curated = curatedOrNone(opts.curatedDir);
-    const { quests } = curated.links.length > 0 ? applyOverrides(loaded, curated.links) : { quests: loaded };
+    const applied = curated.links.length > 0 ? applyOverrides(loaded, curated.links) : { quests: loaded, problems: [] };
+    const quests = applied.quests;
+    reportProblems([...curated.problems, ...applied.problems]);
     const catalog: QuestCatalog = {
       quests,
       levelCap: await getLevelCap(source),

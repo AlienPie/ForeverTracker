@@ -95,17 +95,17 @@ export function slotsUsed(learned: Set<string>, catalog: ProfessionInfo[]): numb
 }
 
 /**
- * The profession a quest is for. When `tags` has tags (`tags.hasTags`), the curated profession tag
- * decides (matched by name, case-insensitive, to the catalog) and a quest without a profession tag
- * is NOT a profession quest, whatever its name. With no tags (absent or empty) the interim name
- * rule (`professionOfQuest`) applies. A tag naming a profession missing from the catalog gives null.
+ * The profession a quest is for. When `tags` has profession tags (`tags.hasProfessionTags`), the
+ * curated profession tag decides (matched by name, case-insensitive, to the catalog) and a quest
+ * without a profession tag is NOT a profession quest, whatever its name. With no profession tags
+ * (absent, empty, or only class or race tags) the interim name rule (`professionOfQuest`) applies. A tag naming a profession missing from the catalog gives null.
  */
 export function professionOfQuestTagged(
   q: QuestRow,
   professions: ProfessionInfo[],
   tags?: TagIndex,
 ): ProfessionInfo | null {
-  if (!tags || !tags.hasTags) return professionOfQuest(q.name, professions);
+  if (!tags || !tags.hasProfessionTags) return professionOfQuest(q.name, professions);
   const tag = tags.professionOf(q.id);
   if (tag === null) return null;
   const key = norm(tag);

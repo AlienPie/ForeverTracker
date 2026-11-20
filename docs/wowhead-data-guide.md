@@ -85,12 +85,12 @@ Some quests follow another quest in every region, but the mirror only links them
 {
   "version": 1,
   "links": [
-    { "from": 96628, "to": 96626, "note": "Camping 101 follows The Adventurer in every region" }
+    { "from": 96628, "to": 96608, "note": "The Great Outdoors follows The Adventurer in Dun Morogh" }
   ]
 }
 ```
 
-Here quest 96626 (Camping 101) follows 96628 (The Adventurer). Quest IDs are in the page address of a chain page: `/c/<guid>/quests/chain/<questId>`, where the number at the end is the ID. Links with unknown IDs, or that would create a loop, are skipped. This file is yours; `pnpm curated:build` never touches it.
+Here quest 96608 ("The Great Outdoors", Dun Morogh, which leads on to 96629 "Camping 101: Cooking") follows 96628 ("The Adventurer", Dun Morogh). A link joins the two quests' chains into one group, so only link a quest to the quest that really follows it in that region; link across regions only when the two chains really are one chain. Quest IDs are in the page address of a chain page: `/c/<guid>/quests/chain/<questId>`, where the number at the end is the ID. Links with unknown IDs, or that would create a loop, are skipped. This file is yours; `pnpm curated:build` never touches it.
 
 ## 7. When to redo it
 

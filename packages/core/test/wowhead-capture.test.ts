@@ -10,7 +10,7 @@ const extract = exportsBag.extract!;
 
 const fixture = (name: string): Capture =>
   JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8")) as Capture;
-const link = (id: number, text: string, rowText = "") => ({ href: `/forever/quest=${id}/x`, text, rowText });
+const link = (id: number, text: string, rowText = text) => ({ href: `/forever/quest=${id}/x`, text, rowText });
 const page = (url: string, anchors: ReturnType<typeof link>[] = []) => ({ url, title: "t", anchors, tableRows: [] });
 const existing = { patch: "1.60.1", capturedAt: "2026-11-21" };
 
@@ -21,6 +21,14 @@ describe("extract", () => {
     expect(c.kind).toBe("class");
     expect(c.value).toBe("Shaman");
     expect(c.rows[0]!.name).toBe("A");
+  });
+
+  it("ignores quest links outside any table row and counts them", () => {
+    const c = extract(
+      page("https://x.test/forever/quests/classes/shaman", [link(1, "In list", "In list 4"), link(2, "Sidebar", ""), link(3, "Comment", "")]),
+    );
+    expect(c.rows.map((r) => r.questId)).toEqual([1]);
+    expect(c.notes.join(" ")).toContain("2 quest links outside the list were ignored");
   });
 
   it("reads the level from the row text, or notes its absence", () => {

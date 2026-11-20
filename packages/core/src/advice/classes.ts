@@ -38,12 +38,19 @@ export function classAllowsTagged(q: QuestRow, classToken: string | null | undef
   return t !== "" && tagged.some((c) => c.trim().toLowerCase() === t);
 }
 
+/** Letters only, lower case; "scourge" is the addon's token for Undead. "Night Elf" and "NightElf" both give "nightelf". */
+const raceKey = (s: string): string => {
+  const k = s.replace(/[^\p{L}]/gu, "").toLowerCase();
+  return k === "scourge" ? "undead" : k;
+};
+
 /**
- * Whether a character of `raceToken` (snapshot race, e.g. "Dwarf", any case) may do a quest tagged
- * for `races`: true when `races` is empty, otherwise only on a case-insensitive match.
+ * Whether a character of `raceToken` (snapshot race token, e.g. "Dwarf", "NightElf", "Scourge")
+ * may do a quest tagged for `races`: true when `races` is empty, otherwise only when one matches
+ * ignoring case, spaces and punctuation ("Night Elf" = "NightElf", "Undead" = "Scourge").
  */
 export function raceAllows(races: string[], raceToken: string | null | undefined): boolean {
   if (races.length === 0) return true;
-  const t = typeof raceToken === "string" ? raceToken.trim().toLowerCase() : "";
-  return t !== "" && races.some((r) => r.trim().toLowerCase() === t);
+  const t = typeof raceToken === "string" ? raceKey(raceToken) : "";
+  return t !== "" && races.some((r) => raceKey(r) === t);
 }

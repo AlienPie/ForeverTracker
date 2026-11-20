@@ -1,8 +1,9 @@
 import type { QuestRow } from "../advice/content";
 import type { QuestLinkOverride, QuestTag } from "./types";
 
-/** Relation string of a link added from `overrides.json`. */
-export const CURATED_RELATION = "Curated";
+import { CURATED_RELATION } from "./relation";
+
+export { CURATED_RELATION };
 
 /** True when `target` is reachable from `start` by following `chain.next`. */
 function reaches(byId: Map<number, QuestRow>, start: number, target: number): boolean {
@@ -73,6 +74,12 @@ export type TagIndex = {
   racesOf(questId: number): string[];
   /** False when there are no tags at all. */
   hasTags: boolean;
+  /** True when at least one profession tag exists (the interim name rule is then off). */
+  hasProfessionTags: boolean;
+  /** True when at least one class tag exists. */
+  hasClassTags: boolean;
+  /** True when at least one race tag exists. */
+  hasRaceTags: boolean;
 };
 
 /** Index of the curated quest tags by quest id. Values are returned as given. */
@@ -92,5 +99,8 @@ export function buildTagIndex(tags: QuestTag[]): TagIndex {
     classesOf: (id) => classes.get(id) ?? [],
     racesOf: (id) => races.get(id) ?? [],
     hasTags: tags.length > 0,
+    hasProfessionTags: profession.size > 0,
+    hasClassTags: classes.size > 0,
+    hasRaceTags: races.size > 0,
   };
 }

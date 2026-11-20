@@ -55,7 +55,7 @@
 ```
 `kind` is `class`, `race` or `profession`; `value` is the display name (case-insensitive match). A quest may carry several tags of different kinds, and several `race` tags mean any of them is allowed (alternatives).
 
-`data/curated/overrides.json`: `{ "version": 1, "links": [ { "from": 96628, "to": 96626, "note": "Camping 101 follows The Adventurer in every region" } ] }`. Each link means quest `to` can follow quest `from` (adds `from` to `to`'s previous and `to` to `from`'s next, relation `"Curated"`).
+`data/curated/overrides.json`: `{ "version": 1, "links": [ { "from": 96628, "to": 96608, "note": "The Great Outdoors follows The Adventurer in Dun Morogh" } ] }`. Each link means quest `to` can follow quest `from` (adds `from` to `to`'s previous and `to` to `from`'s next, relation `"Curated"`).
 
 `data/curated/zones.json`: `{ "version": 1, "zones": [ { "name": "Dun Morogh", "minLevel": 1, "maxLevel": 10, "territory": "Alliance", "type": "zone" } ] }`; `territory` is `Alliance`, `Horde` or `Contested`, `type` is `zone`, `dungeon`, `raid` or `battleground`; levels may be null.
 
@@ -101,7 +101,7 @@ Capture file (`data/wowhead-captures/<name>.json`), written by the snippet, save
   - `applyOverrides(quests: QuestRow[], links: QuestLinkOverride[]): { quests: QuestRow[]; problems: string[] }`. Returns new row objects only for quests whose links changed (inputs are not mutated). For each link, `to` gains `{ questId: from, name, relation: "Curated" }` in `chain.previous` and `from` gains the matching entry in `chain.next`, unless already linked. Skips (with a problem string) a link whose `from` or `to` is not in `quests`, and a link that would create a cycle (`to` already reaches `from` through `chain.next`).
   - `type TagIndex = { professionOf(questId: number): string | null; classesOf(questId: number): string[]; racesOf(questId: number): string[]; hasTags: boolean }` and `buildTagIndex(tags: QuestTag[]): TagIndex` (values returned as given; first profession tag wins; `hasTags` false when the list is empty).
 
-- [ ] **Step 1: Write failing tests**: the Camping case (quest 96628 "The Adventurer" with no `next`, quest 96626 with `previous` only 95998; one link from 96628 to 96626; after applying, 96626's previous contains both and 96628's next contains 96626; input arrays unchanged); unknown id skipped with a problem; cycle skipped (A to B exists, link B to A); duplicate link not added twice; `buildTagIndex` with two race tags on one quest returns both, `professionOf` of an untagged quest is null, `hasTags` false for `[]`.
+- [ ] **Step 1: Write failing tests**: the Camping case (quest 96628 "The Adventurer" (Dun Morogh) with no `next`, quest 96608 "The Great Outdoors" (Dun Morogh) with no `previous`; one link from 96628 to 96608; after applying, 96608's previous contains 96628 and 96628's next contains 96608; input arrays unchanged); unknown id skipped with a problem; cycle skipped (A to B exists, link B to A); duplicate link not added twice; `buildTagIndex` with two race tags on one quest returns both, `professionOf` of an untagged quest is null, `hasTags` false for `[]`.
 - [ ] **Step 2: Run** the file and see it fail.
 - [ ] **Step 3: Implement** both functions.
 - [ ] **Step 4: Run** the file: pass.
