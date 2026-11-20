@@ -23,6 +23,19 @@ function ftKindFromUrl(url) {
   return null;
 }
 
+/** The integer in the anchor's table row under the header matching `re`, or null. */
+function columnNumber(anchor, re) {
+  var headers = anchor.headers || [];
+  var cells = anchor.cells || [];
+  for (var i = 0; i < headers.length; i++) {
+    if (re.test(String(headers[i] || "").trim())) {
+      var m = /^\s*(\d{1,3})\s*$/.exec(String(cells[i] || ""));
+      return m ? parseInt(m[1], 10) : null;
+    }
+  }
+  return null;
+}
+
 function extract(input, hint) {
   var notes = [];
   var found = ftKindFromUrl(input.url);
@@ -57,6 +70,10 @@ function extract(input, hint) {
     seen[id] = true;
     var name = String(a.text || "").trim();
     var row = { questId: id, name: name };
+    var lv = columnNumber(a, /^level$/i);
+    var rq = columnNumber(a, /^req\.?(uired)?$/i);
+    if (lv !== null) row.level = lv;
+    if (rq !== null) row.requiredLevel = rq;
     rows.push(row);
   }
   if (kind !== "zones" && rows.length === 0) notes.push("No quests found on this page (no links containing /quest=).");
@@ -95,7 +112,15 @@ if (typeof __ftExports !== "undefined") {
       var links = document.querySelectorAll("a[href*='/quest=']");
       for (var i = 0; i < links.length; i++) {
         var tr = links[i].closest("tr");
-        anchors.push({ href: links[i].getAttribute("href") || "", text: text(links[i]), rowText: tr ? text(tr) : "" });
+        var cells = [];
+        var headers = [];
+        if (tr) {
+          for (var k = 0; k < tr.cells.length; k++) cells.push(text(tr.cells[k]));
+          var table = tr.closest("table");
+          var headRow = table && (table.tHead ? table.tHead.rows[0] : table.querySelector("tr:has(th)"));
+          if (headRow) for (var h = 0; h < headRow.cells.length; h++) headers.push(text(headRow.cells[h]));
+        }
+        anchors.push({ href: links[i].getAttribute("href") || "", text: text(links[i]), rowText: tr ? text(tr) : "", cells: cells, headers: headers });
       }
       var best = null;
       var tables = document.querySelectorAll("table");

@@ -10,8 +10,9 @@ const extract = exportsBag.extract!;
 
 const fixture = (name: string): Capture =>
   JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8")) as Capture;
-const link = (id: number, text: string, rowText = text) => ({ href: `/forever/quest=${id}/x`, text, rowText });
-const page = (url: string, anchors: ReturnType<typeof link>[] = []) => ({ url, title: "t", anchors, tableRows: [] });
+type Anchor = { href: string; text: string; rowText: string; cells?: string[]; headers?: string[] };
+const link = (id: number, text: string, rowText = text): Anchor => ({ href: `/forever/quest=${id}/x`, text, rowText });
+const page = (url: string, anchors: Anchor[] = []) => ({ url, title: "t", anchors, tableRows: [] });
 const existing = { patch: "1.60.1", capturedAt: "2026-11-21" };
 
 describe("extract", () => {
@@ -31,13 +32,20 @@ describe("extract", () => {
     expect(c.notes.join(" ")).toContain("2 quest links outside the list were ignored");
   });
 
-  it("does not guess a level from the row text (digits in a row are not reliably the quest level)", () => {
+  it("reads Level and Req. from their columns, not from other digits in the row", () => {
+    const headers = ["Changes", "Name", "Level", "Req.", "Side", "Rewards", "Exp.", "Money", "Pop."];
+    const cells = ["Updated Level changed, Requirements changed +7", "Storm, Earth, and Fire Shaman", "43", "30", "", "", "3,600", "60", ""];
     const c = extract(
-      page("https://x.test/forever/quests/classes/shaman", [link(1, "Storm, Earth, and Fire", "Updated Level changed, Requirements changed +7 Storm, Earth, and Fire Shaman 43 30 3,600 60")]),
+      page("https://x.test/forever/quests/classes/shaman", [
+        { ...link(1, "Storm, Earth, and Fire", cells.join(" ")), cells, headers },
+        link(2, "No columns", "No columns 12 34"),
+      ]),
     );
-    expect(c.rows).toEqual([{ questId: 1, name: "Storm, Earth, and Fire" }]);
+    expect(c.rows[0]).toEqual({ questId: 1, name: "Storm, Earth, and Fire", level: 43, requiredLevel: 30 });
+    expect(c.rows[1]).toEqual({ questId: 2, name: "No columns" });
     expect(c.notes.join(" ")).not.toMatch(/level/i);
   });
+
 
 
   it("title-cases hyphenated slugs and handles professions and races", () => {

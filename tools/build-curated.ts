@@ -14,7 +14,7 @@ export type Capture = {
   capturedAt: string;
   kind: string;
   value: string;
-  rows: { questId: number; name: string }[];
+  rows: { questId: number; name: string; level?: number; requiredLevel?: number }[];
   zoneRows: { cells: string[] }[];
   notes: string[];
 };
