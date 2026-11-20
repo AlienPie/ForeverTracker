@@ -4,8 +4,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { CuratedTags, CuratedZone, QuestTag, QuestTagKind } from "../packages/core/src/index";
-import { openDb, resolveDataDir } from "../packages/db/src/index";
-import { readQuestIds } from "../packages/content/src/index";
+import { readQuestIdsReadonly, resolveDataDir } from "../packages/db/src/index";
 
 export type Capture = {
   tool: "ft-capture";
@@ -161,12 +160,15 @@ function main(): void {
 
   let mirror: Set<number> | null = null;
   const dbPath = join(resolveDataDir(process.env), "forevertracker.sqlite");
+  let mirrorError: string | null = null;
   if (existsSync(dbPath)) {
     try {
-      mirror = new Set(readQuestIds(openDb(dbPath)).ids);
-    } catch {
-      mirror = null;
+      mirror = new Set(readQuestIdsReadonly(dbPath));
+      if (mirror.size === 0) mirrorError = "no quest records in the mirror";
+    } catch (e) {
+      mirrorError = e instanceof Error ? e.message : String(e);
     }
+    if (mirrorError !== null) mirror = null;
   }
 
   const prev = readJson(join(curDir, "quest-tags.json")) as { patch?: unknown; capturedAt?: unknown } | null;
@@ -175,6 +177,7 @@ function main(): void {
     capturedAt: new Date().toISOString().slice(0, 10),
   };
   const { tags, zones, report } = buildCurated(captures, mirror, existing);
+  if (mirrorError !== null) report.push(`mirror error: ${mirrorError}`);
   for (const c of captures) for (const n of c.notes) report.push(`note from capture ${c.url}: ${n}`);
 
   const hasTagCaptures = captures.some((c) => TAG_KINDS.includes(c.kind));
