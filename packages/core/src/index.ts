@@ -53,3 +53,4 @@ export {
   type QuestTagKind,
 } from "./curated/types";
 export { parseCurated, readCuratedDir } from "./curated/load";
+export { applyOverrides, buildTagIndex, CURATED_RELATION, type TagIndex } from "./curated/apply";
