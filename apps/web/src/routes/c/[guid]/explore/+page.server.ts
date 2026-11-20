@@ -6,7 +6,15 @@ import { buildUsable } from "../../../../lib/server/usable";
 import { env } from "../../../../lib/server/env";
 import { getQuestCatalogSafe } from "../../../../lib/server/safe-catalog";
 
+const SORTS = ["level", "complete", "recent"] as const;
+export type ExploreSort = (typeof SORTS)[number];
+export type Tally = { done: number; total: number };
+
 export type ExplorePageData = {
+  sort: ExploreSort;
+  /** Every zone, and the visited ones only. */
+  all: Tally;
+  seen: Tally;
   /** The quest catalog has at least one quest. */
   contentReady: boolean;
   contentMode: ContentMode;
@@ -19,12 +27,14 @@ export type ExplorePageData = {
   hasZoneData: boolean;
 };
 
-export const load: ServerLoad = async ({ params }): Promise<ExplorePageData> => {
-  const view = characterOr404(params.guid, undefined, { events: false });
+export const load: ServerLoad = async ({ params, url }): Promise<ExplorePageData> => {
+  const view = characterOr404(params.guid, undefined, { events: 2000 });
+  const asked = url.searchParams.get("sort");
+  const sort: ExploreSort = SORTS.find((s) => s === asked) ?? "level";
   const catalog = await getQuestCatalogSafe();
   const contentReady = catalog.quests.length > 0;
   const hasZoneData = (catalog.zones?.length ?? 0) > 0;
-  const base = { contentMode: env().contentMode, level: view.level, hasZoneData };
+  const base = { sort, all: { done: 0, total: 0 }, seen: { done: 0, total: 0 }, contentMode: env().contentMode, level: view.level, hasZoneData };
   if (!contentReady) return { ...base, contentReady, visited: [], unvisited: [], unplaced: 0 };
 
   const faction = factionOfRace(view.race);
@@ -39,6 +49,11 @@ export const load: ServerLoad = async ({ params }): Promise<ExplorePageData> => 
     completed,
     inLog,
   });
+  const completedAt = new Map<number, number>();
+  for (const e of view.events) {
+    const id = e.kind === "quest_turned_in" && e.data && typeof e.data === "object" ? (e.data as { questId?: unknown }).questId : null;
+    if (typeof id === "number" && (completedAt.get(id) ?? 0) < e.t) completedAt.set(id, e.t);
+  }
   const { zones, unplaced } = zoneProgress({
     quests: catalog.quests,
     zones: catalog.zones,
@@ -49,6 +64,7 @@ export const load: ServerLoad = async ({ params }): Promise<ExplorePageData> => 
     inLog,
     visitedMapIds: new Set(view.visitedMaps.map((v) => v.mapId)),
     usable,
+    completedAt,
   });
   // Unvisited: in-range zones first, zones of the other faction's territory last; the rest keep the level order.
   const unvisited = zones.filter((z) => !z.visited);
@@ -56,5 +72,10 @@ export const load: ServerLoad = async ({ params }): Promise<ExplorePageData> => 
     (faction !== null && (z.territory === "Alliance" || z.territory === "Horde") && z.territory !== faction ? 2 : 0) +
     (z.fit === "in-range" ? 0 : 1);
   unvisited.sort((a, b) => rank(a) - rank(b));
-  return { ...base, contentReady, visited: zones.filter((z) => z.visited), unvisited, unplaced };
+  const visited = zones.filter((z) => z.visited);
+  const pct = (z: ZoneProgress) => (z.total > 0 ? z.done / z.total : 0);
+  if (sort === "complete") visited.sort((a, b) => pct(b) - pct(a) || (b.lastDoneAt ?? 0) - (a.lastDoneAt ?? 0));
+  else if (sort === "recent") visited.sort((a, b) => (b.lastDoneAt ?? 0) - (a.lastDoneAt ?? 0) || pct(b) - pct(a));
+  const tally = (list: ZoneProgress[]): Tally => ({ done: list.reduce((n, z) => n + z.done, 0), total: list.reduce((n, z) => n + z.total, 0) });
+  return { ...base, contentReady, visited, unvisited, unplaced, all: tally(zones), seen: tally(visited) };
 };

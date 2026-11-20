@@ -72,7 +72,8 @@ function setup(opts: { sv?: string; quests?: boolean; zones?: boolean; zoneList?
   resetQuestCatalog();
 }
 
-const run = async () => (await load({ params: { guid: GUID } } as never)) as ExplorePageData;
+const run = async (sort?: string) =>
+  (await load({ params: { guid: GUID }, url: new URL(`http://localhost/x${sort ? `?sort=${sort}` : ""}`) } as never)) as ExplorePageData;
 const html = (data: ExplorePageData) => render(ExplorePage, { props: { data } }).body.replace(/<!--.*?-->/g, "");
 
 beforeEach(() => {
@@ -103,7 +104,7 @@ describe("explore page", () => {
     const out = html(await run());
     expect(out).toContain("Visited");
     expect(out).toContain("Not visited yet");
-    expect(out).toContain("1 zone visited");
+    expect(out).toContain("Visited zones (1)");
     expect(out).toContain("<details");
     expect(out).toContain("Dun Morogh");
     expect(out).toContain("3 / 4");
@@ -146,7 +147,7 @@ describe("explore page", () => {
     const data = await run();
     expect(data.visited).toEqual([]);
     const out = html(data);
-    expect(out).toContain("0 zones visited");
+    expect(out).toContain("Visited zones (0)");
     expect(out).toContain("Not visited yet");
     expect(out).not.toContain("NaN");
   });
@@ -166,7 +167,7 @@ describe("explore page", () => {
     expect(out).toContain("Stonard Pass");
     expect(out).toContain("0 / 0");
     expect(out).not.toContain("NaN");
-    expect(out).not.toContain("%");
+    expect(out.slice(out.indexOf("<details"))).not.toMatch(/\d%/);
   });
 
   const add = (...qs: ReturnType<typeof quest>[]) => {
@@ -217,5 +218,38 @@ describe("explore page", () => {
     expect(out).toContain("in your log");
     expect(out).toContain("Completed");
     expect(out).toContain("Not done");
+  });
+
+  const twoZones = (events: string) => `ForeverTrackerDB = { schema = 1, characters = {
+    ["${GUID}"] = { snapshot = { takenAt = ${NOW - 3600},
+      identity = { name = "Brewdan", class = "WARRIOR", race = "Dwarf", level = 12 },
+      state = { zone = "Dun Morogh", mapId = 1426 },
+      progress = { professions = {}, questsCompleted = { 100, 101, 103, 200 }, questLog = {} } }, visited = {}, events = { ${events} } },
+  } }`;
+
+  test("sorts visited zones by level, by most complete, or by recent activity", async () => {
+    setup({ sv: twoZones(`{ t = ${NOW - 500}, kind = "quest_turned_in", data = { questId = 100 } }, { t = ${NOW - 900}, kind = "quest_turned_in", data = { questId = 200 } }`) });
+    expect((await run()).visited.map((z) => z.name)).toEqual(["Dun Morogh", "Westfall"]);
+    expect((await run("complete")).visited.map((z) => z.name)).toEqual(["Westfall", "Dun Morogh"]); // 100% before 75%
+    expect((await run("recent")).visited.map((z) => z.name)).toEqual(["Dun Morogh", "Westfall"]); // 100 turned in last
+    expect((await run("nonsense")).sort).toBe("level");
+  });
+
+  test("equal completion is ordered by the most recent turn-in", async () => {
+    setup({ sv: twoZones(`{ t = ${NOW - 900}, kind = "quest_turned_in", data = { questId = 200 } }`), zoneList: ZONES });
+    const data = await run("complete");
+    expect(data.visited.map((z) => z.name)).toEqual(["Westfall", "Dun Morogh"]);
+  });
+
+  test("global and visited tallies count only quests this faction can do", async () => {
+    setup({ sv: twoZones("") });
+    const data = await run();
+    // Dun Morogh: 100, 101, 103, 104 (102 is skipped and the Horde quest 105 is ignored). Westfall: 200.
+    expect(data.all).toEqual({ done: 4, total: 5 });
+    expect(data.seen).toEqual({ done: 4, total: 5 });
+    const out = html(data);
+    expect(out).toContain("All zones");
+    expect(out).toContain("Visited zones (2)");
+    expect(out).toContain("Most complete");
   });
 });

@@ -14,8 +14,20 @@
   const meta = (z: ZoneProgress) =>
     data.hasZoneData ? [range(z.minLevel, z.maxLevel), z.territory].filter(Boolean).join(", ") : "";
   const pct = (done: number, total: number) => (total > 0 ? `${Math.round((done / total) * 100)}%` : null);
-  const doneInVisited = $derived(data.visited.reduce((n, z) => n + z.done, 0));
+  const SORTS = [
+    { id: "level", label: "Level" },
+    { id: "complete", label: "Most complete" },
+    { id: "recent", label: "Recently active" },
+  ];
+  const share = (done: number, total: number) => (total > 0 ? Math.round((done / total) * 100) : 0);
 </script>
+
+{#snippet meter(label: string, done: number, total: number)}
+  <div class="meter">
+    <div class="mhead"><span>{label}</span><span>{done} / {total} <span class="sub">{share(done, total)}%</span></span></div>
+    <div class="track" role="progressbar" aria-label={label} aria-valuemin="0" aria-valuemax={total} aria-valuenow={done}><i style:width="{share(done, total)}%"></i></div>
+  </div>
+{/snippet}
 
 <section class="panel explore" aria-labelledby="ex">
   <h2 id="ex">Explore</h2>
@@ -23,11 +35,20 @@
     <p class="sub">No zone progress yet.</p>
     <ContentBanner contentMode={data.contentMode} />
   {:else}
-    <p class="sub">
-      {plural(data.visited.length, "zone", "zones")} visited, {plural(doneInVisited, "quest", "quests")} done in them.
-    </p>
+    <div class="meters">
+      {@render meter("All zones", data.all.done, data.all.total)}
+      {@render meter(`Visited zones (${data.visited.length})`, data.seen.done, data.seen.total)}
+    </div>
 
     <h3 class="zhead">Visited</h3>
+    {#if data.visited.length > 1}
+      <p class="sorts" aria-label="Sort visited zones">
+        Sort by
+        {#each SORTS as s (s.id)}
+          <a href="?sort={s.id}" aria-current={data.sort === s.id ? "true" : undefined}>{s.label}</a>
+        {/each}
+      </p>
+    {/if}
     {#if data.visited.length === 0}
       <p class="sub">No zone visited yet. Zones show here once you have been there or done one of their quests.</p>
     {/if}
@@ -40,6 +61,7 @@
             {#if FIT[z.fit]}<span class="tag" class:cont={z.fit === "in-range"}>{FIT[z.fit]}</span>{/if}
           </span>
           <span class="zcount">{z.done} / {z.total}{#if pct(z.done, z.total)} <span class="sub">{pct(z.done, z.total)}</span>{/if}</span>
+          {#if z.total > 0}<span class="track zbar" aria-hidden="true"><i style:width="{share(z.done, z.total)}%"></i></span>{/if}
         </summary>
         <div class="zbody">
           {#if z.inProgress.length > 0}

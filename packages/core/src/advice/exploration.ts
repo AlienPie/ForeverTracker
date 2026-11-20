@@ -17,6 +17,8 @@ export type ZoneProgress = PlaceZone & {
   skipped: number;
   /** done + inLog + left. */
   total: number;
+  /** Newest turn-in time (unix seconds) among completed quests of this zone that `completedAt` knows; else null. */
+  lastDoneAt: number | null;
   /** Completed quests, by level then id; empty unless visited. */
   completedQuests: ZoneQuest[];
   /**
@@ -38,6 +40,8 @@ export type ExplorationInput = {
   completed: Set<number>;
   inLog: Set<number>;
   visitedMapIds: ReadonlySet<number>;
+  /** When quests were turned in (quest id to unix seconds), from the addon's events; the game's list has no dates. */
+  completedAt?: ReadonlyMap<number, number>;
   usable?: (q: QuestRow) => boolean;
 };
 
@@ -126,6 +130,7 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
   const zones = place(input.zones, groups).map((p): ZoneProgress => {
     const g = groups.get(norm(p.name))!;
     let done = 0;
+    let lastDoneAt: number | null = null;
     const finished: QuestRow[] = [];
     const logged: QuestRow[] = [];
     const chained: QuestRow[] = [];
@@ -136,6 +141,8 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
       if (completed.has(q.id)) {
         done++;
         finished.push(q);
+        const t = input.completedAt?.get(q.id);
+        if (t !== undefined && (lastDoneAt === null || t > lastDoneAt)) lastDoneAt = t;
       } else if (inLog.has(q.id)) {
         log++;
         logged.push(q);
@@ -157,6 +164,7 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
       left: left.length,
       skipped: skipped.length,
       total: done + log + left.length,
+      lastDoneAt,
       completedQuests: visited ? finished.sort(byLevelThenId).map(zq) : [],
       inProgress: visited
         ? [...logged.map((q) => ({ q, inLog: true })), ...chained.map((q) => ({ q, inLog: false }))]
