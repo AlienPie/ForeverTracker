@@ -270,13 +270,17 @@ supplies their own keys. Keys and tokens are never logged.
   and completed); interim profession-quest rule (from the quest names, ForeverDB data only);
   surname on the roster. No new external data sources.
 - **M2 (order as listed):**
-  0. **Spike first:** check what ForeverDB already offers for class/race/profession tagging, and read Wowhead's
-     terms and robots rules. If ForeverDB covers it, no Wowhead step is needed. If a scripted run is allowed,
-     build the maintainer script below; otherwise keep the paste snippet.
-  1. **Maintainer tool and curated data** (class/race/profession quest tags, zone level ranges and territory
-     from Wowhead, link overrides for quests shared between regions). Preferred shape: a script the owner runs
-     once per patch in a real browser with a polite delay, writing curated JSON that is committed with the
-     repo; the app reads the local files and never calls Wowhead. The paste-in snippet is the fallback.
+  0. **Spike (done 2026-11-20):** ForeverDB has no class, race or profession fields or filters on quests
+     (filters: `q`, `zone`, `minLevel`, `maxLevel`, `side`), so the tags need an outside source. Wowhead's
+     terms (https://corp.fanbyte.com/legal/terms) forbid accessing or downloading content with any tool,
+     robot, crawler or similar other than ZAM's software or generally available browsers. **Ruling: no
+     scripted fetching of Wowhead.** The maintainer uses the paste-in browser snippet on pages the maintainer
+     has opened and read in a normal browser, once per patch. ForeverDB's limits: 5,000 requests a day and
+     30 a minute on the free tier (docs; the owner sees 60 a minute until December); 429 with Retry-After.
+  1. **Maintainer snippet tool and curated data** (class/race/profession quest tags, zone level ranges and
+     territory from Wowhead, link overrides for quests shared between regions). The snippet runs in the
+     owner's own browser on pages the owner has opened; output is curated JSON committed with the repo; the
+     app reads the local files and never calls Wowhead.
   2. Class/race/profession chains using the tags (replacing the interim profession rule; hides steps for
      professions the character lacks).
   3. **Exploration and completion view, v1:** quest-based completion per zone, what is left, skipped quests in
@@ -286,6 +290,9 @@ supplies their own keys. Keys and tokens are never logged.
   5. Alt comparison chart (level against date, all characters).
   6. Profession advice, then the talent playground with guide builds.
   Backup and restore (bug-list item 11) is small and may go first or alongside.
+  **M2 cleanup (end of M2, owner-deferred):** lower the content sync to the free-tier limit (30 a minute
+  after 12 December) and honour Retry-After on 429; login rate limit; bind sessions to the owner password and
+  set the cookie `secure` flag when the request is HTTPS.
 - **M3:** sync agent first (owner priority: automatic upload), then Battle.net login, planning view, theme polish.
 - **M4 (backlog, after M3):** dungeon planner and tracker; gear tab with best-in-slot at the level caps and where to find it; share card; quest finder alongside the M2 quest tags if not already done; backup and restore, "since your last upload" recap with gold trend, pace ETA (see `docs/superpowers/m1-bugs-and-tweaks.md` items 8 to 17 for the owner's priorities, which may pull some of these earlier).
 
