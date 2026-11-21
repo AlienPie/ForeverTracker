@@ -152,3 +152,17 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 **Owner check.** Rebuild with `podman compose up -d --build --force-recreate`, open a character's Explore tab, and compare a zone count with the same zone on the Quests tab.
 
 **Next: M2 step 4** ("where to next" levelling areas), then the alt comparison chart (step 5), profession advice and the talent playground (step 6). M2 cleanup at the end: sync rate and Retry-After, login rate limit, and session binding with the cookie `secure` flag.
+
+## M2 cleanup: found in the browser run-through (21 November)
+
+To tackle next. Items 1 to 3 are one small round (recommended first); the rest can follow in any order.
+
+1. **Journey route "now" marker.** It sits on the last place first reached (Hillsbrad Foothills) rather than the character's current zone (Darkshore, `state.mapId`). Mark the current zone instead.
+2. **Hide a place.** Flown-over places recorded before the taxi fix (Searing Gorge, Burning Steppes, Stranglethorn) still show on the Journey route and as visited zones on Explore. Add a "hide this place" control, stored in the app database like manual completion.
+3. **Continent and sea maps are not places.** "Kalimdor" appears as a route place and events read "First visit to The Great Sea, Eastern Kingdoms". Filter continent map ids (for example 1414, 1415) and sea subzones out of the route.
+4. **Raw quest ids on the Journey tab.** "Completed quest 94499" appears for quests the mirror does not know (Forever-specific ids). Run a content sync, and show "unknown quest" instead of a bare id.
+5. **Race and class quests are untagged**, so Explore totals include quests the character cannot do (Zephras Isle 81 for a Dwarf, Teldrassil 59, "Hallowed Memorandum" for a Shaman). Needs the remaining class, race and profession captures (docs/wowhead-data-guide.md).
+6. **Same-name duplicates.** Dun Morogh lists "The Sparklematic 5200!" four times at level 30 (separate quest ids with one name). Decide whether to merge them in Explore.
+7. **Levels 11 to 19 on the test character have no time per level** (level-up events never recorded). The addon fix (commit 0b714a1) covers new levelling only. Show "not recorded" for the gap on the Journey chart, and check after the next level-up that the Journey tab shows it (if not, bring back the saved data).
+8. **Favicon:** `/favicon.ico` returns 404 on every page.
+9. **Welcome! (Dun Morogh)** shows as not done because the game completed a Forever-specific id the mirror lacks. After a content sync, check whether it clears; otherwise add a curated override mapping the real id to 5841.
