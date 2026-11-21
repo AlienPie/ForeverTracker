@@ -1,12 +1,12 @@
 // Read-only probe of Blizzard's (undocumented) WoW: Forever API.
-// Needs BNET_CLIENT_ID and BNET_CLIENT_SECRET in the environment (see .env.example). Prints
+// Needs BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET in the environment (see .env.example). Prints
 // the HTTP status and name of each quest id; never prints the credentials or token.
 //   node --env-file=.env scripts/probe-battlenet.mjs [region] [questId ...]
 const [region = "eu", ...rest] = process.argv.slice(2);
 const ids = rest.length ? rest.map(Number) : [5841, 5805, 94499, 96057, 1];
-const { BNET_CLIENT_ID: id, BNET_CLIENT_SECRET: secret } = process.env;
+const { BLIZZARD_CLIENT_ID: id, BLIZZARD_CLIENT_SECRET: secret } = process.env;
 if (!id || !secret) {
-  console.error("Set BNET_CLIENT_ID and BNET_CLIENT_SECRET (e.g. in .env, then run with --env-file=.env).");
+  console.error("Set BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET (e.g. in .env, then run with --env-file=.env).");
   process.exit(1);
 }
 const tokenRes = await fetch("https://oauth.battle.net/token", {
