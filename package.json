@@ -7,6 +7,7 @@
     "typecheck": "tsc -b",
     "addon:quest-ids": "tsx tools/gen-addon-quest-ids.ts",
     "curated:build": "tsx tools/build-curated.ts",
+    "blizzard:quests": "node --env-file=.env --import tsx tools/fetch-blizzard-quests.ts",
     "content:sync": "tsx packages/content/src/cli/sync.ts",
     "token:create": "pnpm --filter web token:create"
   },

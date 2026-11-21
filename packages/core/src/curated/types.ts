@@ -13,8 +13,17 @@ export type CuratedZone = {
   territory: CuratedTerritory | null;
   type: CuratedZoneType;
 };
-export type Curated = { tags: CuratedTags; links: QuestLinkOverride[]; zones: CuratedZone[]; problems: string[] };
+export type Curated = {
+  tags: CuratedTags;
+  links: QuestLinkOverride[];
+  zones: CuratedZone[];
+  /** Quest side by id, from Blizzard's data (the mirror's side is often missing). */
+  sides: Record<number, "Alliance" | "Horde">;
+  /** Quest titles by id, from Blizzard's data, for ids the mirror does not know. */
+  names: Record<number, string>;
+  problems: string[];
+};
 
 export function emptyCurated(): Curated {
-  return { tags: { patch: null, capturedAt: null, tags: [] }, links: [], zones: [], problems: [] };
+  return { tags: { patch: null, capturedAt: null, tags: [] }, links: [], zones: [], sides: {}, names: {}, problems: [] };
 }

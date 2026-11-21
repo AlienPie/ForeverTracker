@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { mergeBlizzard, readBlizzardQuest, type BlizzardQuest } from "./blizzard";
 import {
   emptyCurated,
   type Curated,
@@ -97,12 +98,24 @@ function parseZones(raw: unknown, out: Curated): void {
   });
 }
 
-/** Validate the three parsed JSON files. Bad entries are dropped and described in `problems`; never throws. */
-export function parseCurated(files: { tags?: unknown; overrides?: unknown; zones?: unknown }): Curated {
+function parseBlizzard(raw: unknown, out: Curated): void {
+  const obj = open("blizzard-quests.json", raw, out.problems);
+  if (!obj) return;
+  const quests: BlizzardQuest[] = [];
+  list("blizzard-quests.json", "quests", obj, out.problems).forEach((e) => {
+    const q = readBlizzardQuest(e);
+    if (q) quests.push(q);
+  });
+  mergeBlizzard(out, quests);
+}
+
+/** Validate the parsed JSON files. Bad entries are dropped and described in `problems`; never throws. */
+export function parseCurated(files: { tags?: unknown; overrides?: unknown; zones?: unknown; blizzard?: unknown }): Curated {
   const out = emptyCurated();
   if (files.tags !== undefined) parseTags(files.tags, out);
   if (files.overrides !== undefined) parseLinks(files.overrides, out);
   if (files.zones !== undefined) parseZones(files.zones, out);
+  if (files.blizzard !== undefined) parseBlizzard(files.blizzard, out);
   return out;
 }
 
@@ -123,7 +136,7 @@ export function readCuratedDir(dir: string): Curated {
       return undefined;
     }
   };
-  const curated = parseCurated({ tags: read("quest-tags.json"), overrides: read("overrides.json"), zones: read("zones.json") });
+  const curated = parseCurated({ tags: read("quest-tags.json"), overrides: read("overrides.json"), zones: read("zones.json"), blizzard: read("blizzard-quests.json") });
   curated.problems.unshift(...problems);
   return curated;
 }

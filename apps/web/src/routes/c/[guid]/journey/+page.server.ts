@@ -52,7 +52,8 @@ export const load: ServerLoad = async ({ params, url }): Promise<JourneyPageData
   if (!journey) error(404, "Character not found");
 
   const catalog = await getQuestCatalogSafe();
-  const questNames = new Map(catalog.quests.map((q) => [q.id, q.name]));
+  const questNames = new Map<number, string>(Object.entries(catalog.extraNames ?? {}).map(([k, v]) => [Number(k), v]));
+  for (const q of catalog.quests) questNames.set(q.id, q.name);
   const nameOf = (id: number) => mapName(id, catalog.mapNames);
 
   const sessions = buildSessions(journey.events);

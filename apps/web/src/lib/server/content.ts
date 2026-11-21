@@ -31,7 +31,18 @@ export type QuestCatalog = {
   tags?: TagIndex;
   /** Curated zone level ranges; absent when there are none. */
   zones?: CuratedZone[];
+  /** Quest titles from Blizzard's data, by id, for quests the mirror lacks; absent when there are none. */
+  extraNames?: Record<number, string>;
 };
+
+/** Blizzard's faction requirement is authoritative: it replaces the mirror's (often missing) side. */
+export function applyBlizzardSides(quests: QuestRow[], sides: Record<number, "Alliance" | "Horde">): QuestRow[] {
+  if (Object.keys(sides).length === 0) return quests;
+  return quests.map((q) => {
+    const s = sides[q.id];
+    return s ? { ...q, side: s === "Alliance" ? "a" : "h" } : q;
+  });
+}
 
 export const CATALOG_TTL_MS = 60_000;
 export const EMPTY_CATALOG: QuestCatalog = Object.freeze({ quests: [], levelCap: null, mapNames: {} }) as QuestCatalog;
@@ -159,7 +170,7 @@ export function createQuestCatalog(opts: {
     if (loaded.length === 0) return EMPTY;
     const curated = curatedOrNone(opts.curatedDir);
     const applied = curated.links.length > 0 ? applyOverrides(loaded, curated.links) : { quests: loaded, problems: [] };
-    const quests = applied.quests;
+    const quests = applyBlizzardSides(applied.quests, curated.sides);
     reportProblems([...curated.problems, ...applied.problems]);
     const catalog: QuestCatalog = {
       quests,
@@ -169,6 +180,7 @@ export function createQuestCatalog(opts: {
     };
     if (curated.tags.tags.length > 0) catalog.tags = buildTagIndex(curated.tags.tags);
     if (curated.zones.length > 0) catalog.zones = curated.zones;
+    if (Object.keys(curated.names).length > 0) catalog.extraNames = curated.names;
     return catalog;
   }
 
