@@ -11,15 +11,13 @@ export function parseTooltipProvider(raw: string | undefined): TooltipProvider {
 }
 
 /**
- * Link target for an item, spell or quest, in the form the chosen provider's tooltip script recognises.
- * Wowhead needs its /forever/ pages (other forms show retail data); ForeverDB is the default target otherwise.
+ * Link target for an item, spell or quest: always Wowhead's /forever/ page (other forms show retail
+ * data), whatever the tooltip provider. The provider only decides which tooltip script loads.
  * Returns null for ids that are not positive integers, so callers render plain text.
  */
-export function entityUrl(kind: EntityKind, id: number, provider: TooltipProvider): string | null {
+export function entityUrl(kind: EntityKind, id: number, _provider?: TooltipProvider): string | null {
   if (!Number.isSafeInteger(id) || id <= 0) return null;
-  return provider === "wowhead"
-    ? `https://www.wowhead.com/forever/${kind}=${id}`
-    : `https://foreverdb.net/${kind}/${id}`;
+  return `https://www.wowhead.com/forever/${kind}=${id}`;
 }
 
 /** Script the browser should load for a provider, or null when none. */

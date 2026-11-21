@@ -53,11 +53,15 @@ export function readBlizzardQuest(e: unknown): BlizzardQuest | null {
   };
 }
 
-/** Add Blizzard's class, race and profession requirements as tags, except where `Curated` already has a tag of that kind for the quest (the owner's captures win). */
+/**
+ * Add Blizzard's class, race and profession requirements as tags. Blizzard's data is live, the
+ * owner's captures go stale, so for a quest Blizzard knows its data replaces every captured tag of
+ * the quest; captures only stand for quests Blizzard lacks.
+ */
 export function mergeBlizzard(out: Curated, quests: BlizzardQuest[]): void {
-  const have = new Set(out.tags.tags.map((t) => `${t.questId}|${t.kind}`));
+  const known = new Set(quests.map((q) => q.id));
+  out.tags.tags = out.tags.tags.filter((t) => !known.has(t.questId));
   const add = (questId: number, kind: QuestTag["kind"], values: string[]) => {
-    if (have.has(`${questId}|${kind}`)) return;
     for (const value of values) out.tags.tags.push({ questId, kind, value });
   };
   for (const q of quests) {

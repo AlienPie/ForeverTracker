@@ -38,12 +38,22 @@ describe("blizzard-quests.json in parseCurated", () => {
     expect(c.sides[94499]).toBe("Alliance");
     expect(c.names[94499]).toBe("Call of Water");
   });
-  test("the owner's capture tags win over Blizzard's for the same quest and kind", () => {
+  test("Blizzard's tags replace captured ones for quests it knows; captures stand for the rest", () => {
     const c = parseCurated({
-      tags: { version: 1, tags: [{ questId: 94499, kind: "class", value: "Warrior" }] },
+      tags: {
+        version: 1,
+        tags: [
+          { questId: 94499, kind: "class", value: "Warrior" },
+          { questId: 94499, kind: "profession", value: "Cooking" },
+          { questId: 1, kind: "class", value: "Mage" },
+        ],
+      },
       blizzard: file([q]),
     });
-    expect(c.tags.tags).toEqual([{ questId: 94499, kind: "class", value: "Warrior" }]);
+    expect(c.tags.tags).toEqual([
+      { questId: 1, kind: "class", value: "Mage" },
+      { questId: 94499, kind: "class", value: "Shaman" },
+    ]);
   });
   test("bad entries are dropped and an unsupported version is a problem", () => {
     expect(parseCurated({ blizzard: file([{ id: "x" }, q]) }).names).toEqual({ 94499: "Call of Water" });

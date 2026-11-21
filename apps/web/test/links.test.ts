@@ -7,9 +7,9 @@ describe("entityUrl", () => {
     expect(entityUrl("item", 6710, "wowhead")).toBe("https://www.wowhead.com/forever/item=6710");
     expect(entityUrl("spell", 145, "wowhead")).toBe("https://www.wowhead.com/forever/spell=145");
   });
-  test("foreverdb and none use ForeverDB paths", () => {
-    expect(entityUrl("item", 1482, "foreverdb")).toBe("https://foreverdb.net/item/1482");
-    expect(entityUrl("quest", 1582, "none")).toBe("https://foreverdb.net/quest/1582");
+  test("every provider links to Wowhead", () => {
+    expect(entityUrl("item", 1482, "foreverdb")).toBe("https://www.wowhead.com/forever/item=1482");
+    expect(entityUrl("quest", 1582, "none")).toBe("https://www.wowhead.com/forever/quest=1582");
   });
   test("non-positive-integer ids give no link", () => {
     for (const id of [0, -1, 1.5, NaN, Infinity]) expect(entityUrl("item", id, "none")).toBeNull();

@@ -49,7 +49,7 @@
         {/each}
       </ol>
       <p class="sub foot">
-        Why these? Quests come from ForeverDB. Class quests are matched to your class; race quests are not tagged yet, so some may be missing.
+        Why these? Quests come from ForeverDB. Class, race and profession quests are matched to your character using Blizzard's quest data.
       </p>
     {/if}
   </section>

@@ -171,5 +171,18 @@ To tackle next. Items 1 to 3 are one small round (recommended first); the rest c
 
 - Blizzard has an undocumented Forever API (notes: https://mhuijskens.com/WoWForever/Api/). Namespace `static-forever-eu` serves `/data/wow/quest/{id}` with title, area or category, and `requirements` (classes, races, faction, prerequisite quests, reputations). The quest index lists only categories, areas and types, so quests are fetched by id. It has no level field.
 - `pnpm blizzard:quests` (tools/fetch-blizzard-quests.ts, uses BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET from `.env`) fetches every mirror quest id, ids from the last run and any ids on the command line (use it for completed ids the mirror lacks), and writes data/curated/blizzard-quests.json (3920 quests: 721 class, 212 race, 518 faction, 104 profession). The file is loaded with the curated data: your Wowhead capture tags win for a quest and kind; Blizzard's faction replaces the mirror's side; titles name unknown quests on the Journey tab.
-- 11 mirror quest ids are not in Blizzard's data (1374, 1375, 1380, 1381, 2358, 2521, 3504, 3506 and three more): probably removed from the game. Welcome! (5841) is still there, so there is no "removed" flag.
+- 11 mirror quest ids are not in Blizzard's data (1374, 1375, 1380, 1381, 2358, 2521, 3504, 3506 and three more). Wowhead shows only 1374 as removed from the game; 1375 and 1380 are still in it, so absence from Blizzard's data does not mean removed. Welcome! (5841) is in Blizzard's data though Wowhead says it is gone, so there is no reliable "removed" signal.
+- Decisions (21 November): Blizzard's data replaces captured tags for any quest it knows (captures stand only for quests it lacks); all quest, item and spell links go to Wowhead (`https://www.wowhead.com/forever/quest=<id>`); the "no longer in the game" list is the last low-impact item, and "Mark as completed" covers it meanwhile.
+- Quests only Blizzard knows (Call of Water, 94499) are named on the Journey tab but are not in chains or Explore, because those are built from the mirror's quest list. Blizzard has no quest index and no level field, so adding them means walking id ranges (79000 to 99999) and getting levels from somewhere else.
 - Open for M3: whether to drop ForeverDB entirely (Blizzard now covers quests; talents, professions and zones need checking), and whether the profile `quests` document (characters of level 10 and up, updated at logout) can replace the addon's completed-quest list.
+
+## To capture or verify once the milestones are done
+
+Wowhead is read by hand, so keep this short and do it in one sitting at the end.
+
+- Zone level ranges and territory (data/curated/zones.json): recheck after patches; Blizzard has no zone data in the API we found.
+- Quest levels for quests only Blizzard knows (the 94xxx, 96xxx and similar ids), if we add them to chains and Explore.
+- Quests removed from the game (Welcome! 5841, 1374 and any others): the "no longer available" line on each Wowhead page, which has no filter.
+- Remaining capture-based tags are only needed for quests Blizzard lacks; check how many that is after the next `pnpm blizzard:quests`.
+- Re-run `pnpm blizzard:quests` (and a content sync) after every game patch.
+- Profession advice and talent data: compare ForeverDB's against Blizzard's static data before deciding whether to drop ForeverDB (M3).

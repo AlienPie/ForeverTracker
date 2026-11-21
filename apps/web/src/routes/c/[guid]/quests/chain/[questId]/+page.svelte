@@ -71,7 +71,7 @@
       {/each}
     </ol>
     {#if c.members.some((m) => m.state === "unavailable")}
-      <p class="sub note">Dimmed steps are quests your character cannot take, going by Wowhead's class, race and profession tags. They are not counted above.</p>
+      <p class="sub note">Dimmed steps are quests your character cannot take, going by Blizzard's class, race, faction and profession requirements. They are not counted above.</p>
     {/if}
     {#if c.members.some((m) => m.state === "skipped")}
       <p class="sub note">Dimmed steps marked skipped are not needed: you completed what follows them. They are not counted above.</p>
