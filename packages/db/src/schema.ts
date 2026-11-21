@@ -77,3 +77,14 @@ export const manualCompletion = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.guid, t.questId] })],
 );
+
+/** Places (map ids) the owner hid from a character's visited list, such as zones only flown over. */
+export const hiddenPlace = sqliteTable(
+  "hidden_place",
+  {
+    guid: text("guid").notNull(),
+    mapId: integer("map_id").notNull(),
+    hiddenAt: integer("hidden_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.guid, t.mapId] })],
+);

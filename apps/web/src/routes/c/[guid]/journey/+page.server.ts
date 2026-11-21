@@ -83,7 +83,7 @@ export const load: ServerLoad = async ({ params, url }): Promise<JourneyPageData
   // that started before the window has no known start there and is left out (not drawn as ~0).
   const oldest = journey.oldestT;
   const paceUps = journey.capped && oldest !== null ? journey.levelUps.filter((u) => u.t >= oldest) : journey.levelUps;
-  const route = routeFromVisited(view.visitedMaps, journey.levelUps, (id) => catalog.mapNames[id] ?? null);
+  const route = routeFromVisited(view.visitedMaps, journey.levelUps, (id) => catalog.mapNames[id] ?? null, { currentMapId: view.mapId });
 
   return {
     empty: sessions.length === 0,

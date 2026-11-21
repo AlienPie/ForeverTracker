@@ -1,6 +1,7 @@
-import type { ServerLoad } from "@sveltejs/kit";
+import { fail, type Actions, type ServerLoad } from "@sveltejs/kit";
 import type { ContentMode } from "@ft/content";
-import { factionOfRace, zoneProgress, type ZoneProgress } from "@ft/core";
+import { factionOfRace, hidePlace, unhidePlace, zoneProgress, type ZoneProgress } from "@ft/core";
+import { getDb } from "../../../../lib/server/db";
 import { characterOr404 } from "../../../../lib/server/character";
 import { buildUsable } from "../../../../lib/server/usable";
 import { env } from "../../../../lib/server/env";
@@ -11,6 +12,8 @@ export type ExploreSort = (typeof SORTS)[number];
 export type Tally = { done: number; total: number };
 
 export type ExplorePageData = {
+  /** Places the owner hid (zones only flown over, say), so they can be shown again. */
+  hidden: { name: string; mapId: number }[];
   sort: ExploreSort;
   /** Every zone, and the visited ones only. */
   all: Tally;
@@ -34,7 +37,7 @@ export const load: ServerLoad = async ({ params, url }): Promise<ExplorePageData
   const catalog = await getQuestCatalogSafe();
   const contentReady = catalog.quests.length > 0;
   const hasZoneData = (catalog.zones?.length ?? 0) > 0;
-  const base = { sort, all: { done: 0, total: 0 }, seen: { done: 0, total: 0 }, contentMode: env().contentMode, level: view.level, hasZoneData };
+  const base = { hidden: [] as { name: string; mapId: number }[], sort, all: { done: 0, total: 0 }, seen: { done: 0, total: 0 }, contentMode: env().contentMode, level: view.level, hasZoneData };
   if (!contentReady) return { ...base, contentReady, visited: [], unvisited: [], unplaced: 0 };
 
   const faction = factionOfRace(view.race);
@@ -77,5 +80,21 @@ export const load: ServerLoad = async ({ params, url }): Promise<ExplorePageData
   if (sort === "complete") visited.sort((a, b) => pct(b) - pct(a) || (b.lastDoneAt ?? 0) - (a.lastDoneAt ?? 0));
   else if (sort === "recent") visited.sort((a, b) => (b.lastDoneAt ?? 0) - (a.lastDoneAt ?? 0) || pct(b) - pct(a));
   const tally = (list: ZoneProgress[]): Tally => ({ done: list.reduce((n, z) => n + z.done, 0), total: list.reduce((n, z) => n + z.total, 0) });
-  return { ...base, contentReady, visited, unvisited, unplaced, all: tally(zones), seen: tally(visited) };
+  const hidden = zones.filter((z) => z.mapId !== null && view.hiddenMaps.includes(z.mapId)).map((z) => ({ name: z.name, mapId: z.mapId! }));
+  return { ...base, hidden, contentReady, visited, unvisited, unplaced, all: tally(zones), seen: tally(visited) };
+};
+
+async function setHidden(guid: string | undefined, request: Request, hide: boolean) {
+  characterOr404(guid, undefined, { events: false });
+  const raw = (await request.formData()).get("mapId");
+  const id = typeof raw === "string" && /^[0-9]{1,9}$/.test(raw) ? Number(raw) : null;
+  if (id === null) return fail(400, { message: "Not a map id" });
+  if (hide) hidePlace(getDb(), guid!, id);
+  else unhidePlace(getDb(), guid!, id);
+  return { ok: true };
+}
+
+export const actions: Actions = {
+  hide: ({ params, request }) => setHidden(params.guid, request, true),
+  unhide: ({ params, request }) => setHidden(params.guid, request, false),
 };

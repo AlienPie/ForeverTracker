@@ -36,6 +36,13 @@
       "when": 1795216930062,
       "tag": "0004_common_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1795265516429,
+      "tag": "0005_lively_gorilla_man",
+      "breakpoints": true
     }
   ]
 }

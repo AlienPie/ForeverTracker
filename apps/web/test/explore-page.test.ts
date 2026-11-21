@@ -12,10 +12,11 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock("../src/lib/server/db", () => ({ getDb: () => state.db }));
 vi.mock("../src/lib/server/env", async (orig) => ({ ...(await orig<object>()), env: () => state.e }));
+vi.mock("$app/forms", () => ({ enhance: () => ({ destroy() {} }) }));
 vi.mock("$app/state", () => ({ page: { params: { guid: "Player-7777-0000F002" }, data: {} } }));
 
 import { resetQuestCatalog } from "../src/lib/server/content";
-import { load, type ExplorePageData } from "../src/routes/c/[guid]/explore/+page.server";
+import { actions, load, type ExplorePageData } from "../src/routes/c/[guid]/explore/+page.server";
 import ExplorePage from "../src/routes/c/[guid]/explore/+page.svelte";
 
 const NOW = 1_800_000_000;
@@ -251,5 +252,33 @@ describe("explore page", () => {
     expect(out).toContain("All zones");
     expect(out).toContain("Visited zones (2)");
     expect(out).toContain("Most complete");
+  });
+
+  test("a zone visited only by record can be hidden and shown again", async () => {
+    const withVisit = `ForeverTrackerDB = { schema = 1, characters = {
+      ["${GUID}"] = { snapshot = { takenAt = ${NOW - 3600},
+        identity = { name = "Brewdan", class = "WARRIOR", race = "Dwarf", level = 12 },
+        state = { zone = "Dun Morogh", mapId = 1426 },
+        progress = { professions = {}, questsCompleted = {}, questLog = {} } },
+        visited = { { mapId = 1436, subzone = "Hill", firstSeen = ${NOW - 7200} } } },
+    } }`;
+    setup({ sv: withVisit });
+    const post = (name: "hide" | "unhide") =>
+      (actions[name] as (e: never) => Promise<unknown>)({
+        params: { guid: GUID },
+        request: new Request("http://localhost/x", { method: "POST", body: new URLSearchParams({ mapId: "1436" }) }),
+      } as never);
+    let data = await run();
+    expect(data.visited.map((z) => z.name)).toEqual(["Westfall"]);
+    expect(html(data)).toContain("Hide this place");
+    await post("hide");
+    data = await run();
+    expect(data.visited).toEqual([]);
+    expect(data.hidden).toEqual([{ name: "Westfall", mapId: 1436 }]);
+    expect(html(data)).toContain("Show again");
+    await post("unhide");
+    data = await run();
+    expect(data.visited.map((z) => z.name)).toEqual(["Westfall"]);
+    expect(data.hidden).toEqual([]);
   });
 });

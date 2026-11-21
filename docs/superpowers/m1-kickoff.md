@@ -157,9 +157,9 @@ Do a short design pass first (mockups before UI code; use the frontend-design sk
 
 To tackle next. Items 1 to 3 are one small round (recommended first); the rest can follow in any order.
 
-1. **Journey route "now" marker.** It sits on the last place first reached (Hillsbrad Foothills) rather than the character's current zone (Darkshore, `state.mapId`). Mark the current zone instead.
-2. **Hide a place.** Flown-over places recorded before the taxi fix (Searing Gorge, Burning Steppes, Stranglethorn) still show on the Journey route and as visited zones on Explore. Add a "hide this place" control, stored in the app database like manual completion.
-3. **Continent and sea maps are not places.** "Kalimdor" appears as a route place and events read "First visit to The Great Sea, Eastern Kingdoms". Filter continent map ids (for example 1414, 1415) and sea subzones out of the route.
+1. **Done (route "now" marker).** It sits on the last place first reached (Hillsbrad Foothills) rather than the character's current zone (Darkshore, `state.mapId`). Mark the current zone instead.
+2. **Done (hide a place, on the Explore tab, with "Hidden places" to show them again).** Flown-over places recorded before the taxi fix (Searing Gorge, Burning Steppes, Stranglethorn) still show on the Journey route and as visited zones on Explore. Add a "hide this place" control, stored in the app database like manual completion.
+3. **Done (continent maps filtered in the reads and at the addon).** "Kalimdor" appears as a route place and events read "First visit to The Great Sea, Eastern Kingdoms". Filter continent map ids (for example 1414, 1415) and sea subzones out of the route.
 4. **Raw quest ids on the Journey tab.** "Completed quest 94499" appears for quests the mirror does not know (Forever-specific ids). Run a content sync, and show "unknown quest" instead of a bare id.
 5. **Race and class quests are untagged**, so Explore totals include quests the character cannot do (Zephras Isle 81 for a Dwarf, Teldrassil 59, "Hallowed Memorandum" for a Shaman). Needs the remaining class, race and profession captures (docs/wowhead-data-guide.md).
 6. **Same-name duplicates.** Dun Morogh lists "The Sparklematic 5200!" four times at level 30 (separate quest ids with one name). Decide whether to merge them in Explore.

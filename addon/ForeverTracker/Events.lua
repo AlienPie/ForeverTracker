@@ -63,6 +63,8 @@ function FT.recordVisit()
     return cmap.GetBestMapForUnit("player")
   end)
   if not num(mapId) then return false end
+  -- Continent maps (Azeroth, Kalimdor, Eastern Kingdoms) are reported at sea and in flight: not places.
+  if mapId == 947 or mapId == 1414 or mapId == 1415 then return false end
   local sub = FT.safe(FT.call, "GetSubZoneText")
   if type(sub) ~= "string" then sub = "" end
   local rec = FT.getCharacter(true)

@@ -1,6 +1,8 @@
 import { character, characterEvent, type Db } from "@ft/db";
 import { and, asc, count, desc, eq } from "drizzle-orm";
 import { levelOf, plausibleTime, type StoredEvent } from "../journey/sessions";
+import { CONTINENT_MAP_IDS } from "../journey/route";
+import { hiddenMapsFor } from "./character";
 
 export type JourneyData = {
   /** The newest events (capped), newest first. */
@@ -47,6 +49,7 @@ export function getJourneyData(db: Db, guid: string, opts: { events?: number } =
   const n = opts.events;
   const limit = typeof n === "number" && Number.isInteger(n) && n > 0 ? n : DEFAULT_JOURNEY_EVENTS;
 
+  const hidden = new Set(hiddenMapsFor(db, guid));
   const events: StoredEvent[] = [];
   const rows = db
     .select()
@@ -58,6 +61,10 @@ export function getJourneyData(db: Db, guid: string, opts: { events?: number } =
   for (const r of rows) {
     const data = parse(r.data);
     if (data === BAD || typeof r.t !== "number" || !Number.isFinite(r.t)) continue;
+    if (r.kind === "zone_first_visit" && typeof data === "object" && data !== null) {
+      const id = (data as { mapId?: unknown }).mapId;
+      if (typeof id === "number" && (CONTINENT_MAP_IDS.has(id) || hidden.has(id))) continue;
+    }
     events.push({ t: r.t, kind: r.kind, data });
   }
 

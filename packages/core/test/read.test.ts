@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { character, characterEvent, openDb, snapshot } from "@ft/db";
 import { describe, expect, test } from "vitest";
-import { formatMoney, formatPlayed, getCharacter, getRoster, ingestSavedVariables, markQuestCompleted, staleness, unmarkQuestCompleted } from "../src/index";
+import { formatMoney, formatPlayed, getCharacter, getRoster, ingestSavedVariables, hidePlace, markQuestCompleted, staleness, unhidePlace, unmarkQuestCompleted } from "../src/index";
 
 const ROSTER = readFileSync(new URL("./fixtures/Roster.lua", import.meta.url), "utf8");
 const M = "Player-4321-00000A01";
@@ -321,5 +321,21 @@ describe("manual completion", () => {
     const db = load(ROSTER);
     expect(markQuestCompleted(db, M, 0)).toBe(false);
     expect(markQuestCompleted(db, "Player-0-0", 5)).toBe(false);
+  });
+});
+
+describe("hidden places", () => {
+  test("a hidden map leaves visitedMaps and shows in hiddenMaps; continents never show", () => {
+    const db = load(ROSTER);
+    const before = getCharacter(db, M, NOW)!;
+    expect(before.visitedMaps.some((v) => [947, 1414, 1415].includes(v.mapId))).toBe(false);
+    const id = before.visitedMaps[0]?.mapId;
+    if (id === undefined) return;
+    expect(hidePlace(db, M, id)).toBe(true);
+    const after = getCharacter(db, M, NOW)!;
+    expect(after.visitedMaps.some((v) => v.mapId === id)).toBe(false);
+    expect(after.hiddenMaps).toEqual([id]);
+    unhidePlace(db, M, id);
+    expect(getCharacter(db, M, NOW)!.hiddenMaps).toEqual([]);
   });
 });

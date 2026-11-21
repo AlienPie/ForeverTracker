@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { enhance } from "$app/forms";
   import { page } from "$app/state";
   import ContentBanner from "../../../../lib/components/ContentBanner.svelte";
   import type { ZoneProgress } from "@ft/core";
@@ -64,6 +65,12 @@
           {#if z.total > 0}<span class="track zbar" aria-hidden="true"><i style:width="{share(z.done, z.total)}%"></i></span>{/if}
         </summary>
         <div class="zbody">
+          {#if z.mapId !== null && z.done + z.inLog === 0}
+            <form method="POST" action="?/hide" use:enhance class="inline hideform">
+              <input type="hidden" name="mapId" value={z.mapId} />
+              <span class="sub">Only flown over?</span> <button type="submit" class="linkbtn">Hide this place</button>
+            </form>
+          {/if}
           {#if z.ruledOut > 0}
             <p class="sub">
               {plural(z.ruledOut, "completed quest is", "completed quests are")} not counted here: {z.ruledOut === 1 ? "it has" : "they have"} the same
@@ -121,6 +128,20 @@
               {#if FIT[z.fit]}<span class="tag" class:cont={z.fit === "in-range"}>{FIT[z.fit]}</span>{/if}
             </span>
             <span class="zcount">{plural(z.total, "quest", "quests")}</span>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+
+    {#if data.hidden.length > 0}
+      <h3 class="zhead">Hidden places</h3>
+      <ul class="zlist">
+        {#each data.hidden as h (h.mapId)}
+          <li>
+            <span class="zname">{h.name}</span>
+            <form method="POST" action="?/unhide" use:enhance class="inline zcount">
+              <input type="hidden" name="mapId" value={h.mapId} /><button type="submit" class="linkbtn">Show again</button>
+            </form>
           </li>
         {/each}
       </ul>

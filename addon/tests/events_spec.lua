@@ -27,6 +27,12 @@ describe("FT.recordVisit", function()
     assert.is_nil(rec and rec.visited and next(rec.visited))
   end)
 
+  it("does not record a continent map as a place", function()
+    local FT = stubs.load({ C_Map = { GetBestMapForUnit = function() return 1414 end } })
+    stubs.setDB(nil)
+    assert.is_false(FT.recordVisit())
+  end)
+
   it("keeps an existing earlier firstSeen already in the DB", function()
     local FT = stubs.load()
     stubs.setDB({ characters = { [GUID] = { visited = {

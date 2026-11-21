@@ -16,6 +16,12 @@ export type Route = { stops: RouteStop[]; earlier: number; markers: RouteMarker[
 
 export const DEFAULT_ROUTE_STOPS = 8;
 
+/**
+ * Continent maps (Azeroth, Kalimdor, Eastern Kingdoms). The game reports these while flying or on a ship,
+ * so they are never counted as a place the character explored.
+ */
+export const CONTINENT_MAP_IDS: ReadonlySet<number> = new Set([947, 1414, 1415]);
+
 function safeName(nameOf: (mapId: number) => string | null, mapId: number): string {
   try {
     const n = nameOf(mapId);
@@ -57,13 +63,17 @@ function lastAtOrBefore(xs: number[], t: number): number {
  * Markers: each level-up (deduped by level, earliest wins) placed after the
  * stop that was current when it happened, as an index into the returned
  * stops; -1 when that stop was dropped or the level-up came before any stop.
- * Ascending by time. Unnamed maps are `Map <id>`.
+ * Ascending by time. Unnamed maps are `Map <id>`. Continent maps are left out.
+ *
+ * `opts.currentMapId`: the map the character is on now. When it is one of the kept stops, that stop is
+ * `current` (and runs to the latest known level) instead of the last stop first reached; when it is a
+ * stop that was dropped as earlier, no stop is current; otherwise the last stop is.
  */
 export function routeFromVisited(
   visited: { mapId: number; subzone: string; firstSeen: number }[],
   levelUps: LevelUp[],
   nameOf: (mapId: number) => string | null,
-  opts: { max?: number } = {},
+  opts: { max?: number; currentMapId?: number | null } = {},
 ): Route {
   const m = opts.max;
   const max = typeof m === "number" && Number.isInteger(m) && m > 0 ? m : DEFAULT_ROUTE_STOPS;
@@ -72,7 +82,7 @@ export function routeFromVisited(
   for (const v of Array.isArray(visited) ? visited : []) {
     if (typeof v !== "object" || v === null) continue;
     const { mapId, firstSeen } = v;
-    if (!Number.isInteger(mapId) || mapId < 0 || !plausibleTime(firstSeen)) continue;
+    if (!Number.isInteger(mapId) || mapId < 0 || CONTINENT_MAP_IDS.has(mapId) || !plausibleTime(firstSeen)) continue;
     const prev = maps.get(mapId);
     if (!prev) maps.set(mapId, { first: firstSeen, last: firstSeen });
     else {
@@ -98,11 +108,14 @@ export function routeFromVisited(
   const latestLevel = runningMax.length > 0 ? runningMax[runningMax.length - 1]! : null;
 
   const earlier = Math.max(0, all.length - max);
+  const here = opts.currentMapId;
+  const hereIndex = typeof here === "number" ? all.findIndex((s) => s.mapId === here) : -1;
+  const currentIndex = hereIndex < 0 ? all.length - 1 : hereIndex < earlier ? -1 : hereIndex;
   const stops: RouteStop[] = [];
   for (let i = earlier; i < all.length; i++) {
     const s = all[i]!;
     const next = all[i + 1];
-    const current = next === undefined;
+    const current = i === currentIndex;
     // Revisits: a later subzone of this map first seen after the next stop was
     // reached makes `s.last` exceed `next.first`; the range then runs to that revisit.
     const lastSeen = next ? Math.max(s.last, next.first - 1) : s.last;

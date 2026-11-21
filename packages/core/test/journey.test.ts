@@ -3,6 +3,8 @@ import { describe, expect, test } from "vitest";
 import {
   buildSessions,
   getJourneyData,
+  hidePlace,
+  unhidePlace,
   levelPace,
   routeFromVisited,
   type StoredEvent,
@@ -579,5 +581,46 @@ describe("getJourneyData", () => {
     // rows whose data does not parse are dropped from events; parsed odd data stays for the models to ignore
     expect(j.events.map((e) => e.t)).toEqual([T0 + 5, T0 + 3, T0 + 2, T0 + 1, -50]);
     expect(j.total).toBe(7);
+  });
+});
+
+describe("route: current zone, continents and hidden places", () => {
+  const nameOf = (id: number) => ({ 1: "A", 2: "B", 3: "C" })[id as 1] ?? null;
+  const visited = [
+    { mapId: 1, subzone: "", firstSeen: T0 },
+    { mapId: 1414, subzone: "", firstSeen: T0 + 10 }, // continent: not a place
+    { mapId: 2, subzone: "", firstSeen: T0 + 20 },
+    { mapId: 3, subzone: "", firstSeen: T0 + 30 },
+  ];
+
+  test("continent maps are left out", () => {
+    const r = routeFromVisited(visited, [], nameOf);
+    expect(r.stops.map((s) => s.mapId)).toEqual([1, 2, 3]);
+  });
+
+  test("the current stop is the map the character is on, not the last one first reached", () => {
+    const r = routeFromVisited(visited, [], nameOf, { currentMapId: 2 });
+    expect(r.stops.map((s) => [s.mapId, s.current])).toEqual([[1, false], [2, true], [3, false]]);
+    // unknown or absent current map: the last stop, as before
+    expect(routeFromVisited(visited, [], nameOf, { currentMapId: 99 }).stops.map((s) => s.current)).toEqual([false, false, true]);
+    expect(routeFromVisited(visited, [], nameOf).stops.map((s) => s.current)).toEqual([false, false, true]);
+    // a current map that was dropped as an earlier stop: nothing is current
+    expect(routeFromVisited(visited, [], nameOf, { max: 2, currentMapId: 1 }).stops.map((s) => s.current)).toEqual([false, false]);
+  });
+
+  test("hidden places and continent visits drop out of the character view and the journey events", () => {
+    const db = openDb(":memory:");
+    db.insert(character).values({ guid: "g", name: "X", firstSeenAt: T0, latestTakenAt: T0 }).run();
+    const put = (t: number, mapId: number) =>
+      db.insert(characterEvent).values({ guid: "g", t, kind: "zone_first_visit", data: JSON.stringify({ mapId, subzone: "" }) }).run();
+    put(T0 + 1, 1427);
+    put(T0 + 2, 1414);
+    put(T0 + 3, 1436);
+    expect(getJourneyData(db, "g")!.events.map((e) => (e.data as { mapId: number }).mapId).sort()).toEqual([1427, 1436]);
+    hidePlace(db, "g", 1427);
+    expect(getJourneyData(db, "g")!.events.map((e) => (e.data as { mapId: number }).mapId)).toEqual([1436]);
+    expect(hidePlace(db, "nobody", 5)).toBe(false);
+    unhidePlace(db, "g", 1427);
+    expect(getJourneyData(db, "g")!.events).toHaveLength(2);
   });
 });

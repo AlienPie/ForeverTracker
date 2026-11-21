@@ -1,4 +1,5 @@
-import { character, characterEvent, manualCompletion, snapshot, type Db } from "@ft/db";
+import { character, characterEvent, hiddenPlace, manualCompletion, snapshot, type Db } from "@ft/db";
+import { CONTINENT_MAP_IDS } from "../journey/route";
 import { and, asc, count, desc, eq } from "drizzle-orm";
 import type { Snapshot } from "../snapshot/types";
 import { staleness } from "./format";
@@ -35,7 +36,10 @@ export type CharacterView = CharacterCard & {
   manualIds: number[];
   /** uiMapId of the character's current map from `state.mapId`; null when absent. */
   mapId: number | null;
+  /** Places visited, without continent maps and without the places the owner hid. */
   visitedMaps: VisitedMap[];
+  /** Map ids the owner hid (see {@link hidePlace}), for the "hidden places" list. */
+  hiddenMaps: number[];
   talents: { unspent: number } | null;
   /**
    * The newest events, newest first, capped by `GetCharacterOptions.events`
@@ -188,7 +192,7 @@ function visitedMaps(snap: Obj | null, extras: Obj | null): VisitedMap[] {
 type Parsed = { card: CharacterCard; view: Omit<CharacterView, keyof CharacterCard | "events" | "eventsTotal"> };
 
 /** Pure: build the card and view fields from stored rows. Never throws on odd data. */
-function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number, marked: number[] = []): Parsed {
+function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number, marked: number[] = [], hidden: number[] = []): Parsed {
   const unsupported = snapRow?.unsupported === true;
   // Unsupported schemas are stored but never interpreted (addon contract).
   const raw = snapRow && !unsupported ? parseJson(snapRow.raw) : null;
@@ -241,7 +245,8 @@ function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number,
       completedIds: done,
       manualIds,
       mapId: nonNegInt(state?.mapId),
-      visitedMaps: visitedMaps(snap, extras),
+      visitedMaps: visitedMaps(snap, extras).filter((v) => !CONTINENT_MAP_IDS.has(v.mapId) && !hidden.includes(v.mapId)),
+      hiddenMaps: [...hidden].sort((a, b) => a - b),
       talents: talents(progress),
     },
   };
@@ -253,11 +258,29 @@ function newestSnapshot(db: Db, guid: string): SnapshotRow | undefined {
 
 /** Card for one stored character row (used by the roster). */
 export function cardFor(db: Db, row: CharacterRow, now: number): CharacterCard {
-  return build(row, newestSnapshot(db, row.guid), now, manualIdsFor(db, row.guid)).card;
+  return build(row, newestSnapshot(db, row.guid), now, manualIdsFor(db, row.guid), hiddenMapsFor(db, row.guid)).card;
 }
 
 function manualIdsFor(db: Db, guid: string): number[] {
   return db.select({ id: manualCompletion.questId }).from(manualCompletion).where(eq(manualCompletion.guid, guid)).all().map((r) => r.id);
+}
+
+/** Map ids the owner hid for a character. */
+export function hiddenMapsFor(db: Db, guid: string): number[] {
+  return db.select({ id: hiddenPlace.mapId }).from(hiddenPlace).where(eq(hiddenPlace.guid, guid)).all().map((r) => r.id);
+}
+
+/** Hides a place (map id) from a stored character's visited list; false for an unknown character or a bad id. */
+export function hidePlace(db: Db, guid: string, mapId: number, now: number = nowSeconds()): boolean {
+  if (!Number.isSafeInteger(mapId) || mapId < 0) return false;
+  if (!db.select().from(character).where(eq(character.guid, guid)).get()) return false;
+  db.insert(hiddenPlace).values({ guid, mapId, hiddenAt: now }).onConflictDoNothing().run();
+  return true;
+}
+
+/** Shows a hidden place again (a no-op when it is not hidden). */
+export function unhidePlace(db: Db, guid: string, mapId: number): void {
+  db.delete(hiddenPlace).where(and(eq(hiddenPlace.guid, guid), eq(hiddenPlace.mapId, mapId))).run();
 }
 
 /** Marks a quest completed by hand for a stored character; false for an unknown character or a bad id. */
@@ -303,7 +326,7 @@ export function getCharacter(
 ): CharacterView | null {
   const row = db.select().from(character).where(eq(character.guid, guid)).get();
   if (!row) return null;
-  const { card, view } = build(row, newestSnapshot(db, guid), now, manualIdsFor(db, guid));
+  const { card, view } = build(row, newestSnapshot(db, guid), now, manualIdsFor(db, guid), hiddenMapsFor(db, guid));
   const limit = opts.events ?? DEFAULT_EVENT_LIMIT;
   const ev =
     limit === false
