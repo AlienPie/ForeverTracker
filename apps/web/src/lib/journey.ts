@@ -62,7 +62,7 @@ export function eventSentence(
       const id = posInt(d.questId);
       if (id === null) return "Completed a quest";
       const name = questNames.get(id);
-      return name ? `Completed ${name}` : `Completed quest ${id}`;
+      return name ? `Completed ${name}` : "Completed an unknown quest";
     }
     case "zone_first_visit": {
       const id = posInt(d.mapId);

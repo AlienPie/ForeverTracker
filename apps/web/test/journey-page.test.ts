@@ -163,7 +163,7 @@ describe("journey page load", () => {
     const data = await run(HERO);
     expect(data.sessions[0]!.events.map((e) => [e.time, e.text])).toEqual([
       ["06:15", "First visit to Map 9999"],
-      ["06:10", "Completed quest 424242"],
+      ["06:10", "Completed an unknown quest"],
       ["06:05", "Reached level 6"],
       ["06:00", "dance_party"],
     ]);
@@ -201,7 +201,7 @@ describe("journey page load", () => {
     state.db = seeded(false);
     const data = await run(HERO);
     expect(data.route.stops.map((s) => s.name)).toEqual(["Map 1426", "Map 1432", "Map 9999"]);
-    expect(data.sessions[2]!.events.map((e) => e.text)).toContain("Completed quest 9101");
+    expect(data.sessions[2]!.events.map((e) => e.text)).toContain("Completed an unknown quest");
   });
 
   test("?all=1 shows every session with a link back", async () => {

@@ -172,3 +172,23 @@ describe("zoneProgress visited and fit", () => {
     expect(c.Far).toMatchObject({ done: 1, ruledOut: 0, visited: true });
   });
 });
+
+describe("same-name copies in one zone", () => {
+  test("counts quests sharing a name and level once, preferring the finished copy", () => {
+    const mk = (id: number, name: string, level: number) =>
+      ({ id, name, level, zone: { n: "Dun Morogh", m: 1426 }, side: "both" }) as never;
+    const quests = [mk(1, "The Sparklematic 5200!", 30), mk(2, "The Sparklematic 5200!", 30), mk(3, "Other", 30)];
+    const { zones } = zoneProgress({
+      quests,
+      level: 30,
+      completed: new Set([2]),
+      inLog: new Set(),
+      visitedMapIds: new Set([1426]),
+    });
+    const z = zones.find((x) => x.name === "Dun Morogh")!;
+    expect(z.total).toBe(2);
+    expect(z.done).toBe(1);
+    expect(z.completedQuests.map((q) => q.id)).toEqual([2]);
+    expect(z.remaining.map((q) => q.id)).toEqual([3]);
+  });
+});

@@ -112,6 +112,34 @@ function fitOf(level: number | null, z: PlaceZone): ZoneFit {
 }
 
 /**
+ * Quests of one zone with the same name and level are copies of one quest (one id per race, for
+ * example), so each set counts once: the copy the character finished, else the one in the log, else
+ * the first the character's side allows, else the first.
+ */
+function mergeCopies(
+  quests: QuestRow[],
+  completed: Set<number>,
+  inLog: Set<number>,
+  faction: Faction | null,
+  usable?: (q: QuestRow) => boolean,
+): QuestRow[] {
+  const sets = new Map<string, QuestRow[]>();
+  for (const q of quests) {
+    const k = `${norm(q.name)}|${q.level}`;
+    const set = sets.get(k);
+    if (set) set.push(q);
+    else sets.set(k, [q]);
+  }
+  const rank = (q: QuestRow) =>
+    completed.has(q.id) ? 0 : inLog.has(q.id) ? 1 : sideAllows(q, faction) && (!usable || usable(q)) ? 2 : 3;
+  const out: QuestRow[] = [];
+  for (const set of sets.values()) {
+    out.push(set.length === 1 ? set[0]! : set.reduce((best, q) => (rank(q) < rank(best) ? q : best)));
+  }
+  return out;
+}
+
+/**
  * Per-zone quest completion. A quest counts in its zone when `zone.m` is numeric and the zone name
  * matches a place zone: completed is `done`; else in log is `inLog`; else unusable or other-side
  * quests are ignored; else skipped (see `skippedMembers`) or `left`. `unplaced` counts quests with
@@ -156,7 +184,7 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
     let ruledOut = 0;
     const left: QuestRow[] = [];
     const skipped: QuestRow[] = [];
-    for (const q of g.quests) {
+    for (const q of mergeCopies(g.quests, completed, inLog, faction, input.usable)) {
       if (completed.has(q.id) && anyVisit && !input.visitedMapIds.has(g.mapId) && (zonesOfName.get(norm(q.name))?.size ?? 0) > 1) {
         ruledOut++;
       } else if (completed.has(q.id)) {
