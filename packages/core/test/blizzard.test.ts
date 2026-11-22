@@ -13,7 +13,7 @@ const shaman = {
 describe("parseBlizzardQuest", () => {
   test("reads class, faction and title", () => {
     expect(parseBlizzardQuest(shaman)).toEqual({
-      id: 94499, title: "Call of Water", classes: ["Shaman"], races: [], faction: "Alliance", profession: null,
+      id: 94499, title: "Call of Water", classes: ["Shaman"], races: [], faction: "Alliance", profession: null, area: null, prereqs: [], xp: null,
     });
   });
   test("a profession category becomes the profession; a class category does not", () => {
@@ -30,7 +30,7 @@ describe("parseBlizzardQuest", () => {
 
 describe("blizzard-quests.json in parseCurated", () => {
   const file = (quests: unknown[]) => ({ version: 1, quests });
-  const q = { id: 94499, title: "Call of Water", classes: ["Shaman"], races: [], faction: "Alliance", profession: null };
+  const q = { id: 94499, title: "Call of Water", classes: ["Shaman"], races: [], faction: "Alliance", profession: null, area: null, prereqs: [], xp: null };
 
   test("adds tags, sides and names", () => {
     const c = parseCurated({ blizzard: file([q]) });
@@ -59,5 +59,37 @@ describe("blizzard-quests.json in parseCurated", () => {
     expect(parseCurated({ blizzard: file([{ id: "x" }, q]) }).names).toEqual({ 94499: "Call of Water" });
     expect(parseCurated({ blizzard: { version: 9, quests: [q] } }).problems.length).toBe(1);
     expect(emptyCurated().sides).toEqual({});
+  });
+});
+
+describe("synthesizeQuests", () => {
+  const zones = [
+    { name: "Mount Hyjal", minLevel: 55, maxLevel: 60, territory: null, type: "zone" as const },
+    { name: "Gnomeregan", minLevel: 24, maxLevel: 33, territory: null, type: "dungeon" as const },
+  ];
+  const mk = (id: number, area: string | null, extra: object = {}) => ({
+    id, title: `Q${id}`, classes: [], races: [], faction: null, profession: null, area, prereqs: [], xp: null, ...extra,
+  });
+  const mapIds = new Map([["mount hyjal", 1198]]);
+
+  test("adds a quest in a curated zone at the middle of its level range", async () => {
+    const { synthesizeQuests } = await import("../src/curated/blizzard");
+    const [q] = synthesizeQuests([mk(1, "Mount Hyjal", { faction: "Horde" })], new Set(), zones, mapIds);
+    expect(q).toMatchObject({ id: 1, name: "Q1", level: 58, zone: { n: "Mount Hyjal", m: 1198 }, side: "h" });
+  });
+  test("skips quests the mirror has, without an area, in dungeons, or in zones with no map id", async () => {
+    const { synthesizeQuests } = await import("../src/curated/blizzard");
+    const got = synthesizeQuests(
+      [mk(1, "Mount Hyjal"), mk(2, null), mk(3, "Gnomeregan"), mk(4, "Mount Hyjal")],
+      new Set([1]),
+      zones,
+      mapIds,
+    );
+    expect(got.map((q) => q.id)).toEqual([4]);
+  });
+  test("keeps prerequisites that exist", async () => {
+    const { synthesizeQuests } = await import("../src/curated/blizzard");
+    const got = synthesizeQuests([mk(5, "Mount Hyjal", { prereqs: [9, 777] }), mk(9, null)], new Set(), zones, mapIds);
+    expect(got[0]!.chain.previous.map((l) => l.questId)).toEqual([9]);
   });
 });

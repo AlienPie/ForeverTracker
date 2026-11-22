@@ -7,6 +7,7 @@ import {
   loadProfessions,
   loadQuests,
   readCuratedDir,
+  synthesizeQuests,
   type Curated,
   type CuratedZone,
   type ProfessionInfo,
@@ -170,12 +171,16 @@ export function createQuestCatalog(opts: {
     if (loaded.length === 0) return EMPTY;
     const curated = curatedOrNone(opts.curatedDir);
     const applied = curated.links.length > 0 ? applyOverrides(loaded, curated.links) : { quests: loaded, problems: [] };
-    const quests = applyBlizzardSides(applied.quests, curated.sides);
     reportProblems([...curated.problems, ...applied.problems]);
+    const mapNames = await loadMapNames(source, applied.quests);
+    const mapIds = new Map<string, number>();
+    for (const [id, name] of Object.entries(mapNames)) if (!mapIds.has(name.trim().toLowerCase())) mapIds.set(name.trim().toLowerCase(), Number(id));
+    const added = synthesizeQuests(curated.blizzard, new Set(applied.quests.map((q) => q.id)), curated.zones, mapIds);
+    const quests = applyBlizzardSides([...applied.quests, ...added], curated.sides);
     const catalog: QuestCatalog = {
       quests,
       levelCap: await getLevelCap(source),
-      mapNames: await loadMapNames(source, quests),
+      mapNames,
       professions: await professionsOrNone(source),
     };
     if (curated.tags.tags.length > 0) catalog.tags = buildTagIndex(curated.tags.tags);

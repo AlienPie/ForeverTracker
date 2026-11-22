@@ -21,9 +21,11 @@ export type Curated = {
   sides: Record<number, "Alliance" | "Horde">;
   /** Quest titles by id, from Blizzard's data, for ids the mirror does not know. */
   names: Record<number, string>;
+  /** Blizzard's quests as read (see `synthesizeQuests`). */
+  blizzard: import("./blizzard").BlizzardQuest[];
   problems: string[];
 };
 
 export function emptyCurated(): Curated {
-  return { tags: { patch: null, capturedAt: null, tags: [] }, links: [], zones: [], sides: {}, names: {}, problems: [] };
+  return { tags: { patch: null, capturedAt: null, tags: [] }, links: [], zones: [], sides: {}, names: {}, blizzard: [], problems: [] };
 }
