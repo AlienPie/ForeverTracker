@@ -79,9 +79,9 @@ Consequence for M3: a sync agent that reads this API can replace the addon for c
 ## Round 2: where to next (M2 step 4)
 
 Rule-based levelling areas for a character: zones whose level range fits, weighted by quests left (from Explore), faction territory, and what the character has already done. Show why each zone is suggested and link to the Explore tab for the zone.
-- [ ] Pure function in `packages/core/src/advice` plus tests; reuse `zoneProgress` fit and counts.
-- [ ] A "Where to next" block on the Quests tab (or Explore), with the reason line the design requires.
-- [ ] Use quest experience rewards (from Blizzard) to estimate how much of the next level a zone can give.
+- [x] `whereToNext` in `packages/core/src/advice/where-to-next.ts` with tests (done 25 November): ranks zones by open quests within 3 levels below to 2 above the character (at least 3), skips the other faction's territory and zones without levels, ties by closeness of the zone's range. `zoneProgress` gained `openLevels`.
+- [x] A "Where to next" panel on the Quests tab under Next up, three zones with a reason line and a link to Explore (done 25 November).
+- [ ] Still open: use quest experience rewards (from Blizzard) to estimate how much of the next level a zone can give; also a per-zone anchor from the Where to next panel to the zone on Explore, and a rule that weighs chains already started. Check the ranking against play before tuning.
 
 ## Round 3: Blizzard profile sync and automatic upload (M3 start)
 

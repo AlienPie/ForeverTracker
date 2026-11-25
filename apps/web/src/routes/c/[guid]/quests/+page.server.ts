@@ -1,6 +1,6 @@
 import type { ServerLoad } from "@sveltejs/kit";
 import type { ContentMode } from "@ft/content";
-import { chainProgress, nextUp, type Suggestion } from "@ft/core";
+import { chainProgress, factionOfRace, nextUp, whereToNext, zoneProgress, type Suggestion, type ZoneSuggestion } from "@ft/core";
 import { characterOr404 } from "../../../../lib/server/character";
 import { buildUsable } from "../../../../lib/server/usable";
 import { env } from "../../../../lib/server/env";
@@ -15,6 +15,8 @@ export type QuestsPageData = {
   contentMode: ContentMode;
   /** Top five "next up" suggestions; empty when content is not ready or the level is unknown. */
   suggestions: Suggestion[];
+  /** Up to three levelling areas (see `whereToNext`); empty when content or the level is missing. */
+  whereNext: ZoneSuggestion[];
   /** Chains started and not finished, with one pip per member. */
   chains: ChainRow[];
   inProgress: number;
@@ -64,6 +66,24 @@ export const load: ServerLoad = async ({ params }): Promise<QuestsPageData> => {
           5,
         )
       : [];
+  const whereNext =
+    contentReady && view.level !== null
+      ? whereToNext(
+          zoneProgress({
+            quests: catalog.quests,
+            zones: catalog.zones,
+            level: view.level,
+            classToken: view.class,
+            raceToken: view.race,
+            faction: factionOfRace(view.race),
+            completed,
+            inLog,
+            visitedMapIds: new Set(view.visitedMaps.map((v) => v.mapId)),
+            usable,
+          }).zones,
+          { level: view.level, faction: factionOfRace(view.race), current: view.zone },
+        )
+      : [];
   const chains = contentReady
     ? chainProgress(catalog.quests, completed, inLog, view.class, usable).map((c) => ({
         chain: c.chain,
@@ -78,6 +98,7 @@ export const load: ServerLoad = async ({ params }): Promise<QuestsPageData> => {
     contentReady,
     contentMode: env().contentMode,
     suggestions,
+    whereNext,
     chains,
     inProgress: view.questLogIds.length,
     completed: view.completedIds.length,

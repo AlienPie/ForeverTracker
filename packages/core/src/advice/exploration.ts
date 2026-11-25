@@ -26,6 +26,8 @@ export type ZoneProgress = PlaceZone & {
   ruledOut: number;
   /** Newest turn-in time (unix seconds) among completed quests of this zone that `completedAt` knows; else null. */
   lastDoneAt: number | null;
+  /** Levels of the quests still open to the character here (not done, not in the log, not skipped), visited or not. */
+  openLevels: number[];
   /** Completed quests, by level then id; empty unless visited. */
   completedQuests: ZoneQuest[];
   /**
@@ -223,6 +225,7 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
       skipped: skipped.length,
       total: done + log + left.length,
       ruledOut,
+      openLevels: left.map((q) => q.level),
       lastDoneAt,
       completedQuests: visited ? finished.sort(byLevelThenId).map(zq) : [],
       inProgress: visited

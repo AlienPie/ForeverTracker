@@ -13,11 +13,13 @@
     profession: "profession",
   };
   const chainHref = (questId: number) => `/c/${encodeURIComponent(page.params.guid ?? "")}/quests/chain/${questId}`;
+  const exploreHref = $derived(`/c/${encodeURIComponent(page.params.guid ?? "")}/explore`);
   const logHref = (list: string) => `/c/${encodeURIComponent(page.params.guid ?? "")}/quests/log?list=${list}`;
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 </script>
 
 <div class="cols">
+  <div class="mainstack">
   <section class="panel" aria-labelledby="nu">
     <h2 id="nu">Next up</h2>
     {#if !data.contentReady}
@@ -53,6 +55,22 @@
       </p>
     {/if}
   </section>
+
+  {#if data.contentReady && data.whereNext.length > 0}
+    <section class="panel where" aria-labelledby="wn">
+      <h2 id="wn">Where to next</h2>
+      <p class="sub">Areas with the most open quests close to your level {data.level}.</p>
+      <ol class="quests">
+        {#each data.whereNext as z (z.name)}
+          <li class="quest">
+            <h3><a href={exploreHref}>{z.name}</a>{#if z.here} <span class="tag">you are here</span>{/if}</h3>
+            <div class="why">{z.reason}</div>
+          </li>
+        {/each}
+      </ol>
+    </section>
+  {/if}
+  </div>
 
   <aside class="side" aria-label="Quest progress">
     <section class="panel" aria-labelledby="ch">

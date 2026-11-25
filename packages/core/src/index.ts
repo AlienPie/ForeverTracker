@@ -61,6 +61,7 @@ export {
   type ZoneProgress,
   type ZoneQuest,
 } from "./advice/exploration";
+export { whereToNext, type ZoneSuggestion } from "./advice/where-to-next";
 export { listQuestLog, type QuestLogPage, type QuestLogRow } from "./advice/quest-log";
 export {
   emptyCurated,
