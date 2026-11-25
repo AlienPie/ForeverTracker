@@ -55,12 +55,26 @@ ForeverDB's chain, level and giver data is classic CMaNGOS data, which Blizzard'
 
 ## Round 1: finish the data decision (small)
 
-- [ ] Make Wowhead the default tooltip provider (`TOOLTIP_PROVIDER` defaults to `none` today; links already go to Wowhead). Check the tooltips render on the Quests, chain and Explore pages for Forever quests (`https://wow.zamimg.com/js/tooltips.js` with `/forever/` links).
-- [ ] Replace the id walk with the area listing: `pnpm blizzard:quests` should read `/data/wow/quest/area/index` and each area's quest list to get every quest id, then fetch the quests. Keep the id range as a fallback. This also finds the ids below 79000 that were never walked.
-- [ ] Spike, then record in the kickoff note: Blizzard's character profile for a level 10 or higher character (`profile-forever-eu`, by first name and surname, public with client credentials). Check `quests` (completed list), `professions`, `specializations`, `achievements`, `reputations`. The result decides what the M3 sync agent can read without the addon.
-- [ ] Spike: Blizzard's profession recipes and talent trees against what the Professions and Talents tabs and the planned advice need (recipe levels, trainers and gathering spots are probably not in Blizzard's data).
-- [ ] Quest levels for Blizzard-only quests: try estimating from the experience reward (the Classic quest experience table) against mirror quests of known level; if the estimate is good, replace the zone-midpoint guess.
+- [x] Wowhead is the default tooltip provider (done 25 November; `none` still opts out; the ForeverDB provider was removed). Still to check by eye after the next rebuild: tooltips render on the Quests, chain and Explore pages for Forever quests.
+- [x] `pnpm blizzard:quests` now lists quests by area, category and type (done 25 November): 7,057 ids, against the 6,212 Wowhead lists, so Blizzard's list includes developer placeholders (`<UNUSED>`, `<NYI>`, `[DNT]`), which `synthesizeQuests` now skips. The file holds 7,107 quests; 1,154 Blizzard-only quests are added to Explore (303 of them with ids below 79000, for example Distracting Jarven, which the mirror lacks).
+- [x] Spike done 25 November (result below). Blizzard's character profile for a level 10 or higher character (`profile-forever-eu`, by first name and surname, public with client credentials). Check `quests` (completed list), `professions`, `specializations`, `achievements`, `reputations`. The result decides what the M3 sync agent can read without the addon.
+- [x] Spike done 25 November (result below).
+- [x] Estimating a quest level from its experience reward was tried and rejected: against 3,632 mirror quests of known level a nearest-median rule is right 33% of the time and within two levels 43% (quest XP varies with difficulty and level 60 quests are all over the place). The zone-midpoint guess stays.
 - [x] Decided (25 November): keep the ForeverDB mirror for chains, levels and givers; no replacement exists.
+
+### Round 1 findings (25 November)
+
+**Character profile (`profile-forever-eu`, public, client credentials, level 10 and up).** Works for a real character by `first-surname` slug. Live data, no addon needed:
+- `/quests`: quests in progress (id and name); `/quests/completed`: every completed quest (202 for the test character, ids and names, so no mirror needed to name them).
+- `/professions`: primaries and secondaries with skill points, the tier's maximum, and every known recipe.
+- `/specializations`: chosen talents with rank and tooltip text.
+- `/reputations`: faction, standing tier and name, value and maximum (Honored 1607 of 12000).
+- `/achievements`, `/collections` (pets, mounts, toys), `/statistics`, equipment and more.
+- It updates when the character logs out.
+- Welcome! (5841 and 5805) is absent here too, so it is not completed in the game's own data; "Mark as completed" stays.
+Consequence for M3: a sync agent that reads this API can replace the addon for completed quests, the quest log, professions and recipes, talents, reputations, achievements and collections, for characters of level 10 and up, without playing. The addon stays for what the API lacks: first visits to places, level-up times, play sessions, `/played`, and characters under level 10.
+
+**Static data.** `/data/wow/recipe/{id}` gives reagents and the crafted item; a profession's tier gives the skill range and recipe lists by category; no trainers or gathering spots, and no recipe skill thresholds. `/data/wow/talent-tree/{treeId}/playable-specialization/{specId}` gives talent nodes with ranks and descriptions (check node positions and prerequisites before building the playground). Quest lists by area, category and type exist (used above).
 
 ## Round 2: where to next (M2 step 4)
 
