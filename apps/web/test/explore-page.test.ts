@@ -110,7 +110,7 @@ describe("explore page", () => {
     expect(out).toContain("Dun Morogh");
     expect(out).toContain("3 / 4");
     expect(out).toContain("75%");
-    expect(out).toContain("above your level");
+    expect(out).toContain("below your level");
     expect(out).toContain("Stray Goat");
     expect(out).toContain('href="/c/Player-7777-0000F002/quests/chain/104"');
     expect(out).toContain("Side Door");

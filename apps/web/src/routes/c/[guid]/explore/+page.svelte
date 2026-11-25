@@ -7,7 +7,7 @@
 
   let { data }: { data: ExplorePageData } = $props();
 
-  const FIT: Record<string, string> = { "in-range": "in range", below: "below your level", above: "above your level" };
+  const FIT: Record<string, string> = { "in-range": "in range", below: "above your level", above: "below your level" };
   const chainHref = (questId: number) => `/c/${encodeURIComponent(page.params.guid ?? "")}/quests/chain/${questId}`;
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const range = (min: number | null, max: number | null) =>
