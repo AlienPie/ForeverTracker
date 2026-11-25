@@ -32,6 +32,7 @@
     { slug: "journey", label: "Journey" },
     { slug: "quests", label: "Quests" },
     { slug: "explore", label: "Explore" },
+    { slug: "reputation", label: "Reputation" },
     { slug: "talents", label: "Talents" },
     { slug: "professions", label: "Professions" },
   ];

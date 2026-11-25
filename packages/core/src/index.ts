@@ -79,3 +79,4 @@ export { parseCurated, readCuratedDir } from "./curated/load";
 export { isPlaceholderTitle, parseBlizzardQuest, synthesizeQuests, type BlizzardQuest } from "./curated/blizzard";
 export { applyOverrides, buildTagIndex, CURATED_RELATION, type TagIndex } from "./curated/apply";
 export { getApiSnapshot, saveApiSnapshot } from "./read/api-snapshot";
+export { reputationRows, TOP as REPUTATION_TOP, type RepReward, type RepRow } from "./advice/reputation";

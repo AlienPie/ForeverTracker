@@ -12,6 +12,7 @@ import {
   type CuratedZone,
   type ProfessionInfo,
   type QuestRow,
+  type RepReward,
   type TagIndex,
 } from "@ft/core";
 import type { Db } from "@ft/db";
@@ -34,6 +35,8 @@ export type QuestCatalog = {
   zones?: CuratedZone[];
   /** Quest titles from Blizzard's data, by id, for quests the mirror lacks; absent when there are none. */
   extraNames?: Record<number, string>;
+  /** Quests that raise a faction's reputation, by faction id (from Blizzard's quest data); absent when there are none. */
+  reputationRewards?: Record<number, RepReward[]>;
 };
 
 /** Blizzard's faction requirement is authoritative: it replaces the mirror's (often missing) side. */
@@ -186,6 +189,14 @@ export function createQuestCatalog(opts: {
     if (curated.tags.tags.length > 0) catalog.tags = buildTagIndex(curated.tags.tags);
     if (curated.zones.length > 0) catalog.zones = curated.zones;
     if (Object.keys(curated.names).length > 0) catalog.extraNames = curated.names;
+    const byId = new Map(quests.map((q) => [q.id, q]));
+    const rewards: Record<number, RepReward[]> = {};
+    for (const b of curated.blizzard) {
+      const q = byId.get(b.id);
+      if (!q) continue;
+      for (const r of b.reps) (rewards[r.faction] ??= []).push({ questId: b.id, name: q.name, level: q.level, value: r.value });
+    }
+    if (Object.keys(rewards).length > 0) catalog.reputationRewards = rewards;
     return catalog;
   }
 

@@ -13,7 +13,7 @@ const shaman = {
 describe("parseBlizzardQuest", () => {
   test("reads class, faction and title", () => {
     expect(parseBlizzardQuest(shaman)).toEqual({
-      id: 94499, title: "Call of Water", classes: ["Shaman"], races: [], faction: "Alliance", profession: null, area: null, prereqs: [], xp: null,
+      id: 94499, title: "Call of Water", classes: ["Shaman"], races: [], faction: "Alliance", profession: null, area: null, prereqs: [], xp: null, reps: [],
     });
   });
   test("a profession category becomes the profession; a class category does not", () => {
@@ -30,7 +30,7 @@ describe("parseBlizzardQuest", () => {
 
 describe("blizzard-quests.json in parseCurated", () => {
   const file = (quests: unknown[]) => ({ version: 1, quests });
-  const q = { id: 94499, title: "Call of Water", classes: ["Shaman"], races: [], faction: "Alliance", profession: null, area: null, prereqs: [], xp: null };
+  const q = { id: 94499, title: "Call of Water", classes: ["Shaman"], races: [], faction: "Alliance", profession: null, area: null, prereqs: [], xp: null, reps: [] };
 
   test("adds tags, sides and names", () => {
     const c = parseCurated({ blizzard: file([q]) });
@@ -68,7 +68,7 @@ describe("synthesizeQuests", () => {
     { name: "Gnomeregan", minLevel: 24, maxLevel: 33, territory: null, type: "dungeon" as const },
   ];
   const mk = (id: number, area: string | null, extra: object = {}) => ({
-    id, title: `Q${id}`, classes: [], races: [], faction: null, profession: null, area, prereqs: [], xp: null, ...extra,
+    id, title: `Q${id}`, classes: [], races: [], faction: null, profession: null, area, prereqs: [], xp: null, reps: [], ...extra,
   });
   const mapIds = new Map([["mount hyjal", 1198]]);
 
@@ -101,5 +101,14 @@ describe("isPlaceholderTitle", () => {
       expect(isPlaceholderTitle(t)).toBe(true);
     }
     for (const t of ["Distracting Jarven", "Welcome!", "The Test of Strength"]) expect(isPlaceholderTitle(t)).toBe(false);
+  });
+});
+
+describe("reputation rewards", () => {
+  test("reads faction and value from rewards.reputations", () => {
+    const q = parseBlizzardQuest({
+      id: 8, title: "R", rewards: { reputations: [{ reward: { id: 81, name: "Thunder Bluff" }, value: 25 }, { reward: { id: 5 }, value: 0 }] },
+    })!;
+    expect(q.reps).toEqual([{ faction: 81, value: 25 }]);
   });
 });

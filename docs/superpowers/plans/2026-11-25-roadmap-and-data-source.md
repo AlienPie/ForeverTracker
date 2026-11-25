@@ -94,7 +94,7 @@ Owner decision (25 November): use Blizzard's character profile as a data source,
 
 ## Round 4: reputation tracker
 
-- [ ] Standings from the profile (`reputations`: tier, value and maximum per faction) with a page or panel per character, what is left to the next standing, and the quests that raise it (Blizzard quest rewards list reputation values).
+- [x] Reputation tab (done 25 November): standings from the profile (tier, value, maximum, what is left to the next standing) with a bar per faction, and the open quests that raise each faction (Blizzard's quest rewards; quests up to three levels above the character, usable by class, race and faction), biggest first. Needs a profile sync; characters without one see how to get it. Still open: a per-faction view of the quests as a route, sorting or pinning the factions the owner cares about, and feeding the daily plan.
 - [ ] Feeds the daily plan.
 
 ## Round 5: daily plan v1

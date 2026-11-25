@@ -18,6 +18,8 @@ export type BlizzardQuest = {
   prereqs: number[];
   /** Experience reward, when given. */
   xp: number | null;
+  /** Reputation rewards: faction id and the reputation gained. */
+  reps: { faction: number; value: number }[];
 };
 
 const PROFESSIONS = new Set([
@@ -25,6 +27,7 @@ const PROFESSIONS = new Set([
   "Herbalism", "Leatherworking", "Mining", "Skinning", "Tailoring",
 ]);
 
+const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const names = (v: unknown): string[] =>
   Array.isArray(v) ? v.flatMap((e) => (isObj(e) && typeof e.name === "string" && e.name.trim() ? [e.name.trim()] : [])) : [];
@@ -59,6 +62,13 @@ export function parseBlizzardQuest(raw: unknown): BlizzardQuest | null {
       return [...ids].sort((a, b) => a - b);
     })(),
     xp: isObj(raw.rewards) && Number.isInteger(raw.rewards.experience) ? (raw.rewards.experience as number) : null,
+    reps: isObj(raw.rewards)
+      ? arr(raw.rewards.reputations).flatMap((r) =>
+          isObj(r) && isObj(r.reward) && Number.isInteger(r.reward.id) && Number.isInteger(r.value) && (r.value as number) !== 0
+            ? [{ faction: r.reward.id as number, value: r.value as number }]
+            : [],
+        )
+      : [],
   };
 }
 
@@ -76,6 +86,11 @@ export function readBlizzardQuest(e: unknown): BlizzardQuest | null {
     area: typeof e.area === "string" && e.area ? e.area : null,
     prereqs: Array.isArray(e.prereqs) ? e.prereqs.filter((n): n is number => Number.isInteger(n) && n > 0) : [],
     xp: Number.isInteger(e.xp) ? (e.xp as number) : null,
+    reps: Array.isArray(e.reps)
+      ? e.reps.flatMap((r) =>
+          isObj(r) && Number.isInteger(r.faction) && Number.isInteger(r.value) ? [{ faction: r.faction as number, value: r.value as number }] : [],
+        )
+      : [],
   };
 }
 
