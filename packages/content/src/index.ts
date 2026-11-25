@@ -16,3 +16,15 @@ export { checkBuild, getItem, syncAll, syncResource, type SyncDeps, type SyncPro
 export { getRecord, listRecords } from "./mirror/store";
 export { createContentSource, parseContentMode, type ContentMode, type ContentSource } from "./source";
 export { readQuestIds, renderQuestIdsLua } from "./addon/quest-ids";
+export {
+  BlizzardError,
+  createBlizzardClient,
+  parseProfile,
+  profileSlug,
+  type ApiProfession,
+  type ApiReputation,
+  type ApiSnapshot,
+  type ApiTalent,
+  type BlizzardClientOptions,
+  type ProfileParts,
+} from "./blizzard/profile";

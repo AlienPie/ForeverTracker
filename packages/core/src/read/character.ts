@@ -1,4 +1,6 @@
 import { character, characterEvent, hiddenPlace, manualCompletion, snapshot, type Db } from "@ft/db";
+import type { ApiSnapshot } from "@ft/content";
+import { getApiSnapshot } from "./api-snapshot";
 import { CONTINENT_MAP_IDS } from "../journey/route";
 import { and, asc, count, desc, eq } from "drizzle-orm";
 import type { Snapshot } from "../snapshot/types";
@@ -42,12 +44,35 @@ export type CharacterView = CharacterCard & {
   hiddenMaps: number[];
   talents: { unspent: number } | null;
   /**
+   * What Blizzard's own profile says (see `saveApiSnapshot`), or null when it was never fetched. The card and the
+   * lists above already merge it in (completed quests from both, the quest log and professions from the newer
+   * source); this holds the comparison and what only the API has.
+   */
+  api: ApiView | null;
+  /**
    * The newest events, newest first, capped by `GetCharacterOptions.events`
    * (default {@link DEFAULT_EVENT_LIMIT}); empty when events were not loaded.
    */
   events: { t: number; kind: string; data: unknown }[];
   /** How many events are stored in all; null when events were not loaded (`events: false`). */
   eventsTotal: number | null;
+};
+
+export type ApiView = {
+  fetchedAt: number;
+  /** The character's last logout as Blizzard saw it, when given. */
+  lastModified: number | null;
+  completed: number;
+  inLog: number;
+  /** Completed quests Blizzard has that the addon upload lacks. */
+  newerCompleted: number;
+  /** Completed quests the addon upload has that Blizzard lacks (for example Welcome!-type quests it does not report). */
+  onlyInAddon: number;
+  /** Which source the quest log and professions came from. */
+  source: "api" | "addon";
+  reputations: ApiSnapshot["reputations"];
+  spec: string | null;
+  talents: ApiSnapshot["talents"];
 };
 
 /** How many events `getCharacter` returns unless told otherwise. */
@@ -192,7 +217,7 @@ function visitedMaps(snap: Obj | null, extras: Obj | null): VisitedMap[] {
 type Parsed = { card: CharacterCard; view: Omit<CharacterView, keyof CharacterCard | "events" | "eventsTotal"> };
 
 /** Pure: build the card and view fields from stored rows. Never throws on odd data. */
-function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number, marked: number[] = [], hidden: number[] = []): Parsed {
+function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number, marked: number[] = [], hidden: number[] = [], api: ApiSnapshot | null = null): Parsed {
   const unsupported = snapRow?.unsupported === true;
   // Unsupported schemas are stored but never interpreted (addon contract).
   const raw = snapRow && !unsupported ? parseJson(snapRow.raw) : null;
@@ -208,7 +233,13 @@ function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number,
   const progress = section(snap?.progress);
 
   const takenAt = snapRow?.takenAt ?? row.latestTakenAt;
-  const game = completedIds(progress);
+  const addonCompleted = completedIds(progress);
+  const addonSet = new Set(addonCompleted);
+  const apiCompleted = api?.completed ?? [];
+  const takenAtNow = snapRow?.takenAt ?? row.latestTakenAt;
+  // Blizzard's profile is live as of the last logout; the addon file is as of its last upload. The newer one wins for the log and professions.
+  const apiIsNewer = api !== null && (api.lastModified ?? api.fetchedAt) >= takenAtNow;
+  const game = api === null ? addonCompleted : [...new Set([...addonCompleted, ...apiCompleted])].sort((a, b) => a - b);
   const gameSet = new Set(game);
   const manualIds = marked.filter((id) => !gameSet.has(id)).sort((a, b) => a - b);
   const done = manualIds.length === 0 ? game : [...game, ...manualIds].sort((a, b) => a - b);
@@ -221,7 +252,7 @@ function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number,
     surname: str(identity?.surname),
     class: row.class,
     race: row.race,
-    level: row.level,
+    level: api?.level != null && (row.level === null || api.level > row.level) ? api.level : row.level,
     xpPct: xpPct(identity),
     zone: str(state?.zone),
     money: nonNegInt(state?.money),
@@ -232,7 +263,10 @@ function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number,
     playedSeconds: nonNegInt(time?.played),
     takenAt,
     syncedAgo: staleness(takenAt, now),
-    professions: professions(progress),
+    professions:
+      apiIsNewer && api!.professions.length > 0
+        ? api!.professions.map((p) => ({ skillLine: p.id, name: p.name, rank: p.skill, max: p.max }))
+        : professions(progress),
     questsCompleted: done.length,
     unsupported,
   };
@@ -241,13 +275,28 @@ function build(row: CharacterRow, snapRow: SnapshotRow | undefined, now: number,
     card,
     view: {
       snapshot: snap as Snapshot | null,
-      questLogIds: questLogIds(progress),
+      questLogIds: apiIsNewer && api!.inLog.length > 0 ? api!.inLog : questLogIds(progress),
       completedIds: done,
       manualIds,
       mapId: nonNegInt(state?.mapId),
       visitedMaps: visitedMaps(snap, extras).filter((v) => !CONTINENT_MAP_IDS.has(v.mapId) && !hidden.includes(v.mapId)),
       hiddenMaps: [...hidden].sort((a, b) => a - b),
       talents: talents(progress),
+      api:
+        api === null
+          ? null
+          : {
+              fetchedAt: api.fetchedAt,
+              lastModified: api.lastModified,
+              completed: api.completed.length,
+              inLog: api.inLog.length,
+              newerCompleted: api.completed.filter((id) => !addonSet.has(id)).length,
+              onlyInAddon: addonCompleted.filter((id) => !new Set(api.completed).has(id)).length,
+              source: apiIsNewer ? "api" : "addon",
+              reputations: api.reputations,
+              spec: api.spec,
+              talents: api.talents,
+            },
     },
   };
 }
@@ -258,7 +307,7 @@ function newestSnapshot(db: Db, guid: string): SnapshotRow | undefined {
 
 /** Card for one stored character row (used by the roster). */
 export function cardFor(db: Db, row: CharacterRow, now: number): CharacterCard {
-  return build(row, newestSnapshot(db, row.guid), now, manualIdsFor(db, row.guid), hiddenMapsFor(db, row.guid)).card;
+  return build(row, newestSnapshot(db, row.guid), now, manualIdsFor(db, row.guid), hiddenMapsFor(db, row.guid), getApiSnapshot(db, row.guid)).card;
 }
 
 function manualIdsFor(db: Db, guid: string): number[] {
@@ -326,7 +375,7 @@ export function getCharacter(
 ): CharacterView | null {
   const row = db.select().from(character).where(eq(character.guid, guid)).get();
   if (!row) return null;
-  const { card, view } = build(row, newestSnapshot(db, guid), now, manualIdsFor(db, guid), hiddenMapsFor(db, guid));
+  const { card, view } = build(row, newestSnapshot(db, guid), now, manualIdsFor(db, guid), hiddenMapsFor(db, guid), getApiSnapshot(db, guid));
   const limit = opts.events ?? DEFAULT_EVENT_LIMIT;
   const ev =
     limit === false

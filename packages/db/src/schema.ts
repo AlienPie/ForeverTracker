@@ -88,3 +88,12 @@ export const hiddenPlace = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.guid, t.mapId] })],
 );
+
+/** The newest reduced Blizzard character profile per character (JSON text of an `ApiSnapshot`, see @ft/content). */
+export const apiSnapshot = sqliteTable("api_snapshot", {
+  guid: text("guid").primaryKey(),
+  fetchedAt: integer("fetched_at").notNull(),
+  /** The profile's last logout, unix seconds, when Blizzard gave it. */
+  lastModified: integer("last_modified"),
+  data: text("data").notNull(),
+});

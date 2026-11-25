@@ -6,7 +6,7 @@
   import Seal from "../../../lib/components/Seal.svelte";
   import XpBar from "../../../lib/components/XpBar.svelte";
   import { className, classColor, raceName } from "../../../lib/classes";
-  import { syncLabel } from "../../../lib/sync";
+  import { ago, syncLabel } from "../../../lib/sync";
   import type { CharacterLayoutData } from "./+layout.server";
 
   let { data, children }: { data: CharacterLayoutData; children: Snippet } = $props();
@@ -15,6 +15,19 @@
   const base = $derived(`/c/${encodeURIComponent(c.guid)}`);
   const kind = $derived([raceName(c.race), className(c.class)].filter(Boolean).join(" "));
   const sync = $derived(syncLabel(c, data.now));
+  const apiNote = $derived(
+    data.api
+      ? `Blizzard profile ${ago(data.now - data.api.fetchedAt)}${data.api.newerCompleted > 0 ? `; ${data.api.newerCompleted} more completed quests than the last upload` : ""}${data.api.source === "api" ? "" : "; the upload is newer, so it is used for the quest log and professions"}`
+      : null,
+  );
+  const APISYNC: Record<string, string> = {
+    ok: "Synced from Blizzard.",
+    none: "Blizzard has no profile for this character (it must be level 10 or higher, and the name and surname must match).",
+    noslug: "This character has no surname recorded yet, so Blizzard cannot be asked. Upload once with the addon.",
+    nocreds: "Set BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET to sync from Blizzard.",
+    error: "The Blizzard sync failed; see the server log and try again in a minute.",
+  };
+  const apiResult = $derived(APISYNC[page.url.searchParams.get("apisync") ?? ""] ?? null);
   const tabs = [
     { slug: "journey", label: "Journey" },
     { slug: "quests", label: "Quests" },
@@ -43,6 +56,13 @@
       <span class:stale={sync.stale}>{sync.text}</span>
     </div>
     <XpBar pct={c.xpPct} level={c.level} />
+    {#if apiNote || data.canApiSync}
+      <form class="apisync" method="POST" action="{base}/api-sync">
+        {#if apiNote}<span class="apinote">{apiNote}</span>{/if}
+        {#if data.canApiSync}<button type="submit" class="linkbtn">Sync from Blizzard</button>{/if}
+      </form>
+    {/if}
+    {#if apiResult}<p class="apiresult" role="status">{apiResult}</p>{/if}
   </div>
 </div>
 

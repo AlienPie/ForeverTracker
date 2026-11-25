@@ -9,6 +9,7 @@ export {
   unhidePlace,
   unmarkQuestCompleted,
   type CharacterCard,
+  type ApiView,
   type CharacterView,
   type GetCharacterOptions,
 } from "./read/character";
@@ -77,3 +78,4 @@ export {
 export { parseCurated, readCuratedDir } from "./curated/load";
 export { isPlaceholderTitle, parseBlizzardQuest, synthesizeQuests, type BlizzardQuest } from "./curated/blizzard";
 export { applyOverrides, buildTagIndex, CURATED_RELATION, type TagIndex } from "./curated/apply";
+export { getApiSnapshot, saveApiSnapshot } from "./read/api-snapshot";

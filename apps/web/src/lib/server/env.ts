@@ -18,6 +18,8 @@ export interface Env {
   allowedHosts: string[];
   /** Directory of the curated data files (CURATED_DIR; default: `data/curated` under the working directory). */
   curatedDir: string;
+  /** Blizzard developer client (BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET); null when either is unset, which turns the profile sync off. */
+  blizzard: { clientId: string; clientSecret: string; region: string } | null;
 }
 
 /**
@@ -58,6 +60,10 @@ export function readEnv(source: Record<string, string | undefined> = process.env
     sessionSecret: orNull(source.SESSION_SECRET),
     allowedHosts: hostList(source.ALLOWED_HOSTS),
     curatedDir: resolveCuratedDir(orNull(source.CURATED_DIR) ?? undefined),
+    blizzard:
+      source.BLIZZARD_CLIENT_ID && source.BLIZZARD_CLIENT_SECRET
+        ? { clientId: source.BLIZZARD_CLIENT_ID, clientSecret: source.BLIZZARD_CLIENT_SECRET, region: (source.BLIZZARD_REGION || "eu").toLowerCase() }
+        : null,
   };
 }
 
