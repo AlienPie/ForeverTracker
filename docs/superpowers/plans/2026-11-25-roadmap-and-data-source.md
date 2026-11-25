@@ -105,6 +105,12 @@ Owner decision (25 November): use Blizzard's character profile as a data source,
 
 - [ ] Level against date, all characters on one chart (data already in Journey events). Low priority: the owner mostly plays one main.
 
+## Tooltip notes (25 November)
+
+- Wowhead tooltips work on the Quests tab, chain pages and quest log. On Explore, `data-wowhead="quest=ID&dataEnv=16"` fell back to retail data and showed "Quest Not Found" for Forever-only ids (for example 95212); `data-wowhead="quest=ID&domain=forever"` works (fixed). Watch for other links where a tooltip is missing and check which data set they use.
+- Backburner: quest links on the Journey tab (events are plain strings today; they need the quest id passed through to render a link with a tooltip).
+- Quest levels stay on ForeverDB's data (owner decision).
+
 ## Deferred: research first (the two big ones)
 
 **Profession advice and the talent playground are moved out of the near rounds (owner, 25 November).** Neither is a simple build. Do a deep research pass on both together before planning them, and expect to write the logic ourselves because not even Wowhead covers it well.
