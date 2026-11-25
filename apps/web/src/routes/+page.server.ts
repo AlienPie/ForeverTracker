@@ -15,6 +15,8 @@ export type RosterPageData = {
   contentMode: ContentMode;
   /** Server clock (unix seconds) the sync labels are computed against. */
   now: number;
+  /** The Blizzard client is configured, so "Sync all from Blizzard" can work. */
+  canApiSync: boolean;
 };
 
 export const load: ServerLoad = async (): Promise<RosterPageData> => {
@@ -49,5 +51,5 @@ export const load: ServerLoad = async (): Promise<RosterPageData> => {
     );
     nextByGuid[card.guid] = first ?? null;
   }
-  return { roster, nextByGuid, contentReady, contentMode: env().contentMode, now };
+  return { roster, nextByGuid, contentReady, contentMode: env().contentMode, now, canApiSync: env().blizzard !== null };
 };

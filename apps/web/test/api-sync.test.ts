@@ -36,3 +36,28 @@ describe("syncCharacterFromApi", () => {
     expect(getApiSnapshot(d, G)).toBeNull();
   });
 });
+
+import { syncAllFromApi } from "../src/lib/server/api-sync";
+
+describe("syncAllFromApi", () => {
+  test("skips low levels and missing surnames, counts the rest", async () => {
+    const d = db();
+    const asked: string[] = [];
+    const r = await syncAllFromApi(
+      d,
+      [
+        { guid: G, name: "Merrowyn", surname: "Stoneback", level: 20 },
+        { guid: "x", name: "Low", surname: "Level", level: 4 },
+        { guid: "y", name: "No", surname: null, level: 30 },
+        { guid: "z", name: "Ghost", surname: "Name", level: 15 },
+      ],
+      creds,
+      async (slug) => {
+        asked.push(slug);
+        return slug.startsWith("ghost") ? null : snap;
+      },
+    );
+    expect(r).toEqual({ synced: 1, none: 1, skipped: 2, failed: 0 });
+    expect(asked).toEqual(["merrowyn-stoneback", "ghost-name"]);
+  });
+});

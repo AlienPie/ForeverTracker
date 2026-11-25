@@ -28,3 +28,32 @@ export async function syncCharacterFromApi(
     return "error";
   }
 }
+
+export type ApiSyncAll = { synced: number; none: number; skipped: number; failed: number };
+
+/**
+ * Syncs every character one after another. Characters under level 10 have no Blizzard profile, and ones
+ * without a surname cannot be asked; both count as skipped without a request. `none` counts characters
+ * Blizzard does not know, `failed` the ones that errored.
+ */
+export async function syncAllFromApi(
+  db: Db,
+  characters: { guid: string; name: string | null; surname: string | null; level: number | null }[],
+  blizzard: { clientId: string; clientSecret: string; region: string } | null,
+  fetchCharacter?: (slug: string) => Promise<ApiSnapshot | null>,
+): Promise<ApiSyncAll> {
+  const out: ApiSyncAll = { synced: 0, none: 0, skipped: 0, failed: 0 };
+  // One client for the whole run so the access token is fetched once.
+  const fetcher = fetchCharacter ?? (blizzard ? createBlizzardClient(blizzard).fetchCharacter : undefined);
+  for (const c of characters) {
+    if ((c.level !== null && c.level < 10) || !profileSlug(c.name, c.surname) || !fetcher) {
+      out.skipped++;
+      continue;
+    }
+    const r = await syncCharacterFromApi(db, c, blizzard, fetcher);
+    if (r === "ok") out.synced++;
+    else if (r === "none") out.none++;
+    else out.failed++;
+  }
+  return out;
+}
