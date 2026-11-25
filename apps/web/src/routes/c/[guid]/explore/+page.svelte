@@ -3,9 +3,11 @@
   import { page } from "$app/state";
   import ContentBanner from "../../../../lib/components/ContentBanner.svelte";
   import type { ZoneProgress } from "@ft/core";
+  import { tooltipData, type TooltipProvider } from "../../../../lib/links";
   import type { ExplorePageData } from "./+page.server";
 
   let { data }: { data: ExplorePageData } = $props();
+  const provider = $derived((page.data.tooltipProvider ?? "none") as TooltipProvider);
 
   const FIT: Record<string, string> = { "in-range": "in range", below: "above your level", above: "below your level" };
   const chainHref = (questId: number) => `/c/${encodeURIComponent(page.params.guid ?? "")}/quests/chain/${questId}`;
@@ -81,7 +83,7 @@
             <h4>In progress</h4>
             <ul class="zquests">
               {#each z.inProgress as q (q.id)}
-                <li><a href={chainHref(q.id)}>{q.name}</a> <span class="lvl">level {q.level}</span> <span class="hint">{q.inLog ? "in your log" : "next in a chain you are on"}</span></li>
+                <li><a href={chainHref(q.id)} data-wowhead={tooltipData("quest", q.id, provider)}>{q.name}</a> <span class="lvl">level {q.level}</span> <span class="hint">{q.inLog ? "in your log" : "next in a chain you are on"}</span></li>
               {/each}
             </ul>
           {/if}
@@ -89,7 +91,7 @@
           {#if z.remaining.length > 0}
             <ul class="zquests">
               {#each z.remaining as q (q.id)}
-                <li><a href={chainHref(q.id)}>{q.name}</a> <span class="lvl">level {q.level}</span></li>
+                <li><a href={chainHref(q.id)} data-wowhead={tooltipData("quest", q.id, provider)}>{q.name}</a> <span class="lvl">level {q.level}</span></li>
               {/each}
             </ul>
           {:else}
@@ -99,7 +101,7 @@
             <h4>Skipped</h4>
             <ul class="zquests dim">
               {#each z.skippedQuests as q (q.id)}
-                <li><a href={chainHref(q.id)}>{q.name}</a> <span class="lvl">level {q.level}</span> <span class="hint">skipped, you completed what follows</span></li>
+                <li><a href={chainHref(q.id)} data-wowhead={tooltipData("quest", q.id, provider)}>{q.name}</a> <span class="lvl">level {q.level}</span> <span class="hint">skipped, you completed what follows</span></li>
               {/each}
             </ul>
           {/if}
@@ -107,7 +109,7 @@
             <h4>Completed</h4>
             <ul class="zquests">
               {#each z.completedQuests as q (q.id)}
-                <li><a href={chainHref(q.id)}>{q.name}</a> <span class="lvl">level {q.level}</span></li>
+                <li><a href={chainHref(q.id)} data-wowhead={tooltipData("quest", q.id, provider)}>{q.name}</a> <span class="lvl">level {q.level}</span></li>
               {/each}
             </ul>
           {/if}

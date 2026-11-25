@@ -22,3 +22,12 @@ describe("providerScriptUrl", () => {
     expect(providerScriptUrl("wowhead")).toBe("https://wow.zamimg.com/js/tooltips.js");
   });
 });
+
+describe("tooltipData", () => {
+  test("a Wowhead data attribute for the Forever data set, only with the wowhead provider", async () => {
+    const { tooltipData } = await import("../src/lib/links");
+    expect(tooltipData("quest", 1582, "wowhead")).toBe("quest=1582&dataEnv=16");
+    expect(tooltipData("quest", 1582, "none")).toBeUndefined();
+    expect(tooltipData("quest", 0, "wowhead")).toBeUndefined();
+  });
+});

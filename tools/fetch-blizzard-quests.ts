@@ -10,6 +10,15 @@ import { parseBlizzardQuest, type BlizzardQuest } from "../packages/core/src/ind
 import { readQuestIdsReadonly, resolveDataDir } from "../packages/db/src/index";
 
 const CONCURRENCY = 10;
+// Blizzard allows 100 requests a second; start at most one every 20 ms (50 a second) to stay clear of it.
+const SPACING_MS = 20;
+let nextSlot = 0;
+async function throttle(): Promise<void> {
+  const now = Date.now();
+  nextSlot = Math.max(nextSlot, now) + SPACING_MS;
+  const wait = nextSlot - SPACING_MS - now;
+  if (wait > 0) await new Promise((ok) => setTimeout(ok, wait));
+}
 const args = process.argv.slice(2);
 const ri = args.indexOf("--region");
 const region = ri >= 0 ? (args.splice(ri, 2)[1] ?? "eu") : "eu";
@@ -55,6 +64,7 @@ async function listedIds(): Promise<number[]> {
 
 async function getJson(path: string): Promise<unknown> {
   for (let attempt = 0; attempt < 5; attempt++) {
+    await throttle();
     const r = await fetch(`https://${region}.api.blizzard.com${path}?namespace=static-forever-${region}&locale=en_GB`, {
       headers: { authorization: `Bearer ${token}` },
     });
@@ -88,6 +98,7 @@ const missing: number[] = [];
 const failed: number[] = [];
 async function one(id: number): Promise<void> {
   for (let attempt = 0; attempt < 4; attempt++) {
+    await throttle();
     const r = await fetch(`https://${region}.api.blizzard.com/data/wow/quest/${id}?namespace=static-forever-${region}&locale=en_GB`, {
       headers: { authorization: `Bearer ${token}` },
     });

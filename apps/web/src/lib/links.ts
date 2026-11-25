@@ -29,3 +29,13 @@ export function providerScriptUrl(provider: TooltipProvider): string | null {
       return null;
   }
 }
+
+/**
+ * Value for a `data-wowhead` attribute on a link that goes somewhere else in the app, so Wowhead's
+ * tooltip script still shows the Forever tooltip on hover (`dataEnv=16` is the Forever data set).
+ * Undefined when the provider is not Wowhead or the id is not a positive integer.
+ */
+export function tooltipData(kind: EntityKind, id: number, provider: TooltipProvider): string | undefined {
+  if (provider !== "wowhead" || !Number.isSafeInteger(id) || id <= 0) return undefined;
+  return `${kind}=${id}&dataEnv=16`;
+}

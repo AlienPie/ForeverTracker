@@ -10,14 +10,14 @@
 
 - **Security fixes are parked.** The app stays local only, so the login rate limit, session binding and cookie `secure` flag move to the backlog. (The compose file publishes the port on all interfaces on the owner's machine; that is the owner's call.)
 - **Data source:** prefer Blizzard's Forever API for everything it can give, Wowhead links and tooltips for display (allowed), and drop ForeverDB if possible. The finding below says it is only partly possible today.
-- **Feature order:** where to next, profession advice, talent playground, then the alt comparison chart (the owner mostly plays one main, so alts come later).
+- **Feature order (revised 25 November):** where to next, then Blizzard profile sync and automatic upload, reputation tracker, daily plan v1, alt chart. Profession advice and the talent playground are deferred behind a research pass.
 - The owner works from a laptop when travelling; setup notes are at the end.
 
 ## Where things stand
 
 Done: M0, M1, M1.1, M2 steps 0 to 3 (curated data, tag-aware chains, Explore tab), the first M2 cleanup rounds (route "now" marker, continent maps, hide a place, unknown quest names, same-name merge, favicon), and the Blizzard integration (class, race, profession and faction requirements for 6,099 quests, race-locked zones, 862 Blizzard-only quests in Explore). Wowhead links everywhere. All pushed to `origin/main`.
 
-Not done, in the owner's order: step 4 where to next, step 6a profession advice, step 6b talent playground, step 5 alt chart. Then M3 (sync agent, Battle.net login, planning view) and M4 (see the design, section 11).
+Not done, in the owner's order: Round 2 where to next, Round 3 Blizzard profile sync and automatic upload, Round 4 reputation, Round 5 daily plan, Round 6 alt chart; profession advice and the talent playground wait for research. See the rounds below and M4 in the design, section 11.
 
 ## Data-source finding: can ForeverDB be dropped?
 
@@ -83,33 +83,40 @@ Rule-based levelling areas for a character: zones whose level range fits, weight
 - [ ] A "Where to next" block on the Quests tab (or Explore), with the reason line the design requires.
 - [ ] Use quest experience rewards (from Blizzard) to estimate how much of the next level a zone can give.
 
-## Round 3: profession advice (M2 step 6a)
+## Round 3: Blizzard profile sync and automatic upload (M3 start)
 
-- [ ] Recipes to learn or skill up at the current rank, from Blizzard's profession data.
-- [ ] Trainer and gathering-spot data: check what Blizzard or the mirror holds; collect the rest from Wowhead by hand if needed (no scripted fetching of Wowhead).
-- [ ] Optional, rule-based: profit hints from the Forever auction house data (`dynamic-forever-eu`, ruleset 2 is Normal), which Blizzard serves.
+Owner decision (25 November): use Blizzard's character profile as a data source, keep the addon as a cross-check, and keep automatic upload on the roadmap.
+- [ ] A server-side sync from the profile API (`profile-forever-eu`, public, client credentials, level 10 and up) into the existing snapshot tables: completed quests, quest log, professions and recipes, talents, reputations, achievements, collections. Characters are found by first name and surname. Respect the rate limit (the quest tool shows 50 requests a second is safe).
+- [ ] Keep the addon snapshot as a second source and show where they differ ("the API is newer", "the addon has an upload from 3 days ago"), so a stale upload or an API gap is visible. The addon stays the only source for first visits, level-up times, play sessions, `/played` and characters under level 10.
+- [ ] Decide the merge rule per field (newest wins, or API wins for lists, addon for events) and record it in `docs/addon-contract.md`.
+- [ ] **Automatic upload (sync agent)** stays on the roadmap: a small local process that watches the SavedVariables file and uploads it, so the addon data no longer needs a manual upload. Do it after the API sync, since the API removes the most urgent need.
+- [ ] Battle.net login, planning view and theme polish follow (rest of M3).
 
-## Round 4: talent playground (M2 step 6b)
+## Round 4: reputation tracker
 
-- [ ] Standalone page from Blizzard's talent trees (prerequisites and tiers enforced), saved and shareable by URL.
-- [ ] Compare with the character's real build (profile `specializations` or the addon snapshot) and curated guide builds.
-- [ ] Check whether Forever loadout strings can be imported and exported (also for stealing a build from Wowhead).
-- [ ] **Track a chosen build.** The owner can save a plan (own or copied from Wowhead); the app then says which talent to take next for a character and feeds it into Next up and the daily plan ("take this talent now").
+- [ ] Standings from the profile (`reputations`: tier, value and maximum per faction) with a page or panel per character, what is left to the next standing, and the quests that raise it (Blizzard quest rewards list reputation values).
+- [ ] Feeds the daily plan.
 
-## Round 5: alt comparison chart (M2 step 5)
+## Round 5: daily plan v1
 
-- [ ] Level against date, all characters on one chart (data already in Journey events).
+- [ ] A pure function over a character that merges Next up, Where to next, reputation, level-up steps and farming goals into a ranked list with a reason per line. Profession and talent steps join it after the research item below.
 
-## Round 6: reputation tracker and daily plan
+## Round 6: alt comparison chart (M2 step 5)
 
-- [ ] Reputation tracker (feature 6), after the Round 1 profile spike shows where standings come from.
-- [ ] Daily plan (feature 13): a pure function over a character that merges the outputs of Next up, Where to next, profession advice, reputation, talent steps and farming goals, with a reason per line.
+- [ ] Level against date, all characters on one chart (data already in Journey events). Low priority: the owner mostly plays one main.
+
+## Deferred: research first (the two big ones)
+
+**Profession advice and the talent playground are moved out of the near rounds (owner, 25 November).** Neither is a simple build. Do a deep research pass on both together before planning them, and expect to write the logic ourselves because not even Wowhead covers it well.
+- **Profession advice:** recipes to learn or skill up at the current rank (Blizzard gives recipes, reagents and a tier's skill range, but no trainers, no gathering spots and no recipe skill thresholds). Likely needs logic built from what drops or sells each item, item and mob levels, and zones. Questions: where does the data for sources of each item come from, can recipe skill thresholds be derived, and is crafting profit from the auction house data (`dynamic-forever-eu`, ruleset 2 is Normal) worth it?
+- **Talent playground:** from Blizzard's talent trees (`/data/wow/talent-tree/{treeId}/playable-specialization/{specId}`, 651 talents). Questions: are node positions, prerequisites and tiers in the data (not confirmed; the node documents show ranks and tooltips), can Forever loadout strings be imported and exported (also for copying a Wowhead build), and how to track a chosen build against a character ("take this talent next", feeding Next up and the daily plan).
+- Output of the research: a short findings note under `docs/superpowers/`, then a plan for each.
 
 ## Then
 
-- **M3:** sync agent first (automatic upload), then Battle.net login, planning view, theme polish. The Round 1 profile spike tells us how much the agent can pull from the API versus the addon.
 - **M4:** see the design. The backup and restore item is small and can go in earlier.
-- **Cleanup that stays:** item 5 done; item 7 (time per level at levels 11 to 19, check after the next level-up); item 9 (Welcome! is not reported by the game; "Mark as completed" covers it); the removed-quests list (last, low impact); the deferred small issues in the kickoff note; the parked security fixes.
+- **Cleanup that stays:** item 7 (time per level at levels 11 to 19, check after the next level-up); item 9 (Welcome! is not reported by the game; "Mark as completed" covers it); the removed-quests list (last, low impact); the deferred small issues in the kickoff note; the parked security fixes.
+- **Quest levels:** ForeverDB's mirror has a level for 3,854 of its 3,862 quests (that part is fine); only the Blizzard-only quests lack one, and they use the zone midpoint.
 
 ## Feature ideas (brainstorm, 25 November; none are committed work)
 
