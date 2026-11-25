@@ -12,6 +12,8 @@ export type CuratedZone = {
   maxLevel: number | null;
   territory: CuratedTerritory | null;
   type: CuratedZoneType;
+  /** Races that can enter this zone's quests (a race-locked start zone such as Zephras Isle); absent or empty means any. */
+  races?: string[];
 };
 export type Curated = {
   tags: CuratedTags;

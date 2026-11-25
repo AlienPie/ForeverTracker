@@ -62,6 +62,7 @@ export const load: ServerLoad = async ({ params, url }): Promise<ExplorePageData
     zones: catalog.zones,
     level: view.level,
     classToken: view.class,
+    raceToken: view.race,
     faction,
     completed,
     inLog,

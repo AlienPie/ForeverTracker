@@ -41,7 +41,9 @@ export function classAllowsTagged(q: QuestRow, classToken: string | null | undef
 /** Letters only, lower case; "scourge" is the addon's token for Undead. "Night Elf" and "NightElf" both give "nightelf". */
 const raceKey = (s: string): string => {
   const k = s.replace(/[^\p{L}]/gu, "").toLowerCase();
-  return k === "scourge" ? "undead" : k;
+  if (k === "scourge") return "undead";
+  // Blizzard names the two new races "High Order Skyborne" and "Windshaper Skyborne"; the game's race token is "Skyborne".
+  return k === "highorderskyborne" || k === "windshaperskyborne" ? "skyborne" : k;
 };
 
 /**

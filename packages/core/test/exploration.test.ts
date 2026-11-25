@@ -192,3 +192,20 @@ describe("same-name copies in one zone", () => {
     expect(z.remaining.map((q) => q.id)).toEqual([3]);
   });
 });
+
+describe("race-locked zones", () => {
+  const mk = (id: number, zone: string, m: number) =>
+    ({ id, name: `Q${id}`, level: 5, zone: { n: zone, slug: zone, m }, side: "both" }) as never;
+  const zones = [
+    { name: "Zephras Isle", minLevel: 1, maxLevel: 12, territory: null, type: "zone" as const, races: ["High Order Skyborne"] },
+    { name: "Dun Morogh", minLevel: 1, maxLevel: 10, territory: null, type: "zone" as const },
+  ];
+  const quests = [mk(1, "Zephras Isle", 10), mk(2, "Zephras Isle", 10), mk(3, "Dun Morogh", 20)];
+  const run = (raceToken: string) =>
+    zoneProgress({ quests, zones, level: 5, raceToken, completed: new Set(), inLog: new Set(), visitedMapIds: new Set() }).zones;
+
+  test("a Dwarf does not see the zone, a Skyborne does", () => {
+    expect(run("Dwarf").map((z) => z.name)).toEqual(["Dun Morogh"]);
+    expect(run("Skyborne").find((z) => z.name === "Zephras Isle")!.total).toBe(2);
+  });
+});

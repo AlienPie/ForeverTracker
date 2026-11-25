@@ -94,6 +94,9 @@ function parseZones(raw: unknown, out: Curated): void {
       maxLevel: level(e.maxLevel),
       territory,
       type: e.type as CuratedZoneType,
+      ...(Array.isArray(e.races) && e.races.some((r) => typeof r === "string" && r.trim())
+        ? { races: e.races.filter((r): r is string => typeof r === "string" && r.trim() !== "").map((r) => r.trim()) }
+        : {}),
     } satisfies CuratedZone);
   });
 }

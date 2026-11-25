@@ -2,6 +2,7 @@ import { chainGraph, chainProgress, skippedMembers } from "./chains";
 import type { QuestRow } from "./content";
 import type { CuratedTerritory, CuratedZone } from "../curated/types";
 import { sideAllows, type Faction } from "./faction";
+import { raceAllows } from "./classes";
 
 export type PlaceZone = { name: string; minLevel: number | null; maxLevel: number | null; territory: CuratedTerritory | null };
 export type ZoneFit = "below" | "in-range" | "above" | "unknown";
@@ -42,6 +43,7 @@ export type ExplorationInput = {
   zones?: CuratedZone[];
   level: number | null;
   classToken?: string | null;
+  raceToken?: string | null;
   faction?: Faction | null;
   completed: Set<number>;
   inLog: Set<number>;
@@ -170,6 +172,12 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
   }
   const anyVisit = input.visitedMapIds.size > 0;
 
+  // Zones only some races can enter (curated `races`): their open quests are not this character's.
+  const lockedZones = new Set<string>();
+  for (const z of input.zones ?? []) {
+    if (z.races && z.races.length > 0 && !raceAllows(z.races, input.raceToken)) lockedZones.add(norm(z.name));
+  }
+
   let unplaced = 0;
   for (const q of quests) if (!q.zone || typeof q.zone.m !== "number") unplaced++;
 
@@ -195,7 +203,8 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
       } else if (inLog.has(q.id)) {
         log++;
         logged.push(q);
-      } else if ((input.usable && !input.usable(q)) || !sideAllows(q, faction)) continue;
+      } else if (lockedZones.has(norm(p.name)) && !inLog.has(q.id)) continue;
+      else if ((input.usable && !input.usable(q)) || !sideAllows(q, faction)) continue;
       else if (skippedIds.has(q.id)) skipped.push(q);
       else {
         left.push(q);
@@ -225,5 +234,5 @@ export function zoneProgress(input: ExplorationInput): { zones: ZoneProgress[]; 
       skippedQuests: visited ? skipped.sort(byLevelThenId).map(zq) : [],
     };
   });
-  return { zones, unplaced };
+  return { zones: zones.filter((z) => !(lockedZones.has(norm(z.name)) && z.done + z.inLog === 0)), unplaced };
 }

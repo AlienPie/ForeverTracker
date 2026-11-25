@@ -174,7 +174,11 @@
       "minLevel": 1,
       "maxLevel": 12,
       "territory": "Contested",
-      "type": "zone"
+      "type": "zone",
+      "races": [
+        "High Order Skyborne",
+        "Windshaper Skyborne"
+      ]
     },
     {
       "name": "Razorfen Downs",

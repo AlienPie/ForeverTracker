@@ -5,7 +5,8 @@ export type Faction = "Alliance" | "Horde";
 /** Letters only, lower case; "scourge" is the addon's token for Undead (same rule as `raceAllows`). */
 const raceKey = (s: string): string => {
   const k = s.replace(/[^\p{L}]/gu, "").toLowerCase();
-  return k === "scourge" ? "undead" : k;
+  if (k === "scourge") return "undead";
+  return k === "highorderskyborne" || k === "windshaperskyborne" ? "skyborne" : k;
 };
 
 const FACTION_BY_RACE = new Map<string, Faction>([
