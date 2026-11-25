@@ -186,3 +186,7 @@ Wowhead is read by hand, so keep this short and do it in one sitting at the end.
 - Remaining capture-based tags are only needed for quests Blizzard lacks; check how many that is after the next `pnpm blizzard:quests`.
 - Re-run `pnpm blizzard:quests` (and a content sync) after every game patch.
 - Profession advice and talent data: compare ForeverDB's against Blizzard's static data before deciding whether to drop ForeverDB (M3).
+
+## Current plan
+
+The roadmap, the ForeverDB-versus-Blizzard finding and the feature ideas are in `docs/superpowers/plans/2026-11-25-roadmap-and-data-source.md`. Start there.
