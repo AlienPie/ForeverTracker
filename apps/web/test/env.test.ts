@@ -25,13 +25,13 @@ describe("readEnv", () => {
     expect(readEnv({ ALLOWED_HOSTS: " Tracker.LAN , ,nas," }).allowedHosts).toEqual(["tracker.lan", "nas"]);
   });
 
-  test("tooltip provider defaults to none, empty string too", () => {
-    expect(readEnv({}).tooltipProvider).toBe("none");
-    expect(readEnv({ TOOLTIP_PROVIDER: "" }).tooltipProvider).toBe("none");
+  test("tooltip provider defaults to wowhead, empty string too", () => {
+    expect(readEnv({}).tooltipProvider).toBe("wowhead");
+    expect(readEnv({ TOOLTIP_PROVIDER: "" }).tooltipProvider).toBe("wowhead");
   });
 
   test("accepts valid tooltip providers", () => {
-    for (const p of ["none", "wowhead", "foreverdb"] as const) {
+    for (const p of ["none", "wowhead"] as const) {
       expect(readEnv({ TOOLTIP_PROVIDER: p }).tooltipProvider).toBe(p);
     }
   });

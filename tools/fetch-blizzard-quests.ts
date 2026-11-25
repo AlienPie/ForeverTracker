@@ -1,5 +1,6 @@
 // Fetch quest requirements from Blizzard's Forever game data into data/curated/blizzard-quests.json.
-// Ids: every quest in the local mirror (read-only), those from the last run, and any given on the command line.
+// Ids: every quest Blizzard lists by area, category and type (it has no quest index), every quest in the local
+// mirror (read-only), those from the last run, and any given on the command line.
 //   pnpm blizzard:quests [--region eu] [--range 79000-99999] [extra quest ids ...]
 // Needs BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET. Credentials and the token are never printed.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -29,20 +30,6 @@ if (!clientId || !secret) {
 const root = fileURLToPath(new URL("..", import.meta.url));
 const dbPath = join(resolveDataDir(process.env), "forevertracker.sqlite");
 const mirrorIds = existsSync(dbPath) ? readQuestIdsReadonly(dbPath) : [];
-// Ids found on an earlier run stay (they include ids the mirror lacks).
-const outPath = join(root, "data/curated/blizzard-quests.json");
-let earlier: number[] = [];
-try {
-  earlier = ((JSON.parse(readFileSync(outPath, "utf8")) as { quests?: { id: number }[] }).quests ?? []).map((q) => q.id);
-} catch {
-  // first run
-}
-const ids = [...new Set([...mirrorIds, ...earlier, ...extra])].sort((a, b) => a - b);
-if (ids.length === 0) {
-  console.error(`No quest ids: the mirror at ${dbPath} is empty or missing and none were given.`);
-  process.exit(1);
-}
-
 const tokenRes = await fetch("https://oauth.battle.net/token", {
   method: "POST",
   headers: { authorization: `Basic ${Buffer.from(`${clientId}:${secret}`).toString("base64")}`, "content-type": "application/x-www-form-urlencoded" },
@@ -53,6 +40,48 @@ if (!tokenRes.ok) {
   process.exit(1);
 }
 const token = ((await tokenRes.json()) as { access_token: string }).access_token;
+
+async function listedIds(): Promise<number[]> {
+  const out = new Set<number>();
+  for (const [kind, key] of [["area", "areas"], ["category", "categories"], ["type", "types"]] as const) {
+    const index = (await getJson(`/data/wow/quest/${kind}/index`)) as Record<string, { id: number }[]> | null;
+    for (const entry of index?.[key] ?? []) {
+      const doc = (await getJson(`/data/wow/quest/${kind}/${entry.id}`)) as { quests?: { id: number }[] } | null;
+      for (const q of doc?.quests ?? []) if (Number.isInteger(q.id) && q.id > 0) out.add(q.id);
+    }
+  }
+  return [...out];
+}
+
+async function getJson(path: string): Promise<unknown> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const r = await fetch(`https://${region}.api.blizzard.com${path}?namespace=static-forever-${region}&locale=en_GB`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    if (r.status === 429) {
+      await new Promise((ok) => setTimeout(ok, 1200));
+      continue;
+    }
+    return r.ok ? r.json() : null;
+  }
+  return null;
+}
+
+// Ids found on an earlier run stay (they include ids the mirror lacks).
+const outPath = join(root, "data/curated/blizzard-quests.json");
+let earlier: number[] = [];
+try {
+  earlier = ((JSON.parse(readFileSync(outPath, "utf8")) as { quests?: { id: number }[] }).quests ?? []).map((q) => q.id);
+} catch {
+  // first run
+}
+const listed = await listedIds();
+console.log(`${listed.length} quest ids listed by Blizzard (areas, categories, types).`);
+const ids = [...new Set([...listed, ...mirrorIds, ...earlier, ...extra])].sort((a, b) => a - b);
+if (ids.length === 0) {
+  console.error(`No quest ids: the mirror at ${dbPath} is empty or missing and none were given.`);
+  process.exit(1);
+}
 
 const found: BlizzardQuest[] = [];
 const missing: number[] = [];

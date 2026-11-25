@@ -93,3 +93,13 @@ describe("synthesizeQuests", () => {
     expect(got[0]!.chain.previous.map((l) => l.questId)).toEqual([9]);
   });
 });
+
+describe("isPlaceholderTitle", () => {
+  test("flags developer placeholders and keeps real quests", async () => {
+    const { isPlaceholderTitle } = await import("../src/curated/blizzard");
+    for (const t of ["<UNUSED>", "<NYI> <TXT> Stormwind Commendation", "Foo [DNT]", "DEPRECATED Quest", "Test Quest"]) {
+      expect(isPlaceholderTitle(t)).toBe(true);
+    }
+    for (const t of ["Distracting Jarven", "Welcome!", "The Test of Strength"]) expect(isPlaceholderTitle(t)).toBe(false);
+  });
+});

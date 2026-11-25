@@ -1,11 +1,11 @@
-export type TooltipProvider = "none" | "wowhead" | "foreverdb";
+export type TooltipProvider = "none" | "wowhead";
 export type EntityKind = "item" | "spell" | "quest";
 
-const PROVIDERS: readonly TooltipProvider[] = ["none", "wowhead", "foreverdb"];
+const PROVIDERS: readonly TooltipProvider[] = ["none", "wowhead"];
 
-/** Parse TOOLTIP_PROVIDER; unset or empty means "none". Throws naming the variable on anything else. */
+/** Parse TOOLTIP_PROVIDER; unset or empty means "wowhead" (set "none" for no third-party script). Throws naming the variable on anything else. */
 export function parseTooltipProvider(raw: string | undefined): TooltipProvider {
-  if (raw === undefined || raw === "") return "none";
+  if (raw === undefined || raw === "") return "wowhead";
   if ((PROVIDERS as readonly string[]).includes(raw)) return raw as TooltipProvider;
   throw new Error(`Invalid TOOLTIP_PROVIDER: "${raw}" (expected one of ${PROVIDERS.join(", ")})`);
 }
@@ -25,8 +25,6 @@ export function providerScriptUrl(provider: TooltipProvider): string | null {
   switch (provider) {
     case "wowhead":
       return "https://wow.zamimg.com/js/tooltips.js";
-    case "foreverdb":
-      return "https://foreverdb.net/embed/tooltips.js";
     default:
       return null;
   }

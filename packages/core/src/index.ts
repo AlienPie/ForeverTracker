@@ -74,5 +74,5 @@ export {
   type QuestTagKind,
 } from "./curated/types";
 export { parseCurated, readCuratedDir } from "./curated/load";
-export { parseBlizzardQuest, synthesizeQuests, type BlizzardQuest } from "./curated/blizzard";
+export { isPlaceholderTitle, parseBlizzardQuest, synthesizeQuests, type BlizzardQuest } from "./curated/blizzard";
 export { applyOverrides, buildTagIndex, CURATED_RELATION, type TagIndex } from "./curated/apply";

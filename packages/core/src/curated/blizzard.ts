@@ -100,6 +100,12 @@ export function mergeBlizzard(out: Curated, quests: BlizzardQuest[]): void {
   }
 }
 
+/** Blizzard's quest list holds developer placeholders: `<UNUSED>`, `<NYI> ...`, `[DNT]`, `[PH]`, "DEPRECATED", test quests. */
+export function isPlaceholderTitle(title: string): boolean {
+  const t = title.trim();
+  return /^<[^>]*>/.test(t) || /\[(DNT|PH|TEST)\]/i.test(t) || /\b(DEPRECATED|UNUSED|NYI)\b/.test(t) || /^test\b/i.test(t) || t === "";
+}
+
 /**
  * Quest rows for quests only Blizzard knows, so Explore and Next up can count them. Blizzard gives
  * no level, so a quest takes the middle of its zone's curated level range. A quest is added only
@@ -118,7 +124,7 @@ export function synthesizeQuests(
   const titles = new Map(blizzard.map((q) => [q.id, q.title]));
   const out: QuestRow[] = [];
   for (const q of blizzard) {
-    if (knownIds.has(q.id) || q.area === null) continue;
+    if (knownIds.has(q.id) || q.area === null || isPlaceholderTitle(q.title)) continue;
     const zone = byName.get(key(q.area));
     const m = mapIds.get(key(q.area));
     if (!zone || m === undefined) continue;
